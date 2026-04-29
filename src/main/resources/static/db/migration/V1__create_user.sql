@@ -1,0 +1,3 @@
+-- CREATE TABLE IN NOT EXISTS user (
+--     id Integer
+-- )

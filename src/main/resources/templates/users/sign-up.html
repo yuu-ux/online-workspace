@@ -1,0 +1,31 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>online-space</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css">
+</head>
+<body>
+    <h1>ユーザー登録</h1>
+    <p>ユーザー登録画面です。</p>
+    <form th:action="@{/users/sign_up}" method="post" th:object="${userForm}" class="sign-up__form">
+        <div class="sign-up__field">
+            <label th:for="*{name}" class="sign-up__label">
+            <input th:field="*{name}" type="text" class="sign-up__input">
+        </div>
+        <div class="sign-up__field">
+            <label th:for="*{email}" class="sign-up__label">
+            <input th:field="*{email}" type="text" class="sign-up__input">
+        </div>
+        <div class="sign-up__field">
+            <label th:for="*{password}" class="sign-up__label">
+            <input th:field="*{password}" type="text" class="sign-up__input">
+        </div>
+        <div class="sign-up__field">
+            <label th:for="*{passwordConfirmation}" class="sign-up__label">
+            <input th:field="*{passwordConfirmation}" type="text" class="sign-up__input">
+        </div>
+        <button type="submit" class="sign-up__submit">登録<button>
+    </form>
+</body>
+</html>
