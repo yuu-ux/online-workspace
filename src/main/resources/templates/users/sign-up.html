@@ -8,7 +8,7 @@
 <body>
     <h1>ユーザー登録</h1>
     <p>ユーザー登録画面です。</p>
-    <form th:action="@{/users/sign_up}" method="post" th:object="${userForm}" class="sign-up__form">
+    <form th:action="@{/users/sign_up}" method="post" th:object="${signUpForm}" class="sign-up__form">
         <div class="sign-up__field">
             <label th:for="*{name}" class="sign-up__label">
             <input th:field="*{name}" type="text" class="sign-up__input">

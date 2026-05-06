@@ -12,7 +12,6 @@ public class UserEntity {
     private String name;
     private String email;
     private String password;
-    private String passwordConfirmation;
     private Timestamp createdAt;
     private Timestamp modifiedAt;
 }

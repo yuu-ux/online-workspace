@@ -4,7 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import com.example.online_workspace.form.UserForm;
+import com.example.online_workspace.form.SignUpForm;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -22,8 +22,8 @@ public class UserController {
 
     @GetMapping("/sign_up")
         public String signUp(Model model) {
-            UserForm userForm = new UserForm();
-            model.addAttribute("userForm", userForm);
+            SignUpForm signUpForm = new SignUpForm();
+            model.addAttribute("signUpForm", signUpForm);
             return "users/sign-up";
         }
 
@@ -31,5 +31,5 @@ public class UserController {
         public String signUp() {
             return "redirect:/";
         }
-
 }
+

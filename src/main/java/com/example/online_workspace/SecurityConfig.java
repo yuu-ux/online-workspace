@@ -18,7 +18,10 @@ public class SecurityConfig {
 				.anyRequest().authenticated()
 			)
 			.formLogin((form) -> form
-                    .loginPage("/login")
+                    .loginPage("/users/sign_up")
+                    .loginProcessingUrl("/login")
+                    .usernameParameter("email")
+                    .passwordParameter("password")
                     .permitAll());
 		return http.build();
 	}

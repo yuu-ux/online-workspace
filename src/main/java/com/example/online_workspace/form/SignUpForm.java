@@ -5,11 +5,11 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 /**
- * UserForm
+ * SignUpForm
  */
 
 @Data
-public class UserForm {
+public class SignUpForm {
     @NotNull(message = "名前は必須です。")
     private String name;
 
