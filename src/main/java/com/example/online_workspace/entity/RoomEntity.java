@@ -5,11 +5,10 @@ import java.time.OffsetDateTime;
 import lombok.Data;
 
 @Data
-public class UserEntity {
+public class RoomEntity {
     private Long id;
     private String name;
-    private String email;
-    private String passwordHash;
+    private Long createdBy;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 }

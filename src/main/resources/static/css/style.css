@@ -1,0 +1,104 @@
+body {
+  margin: 0;
+  background: #f7f7f8;
+  color: #222;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 20px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button {
+  padding: 8px 12px;
+  border: 1px solid #999;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.room-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.room-table th,
+.room-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.chat-messages {
+  max-height: 300px;
+  overflow: auto;
+  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  background: #fafafa;
+}
+
+.chat-message {
+  margin-bottom: 8px;
+}
+
+.chat-message header {
+  display: flex;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.muted {
+  color: #666;
+}
+
+.error {
+  color: #c00;
+  margin-top: -6px;
+}
+
+.toast {
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.toast-success {
+  background: #e8f8ec;
+  border: 1px solid #6acb83;
+}
+
+.toast-error {
+  background: #fdeeee;
+  border: 1px solid #e08b8b;
+}
