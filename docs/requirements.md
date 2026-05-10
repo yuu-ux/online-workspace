@@ -205,15 +205,6 @@
 
 ## 6. 画面要件
 
-### 6.1 成果物方針
-
-- 各画面のモックは draw.io で作成する
-- draw.io では画面内の主な表示要素、主要ボタンの配置、代表的な遷移先が分かるように表現する
-- draw.io はフロー単位で複数画面を 1 ページにまとめてよい
-- 画面遷移図は Mermaid で記載し、Markdown ファイルとして管理する
-
-### 6.2 対象画面
-
 - ホーム画面
 - ログイン画面
 - ユーザー登録画面
@@ -235,7 +226,6 @@
 ### 6.3 参照ファイル
 
 - 画面モック（draw.io）: [screen_wireframe.drawio](./screen_wireframe.drawio)
-- 画面遷移図（Mermaid）: [screen_transitions.md](./screen_transitions.md)
 
 ### 6.4 共通画面要件
 
