@@ -40,7 +40,7 @@
     - Spring Security
     - Mapper
     - thymeleaf
-    - validation
+    - Bean validation
     - flyway
     - lombok
 - PostgreSQL
