@@ -24,7 +24,10 @@
 
 - 提供形態: Webアプリ
 - 主な利用者: 一般ユーザー
-- 対応環境: PCブラウザのみ（Google Chrome 最新安定版）
+- 対応環境: Google Chrome
+    - バージョン150 (課題提出時のstableバージョンに合わせたいが一旦仮で定める)
+    - 校舎PCで動作すること
+    - 参考:https://chromiumdash.appspot.com/schedule
 - リリース目標: 2026年7月10日
 
 ## 3. 技術スタック
