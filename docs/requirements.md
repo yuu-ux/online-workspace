@@ -43,7 +43,6 @@
 - Spring Boot
     - Spring Security
     - Mapper
-    - thymeleaf
     - Bean validation
     - flyway
 
