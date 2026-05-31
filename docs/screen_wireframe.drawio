@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Codex" pages="4">
-  <diagram id="wire-auth" name="画面ワイヤー_認証・公開">
-    <mxGraphModel dx="3602" dy="618" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1400" math="0" shadow="0">
+  <diagram id="wire-auth" name="認証・公開">
+    <mxGraphModel dx="4357" dy="951" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1400" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -175,8 +175,8 @@
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="wire-home-room" name="画面ワイヤー_ホーム・ルーム">
-    <mxGraphModel dx="3116" dy="2973" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1600" math="0" shadow="0">
+  <diagram id="wire-home-room" name="ホーム・ルーム">
+    <mxGraphModel dx="2804" dy="2836" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1600" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -426,288 +426,228 @@
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="wire-social" name="画面ワイヤー_マイページ・ソーシャル">
-    <mxGraphModel dx="1700" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1600" math="0" shadow="0">
+  <diagram id="wire-social" name="マイページ・ソーシャル">
+    <mxGraphModel dx="1402" dy="618" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1600" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="social-note" value="マイページ起点の遷移と、他ユーザー接点をまとめて確認する" style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" vertex="1" parent="1">
-          <mxGeometry x="40" y="10" width="360" height="50" as="geometry" />
+        <mxCell id="mypage-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【マイページ画面】" vertex="1">
+          <mxGeometry height="20" width="180" x="40" y="60" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-label" value="【マイページ画面】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="40" y="70" width="180" height="20" as="geometry" />
+        <mxCell id="mypage-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="640" width="460" x="40" y="90" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="40" y="90" width="460" height="640" as="geometry" />
+        <mxCell id="mypage-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" value="マイページ" vertex="1">
+          <mxGeometry height="40" width="400" x="70" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-title" value="マイページ" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="70" y="120" width="400" height="40" as="geometry" />
+        <mxCell id="mypage-profile" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="名前 / アイコン / 自己紹介 / 作業カテゴリ" vertex="1">
+          <mxGeometry height="90" width="400" x="70" y="186" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-profile" value="名前 / アイコン / 自己紹介 / 作業カテゴリ" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="70" y="186" width="400" height="90" as="geometry" />
+        <mxCell id="mypage-graph" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" value="カテゴリ別作業時間グラフ&#xa;グラフ表示ON/OFF" vertex="1">
+          <mxGeometry height="120" width="400" x="70" y="294" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-graph" value="カテゴリ別作業時間グラフ&#xa;グラフ表示ON/OFF" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" vertex="1" parent="1">
-          <mxGeometry x="70" y="294" width="400" height="120" as="geometry" />
+        <mxCell id="mypage-edit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="プロフィール編集" vertex="1">
+          <mxGeometry height="36" width="180" x="70" y="434" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-edit" value="プロフィール編集" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="70" y="434" width="180" height="36" as="geometry" />
+        <mxCell id="mypage-friends" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="フレンド管理" vertex="1">
+          <mxGeometry height="36" width="180" x="290" y="434" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-friends" value="フレンド管理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="290" y="434" width="180" height="36" as="geometry" />
+        <mxCell id="mypage-history" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="作業履歴" vertex="1">
+          <mxGeometry height="36" width="180" x="70" y="486" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-history" value="作業履歴" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="70" y="486" width="180" height="36" as="geometry" />
+        <mxCell id="mypage-search-field" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ユーザー名検索 入力欄" vertex="1">
+          <mxGeometry height="36" width="280" x="70" y="560" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-search-field" value="ユーザー名検索 入力欄" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="70" y="560" width="280" height="36" as="geometry" />
+        <mxCell id="mypage-search" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="検索" vertex="1">
+          <mxGeometry height="36" width="100" x="370" y="560" as="geometry" />
         </mxCell>
-        <mxCell id="mypage-search" value="検索" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="370" y="560" width="100" height="36" as="geometry" />
+        <mxCell id="search-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【ユーザー検索結果画面】" vertex="1">
+          <mxGeometry height="20" width="220" x="560" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="search-label" value="【ユーザー検索結果画面】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="560" y="70" width="220" height="20" as="geometry" />
+        <mxCell id="search-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="430" width="420" x="560" y="90" as="geometry" />
         </mxCell>
-        <mxCell id="search-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="560" y="90" width="420" height="430" as="geometry" />
+        <mxCell id="search-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" value="ユーザー検索結果" vertex="1">
+          <mxGeometry height="40" width="360" x="590" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="search-title" value="ユーザー検索結果" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="590" y="120" width="360" height="40" as="geometry" />
+        <mxCell id="search-condition" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" value="検索条件表示" vertex="1">
+          <mxGeometry height="36" width="360" x="590" y="186" as="geometry" />
         </mxCell>
-        <mxCell id="search-condition" value="検索条件表示" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" vertex="1" parent="1">
-          <mxGeometry x="590" y="186" width="360" height="36" as="geometry" />
+        <mxCell id="search-result-card" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="検索結果: ユーザーA&#xa;名前 / アイコン / 一言自己紹介" vertex="1">
+          <mxGeometry height="96" width="360" x="590" y="246" as="geometry" />
         </mxCell>
-        <mxCell id="search-result-card" value="検索結果: ユーザーA&#xa;名前 / アイコン / 一言自己紹介" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="246" width="360" height="96" as="geometry" />
+        <mxCell id="search-view-profile" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="プロフィール詳細へ" vertex="1">
+          <mxGeometry height="30" width="160" x="780" y="279" as="geometry" />
         </mxCell>
-        <mxCell id="search-view-profile" value="プロフィール詳細へ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
-          <mxGeometry x="760" y="298" width="160" height="30" as="geometry" />
+        <mxCell id="search-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="マイページへ戻る" vertex="1">
+          <mxGeometry height="30" width="160" x="790" y="468" as="geometry" />
         </mxCell>
-        <mxCell id="search-back" value="マイページへ戻る" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="790" y="468" width="160" height="30" as="geometry" />
+        <mxCell id="other-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【他ユーザープロフィール詳細画面】" vertex="1">
+          <mxGeometry height="20" width="260" x="1040" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="other-label" value="【他ユーザープロフィール詳細画面】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="1040" y="70" width="260" height="20" as="geometry" />
+        <mxCell id="other-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="470" width="460" x="1040" y="90" as="geometry" />
         </mxCell>
-        <mxCell id="other-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="1040" y="90" width="460" height="470" as="geometry" />
+        <mxCell id="other-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" value="他ユーザープロフィール詳細" vertex="1">
+          <mxGeometry height="40" width="400" x="1070" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="other-title" value="他ユーザープロフィール詳細" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="1070" y="120" width="400" height="40" as="geometry" />
+        <mxCell id="other-summary" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="名前 / アイコン / 自己紹介 / 作業カテゴリ" vertex="1">
+          <mxGeometry height="90" width="400" x="1070" y="186" as="geometry" />
         </mxCell>
-        <mxCell id="other-summary" value="名前 / アイコン / 自己紹介 / 作業カテゴリ" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="1070" y="186" width="400" height="90" as="geometry" />
+        <mxCell id="other-records" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" value="公開範囲に応じた作業記録表示" vertex="1">
+          <mxGeometry height="80" width="400" x="1070" y="294" as="geometry" />
         </mxCell>
-        <mxCell id="other-records" value="公開範囲に応じた作業記録表示" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" vertex="1" parent="1">
-          <mxGeometry x="1070" y="294" width="400" height="80" as="geometry" />
+        <mxCell id="other-add-friend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="フレンド追加" vertex="1">
+          <mxGeometry height="36" width="120" x="1070" y="396" as="geometry" />
         </mxCell>
-        <mxCell id="other-add-friend" value="フレンド追加" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
-          <mxGeometry x="1070" y="396" width="120" height="36" as="geometry" />
+        <mxCell id="other-block" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="ブロック" vertex="1">
+          <mxGeometry height="36" width="100" x="1200" y="396" as="geometry" />
         </mxCell>
-        <mxCell id="other-block" value="ブロック" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
-          <mxGeometry x="1200" y="396" width="100" height="36" as="geometry" />
+        <mxCell id="other-report" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="通報" vertex="1">
+          <mxGeometry height="36" width="100" x="1310" y="396" as="geometry" />
         </mxCell>
-        <mxCell id="other-report" value="通報" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
-          <mxGeometry x="1310" y="396" width="100" height="36" as="geometry" />
+        <mxCell id="other-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="検索結果へ戻る" vertex="1">
+          <mxGeometry height="32" width="160" x="1250" y="484" as="geometry" />
         </mxCell>
-        <mxCell id="other-back" value="検索結果へ戻る" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="1250" y="484" width="160" height="32" as="geometry" />
+        <mxCell id="edit-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【プロフィール編集画面】" vertex="1">
+          <mxGeometry height="24" width="210" x="40" y="756" as="geometry" />
         </mxCell>
-        <mxCell id="edit-label" value="【プロフィール編集画面】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="40" y="770" width="210" height="20" as="geometry" />
+        <mxCell id="edit-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="400" width="460" x="40" y="790" as="geometry" />
         </mxCell>
-        <mxCell id="edit-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="40" y="790" width="460" height="400" as="geometry" />
+        <mxCell id="edit-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" value="プロフィール編集" vertex="1">
+          <mxGeometry height="40" width="400" x="70" y="820" as="geometry" />
         </mxCell>
-        <mxCell id="edit-title" value="プロフィール編集" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="70" y="820" width="400" height="40" as="geometry" />
+        <mxCell id="edit-fields" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="名前 / アイコン / 自己紹介 / 作業カテゴリ / プロフィール公開設定" vertex="1">
+          <mxGeometry height="150" width="400" x="70" y="886" as="geometry" />
         </mxCell>
-        <mxCell id="edit-fields" value="名前 / アイコン / 自己紹介 / 作業カテゴリ / プロフィール公開設定" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="70" y="886" width="400" height="150" as="geometry" />
+        <mxCell id="edit-save" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="保存" vertex="1">
+          <mxGeometry height="36" width="120" x="210" y="1114" as="geometry" />
         </mxCell>
-        <mxCell id="edit-save" value="保存" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="210" y="1114" width="120" height="36" as="geometry" />
+        <mxCell id="edit-cancel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="キャンセル" vertex="1">
+          <mxGeometry height="36" width="120" x="350" y="1114" as="geometry" />
         </mxCell>
-        <mxCell id="edit-cancel" value="キャンセル" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="350" y="1114" width="120" height="36" as="geometry" />
+        <mxCell id="friends-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【フレンド管理画面】" vertex="1">
+          <mxGeometry height="20" width="190" x="560" y="550" as="geometry" />
         </mxCell>
-        <mxCell id="friends-label" value="【フレンド管理画面】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="560" y="550" width="190" height="20" as="geometry" />
+        <mxCell id="friends-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="300" width="420" x="560" y="600" as="geometry" />
         </mxCell>
-        <mxCell id="friends-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="560" y="570" width="420" height="300" as="geometry" />
+        <mxCell id="friends-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" value="フレンド管理" vertex="1">
+          <mxGeometry height="40" width="360" x="590" y="630" as="geometry" />
         </mxCell>
-        <mxCell id="friends-title" value="フレンド管理" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="590" y="600" width="360" height="40" as="geometry" />
+        <mxCell id="friends-list" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="フレンド一覧&#xa;お気に入りON/OFF / フレンド解除" vertex="1">
+          <mxGeometry height="110" width="360" x="590" y="696" as="geometry" />
         </mxCell>
-        <mxCell id="friends-list" value="フレンド一覧&#xa;お気に入りON/OFF / フレンド解除" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="666" width="360" height="110" as="geometry" />
+        <mxCell id="friends-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="マイページへ戻る" vertex="1">
+          <mxGeometry height="30" width="160" x="790" y="850" as="geometry" />
         </mxCell>
-        <mxCell id="friends-back" value="マイページへ戻る" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="790" y="820" width="160" height="30" as="geometry" />
+        <mxCell id="history-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【作業履歴画面】" vertex="1">
+          <mxGeometry height="20" width="180" x="1040" y="560" as="geometry" />
         </mxCell>
-        <mxCell id="history-label" value="【作業履歴画面】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="1040" y="550" width="180" height="20" as="geometry" />
+        <mxCell id="history-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="300" width="460" x="1040" y="596" as="geometry" />
         </mxCell>
-        <mxCell id="history-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="1040" y="570" width="460" height="300" as="geometry" />
+        <mxCell id="history-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" value="作業履歴" vertex="1">
+          <mxGeometry height="40" width="400" x="1070" y="626" as="geometry" />
         </mxCell>
-        <mxCell id="history-title" value="作業履歴" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="1070" y="600" width="400" height="40" as="geometry" />
+        <mxCell id="history-body" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="累計作業時間 / カテゴリ別累計 / 日次履歴" vertex="1">
+          <mxGeometry height="110" width="400" x="1070" y="692" as="geometry" />
         </mxCell>
-        <mxCell id="history-body" value="累計作業時間 / カテゴリ別累計 / 日次履歴" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="1070" y="666" width="400" height="110" as="geometry" />
+        <mxCell id="history-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="マイページへ戻る" vertex="1">
+          <mxGeometry height="30" width="160" x="1310" y="846" as="geometry" />
         </mxCell>
-        <mxCell id="history-back" value="マイページへ戻る" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="1310" y="820" width="160" height="30" as="geometry" />
+        <mxCell id="social-report-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【通報画面】" vertex="1">
+          <mxGeometry height="20" width="120" x="1560" y="60" as="geometry" />
         </mxCell>
-        <mxCell id="social-report-label" value="【通報画面】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="1560" y="70" width="120" height="20" as="geometry" />
+        <mxCell id="social-report-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="320" width="340" x="1560" y="90" as="geometry" />
         </mxCell>
-        <mxCell id="social-report-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="1560" y="90" width="340" height="320" as="geometry" />
+        <mxCell id="social-report-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontStyle=1;" value="通報" vertex="1">
+          <mxGeometry height="40" width="280" x="1590" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="social-report-title" value="通報" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="1590" y="120" width="280" height="40" as="geometry" />
+        <mxCell id="social-report-body" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="対象ユーザー / 通報理由 / 詳細説明 / 通報送信" vertex="1">
+          <mxGeometry height="120" width="280" x="1590" y="186" as="geometry" />
         </mxCell>
-        <mxCell id="social-report-body" value="対象ユーザー / 通報理由 / 詳細説明 / 通報送信" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="1590" y="186" width="280" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="social-report-back" value="プロフィールへ戻る" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="1710" y="358" width="160" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-1" value="編集へ" style="endArrow=block;html=1;strokeColor=#6c8ebf;" edge="1" parent="1" source="mypage-edit" target="edit-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-2" value="フレンド管理へ" style="endArrow=block;html=1;strokeColor=#6c8ebf;" edge="1" parent="1" source="mypage-friends" target="friends-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-3" value="作業履歴へ" style="endArrow=block;html=1;strokeColor=#6c8ebf;" edge="1" parent="1" source="mypage-history" target="history-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-4" value="ユーザー検索" style="endArrow=block;html=1;strokeColor=#82b366;" edge="1" parent="1" source="mypage-search" target="search-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-5" value="詳細表示" style="endArrow=block;html=1;strokeColor=#82b366;" edge="1" parent="1" source="search-view-profile" target="other-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-6" value="戻る" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="search-back" target="mypage-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-7" value="保存後" style="endArrow=block;html=1;strokeColor=#6c8ebf;" edge="1" parent="1" source="edit-save" target="mypage-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-8" value="キャンセル" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="edit-cancel" target="mypage-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-9" value="戻る" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="friends-back" target="mypage-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-10" value="戻る" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="history-back" target="mypage-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-11" value="通報へ" style="endArrow=block;html=1;strokeColor=#b85450;" edge="1" parent="1" source="other-report" target="social-report-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-12" value="戻る" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="other-back" target="search-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="social-edge-13" value="キャンセル" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="social-report-back" target="other-screen">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="social-report-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="プロフィールへ戻る" vertex="1">
+          <mxGeometry height="30" width="160" x="1710" y="358" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="wire-admin" name="画面ワイヤー_管理者">
-    <mxGraphModel dx="1500" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1400" math="0" shadow="0">
+  <diagram id="wire-admin" name="管理者">
+    <mxGraphModel dx="1649" dy="727" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1400" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="admin-note" value="管理者画面は通報対応と監視導線を中心に表現する" style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" vertex="1" parent="1">
-          <mxGeometry x="40" y="10" width="340" height="50" as="geometry" />
+        <mxCell id="admin-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【運営管理画面】" vertex="1">
+          <mxGeometry height="20" width="180" x="40" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="admin-label" value="【運営管理画面】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="40" y="70" width="180" height="20" as="geometry" />
+        <mxCell id="admin-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="620" width="580" x="40" y="90" as="geometry" />
         </mxCell>
-        <mxCell id="admin-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="40" y="90" width="580" height="620" as="geometry" />
+        <mxCell id="admin-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontStyle=1;" value="運営管理画面（管理者専用）" vertex="1">
+          <mxGeometry height="40" width="520" x="70" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="admin-title" value="運営管理画面（管理者専用）" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="70" y="120" width="520" height="40" as="geometry" />
+        <mxCell id="admin-filter" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="フィルタ: 理由 / 対象ユーザー / 日付" vertex="1">
+          <mxGeometry height="36" width="250" x="70" y="186" as="geometry" />
         </mxCell>
-        <mxCell id="admin-filter" value="フィルタ: 理由 / 対象ユーザー / 日付" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="70" y="186" width="250" height="36" as="geometry" />
+        <mxCell id="admin-sort" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ソート: 新着順 / 重要度順" vertex="1">
+          <mxGeometry height="36" width="250" x="340" y="186" as="geometry" />
         </mxCell>
-        <mxCell id="admin-sort" value="ソート: 新着順 / 重要度順" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="340" y="186" width="250" height="36" as="geometry" />
+        <mxCell id="admin-list" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="通報一覧&#xa;対象ユーザー / 理由 / 発生ルーム / 発生時刻" vertex="1">
+          <mxGeometry height="250" width="250" x="70" y="250" as="geometry" />
         </mxCell>
-        <mxCell id="admin-list" value="通報一覧&#xa;対象ユーザー / 理由 / 発生ルーム / 発生時刻" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="70" y="250" width="250" height="250" as="geometry" />
+        <mxCell id="admin-detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="通報詳細&#xa;理由 / 詳細説明 / 対応履歴 / 対象ユーザー情報" vertex="1">
+          <mxGeometry height="250" width="250" x="340" y="250" as="geometry" />
         </mxCell>
-        <mxCell id="admin-detail" value="通報詳細&#xa;理由 / 詳細説明 / 対応履歴 / 対象ユーザー情報" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="340" y="250" width="250" height="250" as="geometry" />
+        <mxCell id="admin-warning" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="警告" vertex="1">
+          <mxGeometry height="36" width="100" x="70" y="536" as="geometry" />
         </mxCell>
-        <mxCell id="admin-warning" value="警告" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
-          <mxGeometry x="70" y="536" width="100" height="36" as="geometry" />
+        <mxCell id="admin-suspend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="一時停止" vertex="1">
+          <mxGeometry height="36" width="100" x="180" y="536" as="geometry" />
         </mxCell>
-        <mxCell id="admin-suspend" value="一時停止" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
-          <mxGeometry x="180" y="536" width="100" height="36" as="geometry" />
+        <mxCell id="admin-ban" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" value="永久停止" vertex="1">
+          <mxGeometry height="36" width="100" x="290" y="536" as="geometry" />
         </mxCell>
-        <mxCell id="admin-ban" value="永久停止" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="290" y="536" width="100" height="36" as="geometry" />
+        <mxCell id="admin-mail" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="メール通知プレビュー" vertex="1">
+          <mxGeometry height="36" width="190" x="400" y="536" as="geometry" />
         </mxCell>
-        <mxCell id="admin-mail" value="メール通知プレビュー" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-          <mxGeometry x="400" y="536" width="190" height="36" as="geometry" />
+        <mxCell id="admin-monitor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="監視画面へ" vertex="1">
+          <mxGeometry height="36" width="160" x="430" y="624" as="geometry" />
         </mxCell>
-        <mxCell id="admin-monitor" value="監視画面へ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="430" y="624" width="160" height="36" as="geometry" />
+        <mxCell id="monitor-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【システム監視画面】" vertex="1">
+          <mxGeometry height="20" width="180" x="680" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="monitor-label" value="【システム監視画面】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="680" y="70" width="180" height="20" as="geometry" />
+        <mxCell id="monitor-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="380" width="500" x="680" y="90" as="geometry" />
         </mxCell>
-        <mxCell id="monitor-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="680" y="90" width="500" height="380" as="geometry" />
+        <mxCell id="monitor-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontStyle=1;" value="システム監視画面（Grafana）" vertex="1">
+          <mxGeometry height="40" width="440" x="710" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="monitor-title" value="システム監視画面（Grafana）" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="710" y="120" width="440" height="40" as="geometry" />
+        <mxCell id="monitor-panels" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="API応答時間 / 5xx率 / CPU・メモリ / DB接続数 / WebSocket接続数&#xa;/health 監視 / 500エラー時 Discord通知" vertex="1">
+          <mxGeometry height="160" width="440" x="710" y="186" as="geometry" />
         </mxCell>
-        <mxCell id="monitor-panels" value="API応答時間 / 5xx率 / CPU・メモリ / DB接続数 / WebSocket接続数&#xa;/health 監視 / 500エラー時 Discord通知" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="710" y="186" width="440" height="160" as="geometry" />
+        <mxCell id="monitor-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="管理画面へ戻る" vertex="1">
+          <mxGeometry height="34" width="170" x="980" y="410" as="geometry" />
         </mxCell>
-        <mxCell id="monitor-back" value="管理画面へ戻る" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="980" y="410" width="170" height="34" as="geometry" />
+        <mxCell id="mail-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【メール通知プレビュー】" vertex="1">
+          <mxGeometry height="20" width="210" x="1240" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="mail-label" value="【メール通知プレビュー】" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="1240" y="70" width="210" height="20" as="geometry" />
+        <mxCell id="mail-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="300" width="360" x="1240" y="90" as="geometry" />
         </mxCell>
-        <mxCell id="mail-screen" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="1240" y="90" width="360" height="300" as="geometry" />
+        <mxCell id="mail-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;fontStyle=1;" value="対象ユーザー向けメール内容確認" vertex="1">
+          <mxGeometry height="40" width="300" x="1270" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="mail-title" value="対象ユーザー向けメール内容確認" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="1270" y="120" width="300" height="40" as="geometry" />
+        <mxCell id="mail-body" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="理由 / 実施日時 / 適用期間 / 本文確認" vertex="1">
+          <mxGeometry height="110" width="300" x="1270" y="186" as="geometry" />
         </mxCell>
-        <mxCell id="mail-body" value="理由 / 実施日時 / 適用期間 / 本文確認" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" vertex="1" parent="1">
-          <mxGeometry x="1270" y="186" width="300" height="110" as="geometry" />
+        <mxCell id="mail-send" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="送信" vertex="1">
+          <mxGeometry height="34" width="100" x="1330" y="330" as="geometry" />
         </mxCell>
-        <mxCell id="mail-send" value="送信" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="1330" y="330" width="100" height="34" as="geometry" />
-        </mxCell>
-        <mxCell id="mail-close" value="管理画面へ戻る" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="1440" y="330" width="130" height="34" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-edge-1" value="監視へ" style="endArrow=block;html=1;strokeColor=#6c8ebf;" edge="1" parent="1" source="admin-monitor" target="monitor-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-edge-2" value="戻る" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="monitor-back" target="admin-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-edge-3" value="内容確認" style="endArrow=block;html=1;strokeColor=#6c8ebf;" edge="1" parent="1" source="admin-mail" target="mail-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-edge-4" value="閉じる" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="mail-close" target="admin-screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-edge-5" value="送信後" style="endArrow=block;html=1;strokeColor=#6c8ebf;dashed=1;" edge="1" parent="1" source="mail-send" target="admin-screen">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="mail-close" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="管理画面へ戻る" vertex="1">
+          <mxGeometry height="34" width="130" x="1440" y="330" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
