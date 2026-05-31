@@ -26,6 +26,34 @@ Spring Boot + Thymeleaf + MyBatis + PostgreSQL で作成したオンライン作
 
 初回起動時に Flyway がマイグレーションを実行します。
 
+## フロントエンド開発方針
+
+本番環境では nginx がビルド済みの React 静的ファイルを配信します。React 用の常駐アプリケーションサーバーは立てません。
+
+```text
+Browser -> nginx
+  ├─ /        -> dist/index.html, dist/assets/*
+  ├─ /api/*   -> Spring Boot
+  └─ /ws      -> Spring Boot
+```
+
+開発時は nginx を経由せず、`frontend` コンテナで Vite dev server を起動して開発します。作業者ごとの Node.js バージョン差を避けるため、Node.js 環境はコンテナ内に用意します。
+
+```text
+Browser -> frontend container
+  └─ Vite dev server
+       ├─ React 開発用ファイル配信
+       ├─ HMR
+       ├─ /api/* -> Spring Boot
+       └─ /ws    -> Spring Boot
+```
+
+React のビルドは Node.js 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
+
+```text
+React source -> npm run build -> dist/ -> nginx
+```
+
 ## テスト
 
 ```bash
