@@ -1,4 +1,16 @@
 services:
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: online-workspace-proxy
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+    volumes:
+      - ./docker/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
   frontend:
     image: node:22-alpine
     container_name: online-workspace-frontend
@@ -7,7 +19,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_BASE_URL: http://localhost:8081
+      VITE_API_BASE_URL: http://localhost:8088
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules

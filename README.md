@@ -16,7 +16,7 @@ Spring Boot + Thymeleaf + MyBatis + PostgreSQL で作成したオンライン作
 
 ### Docker Compose で起動
 
-開発時は backend / frontend / db / maildev をまとめて起動できます。
+開発時は proxy / backend / frontend / db / maildev をまとめて起動できます。
 
 ```bash
 docker compose up
@@ -24,6 +24,7 @@ docker compose up
 
 起動後のURL:
 
+- Proxy: http://localhost:8088
 - Frontend Vite: http://localhost:5173
 - Backend MVC: http://localhost:8081
 - MailDev: http://localhost:1080
@@ -31,6 +32,7 @@ docker compose up
 
 コンテナ構成:
 
+- `proxy`: 開発用 nginx reverse proxy
 - `frontend`: Vite React dev server
 - `backend`: Spring Boot dev server
 - `db`: PostgreSQL 16
@@ -63,15 +65,17 @@ Browser -> nginx
   └─ /ws      -> Spring Boot
 ```
 
-開発時は nginx を経由せず、`frontend` コンテナで Vite dev server を起動して開発します。作業者ごとの Node.js バージョン差を避けるため、Node.js 環境はコンテナ内に用意します。
+開発時は `proxy` コンテナ経由、または `frontend` コンテナの Vite dev server に直接アクセスして開発します。作業者ごとの Node.js バージョン差を避けるため、Node.js 環境はコンテナ内に用意します。
 
 ```text
-Browser -> frontend container
-  └─ Vite dev server
-       ├─ React 開発用ファイル配信
-       ├─ HMR
-       ├─ /api/* -> Spring Boot
-       └─ /ws    -> Spring Boot
+Browser -> proxy container
+  ├─ /        -> frontend container
+  │              ├─ React 開発用ファイル配信
+  │              └─ HMR
+  ├─ /api/*   -> backend container
+  ├─ /login   -> backend container
+  ├─ /rooms/* -> backend container
+  └─ /ws      -> backend container
 ```
 
 React のビルドは Node.js 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
