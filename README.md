@@ -73,8 +73,6 @@ Browser -> proxy container
   │              ├─ React 開発用ファイル配信
   │              └─ HMR
   ├─ /api/*   -> backend container
-  ├─ /login   -> backend container
-  ├─ /rooms/* -> backend container
   └─ /ws      -> backend container
 ```
 
