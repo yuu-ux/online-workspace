@@ -26,7 +26,7 @@ docker compose up
 
 - Proxy: http://localhost:8088
 - Frontend Vite: http://localhost:5173
-- Backend MVC: http://localhost:8081
+- Backend MVC: http://localhost:8080
 - MailDev: http://localhost:1080
 - PostgreSQL: localhost:5432
 
