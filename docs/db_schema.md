@@ -1,0 +1,375 @@
+# users
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- name
+    - VARCHAR(100)
+    - NOT NULL
+- email
+    - VARCHAR(255)
+    - NOT NULL
+    - UNIQUE
+- password_hash
+    - VARCHAR(255)
+    - NOT NULL
+- role
+    - VARCHAR(20)
+    - NOT NULL
+    - DEFAULT 'USER'
+    - CHECK (role IN ('USER', 'ADMIN'))
+- account_status
+    - VARCHAR(20)
+    - NOT NULL
+    - DEFAULT 'ACTIVE'
+    - CHECK (account_status IN ('ACTIVE', 'SUSPENDED', 'BANNED'))
+- suspended_until
+    - TIMESTAMPTZ
+- deleted_at
+    - TIMESTAMPTZ
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- updated_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+
+# profiles
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- user_id
+    - BIGINT
+    - NOT NULL
+    - UNIQUE
+    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
+- icon_url
+    - VARCHAR(500)
+- bio
+    - VARCHAR(500)
+    - NOT NULL
+    - DEFAULT ''
+- work_category_id
+    - BIGINT
+    - FOREIGN KEY REFERENCES room_categories(id)
+- is_public
+    - BOOLEAN
+    - NOT NULL
+    - DEFAULT TRUE
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- updated_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+
+# rooms
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- name
+    - VARCHAR(100)
+    - NOT NULL
+- description
+    - VARCHAR(500)
+- created_by
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id)
+- category_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES room_categories(id)
+- work_style
+    - VARCHAR(20)
+    - NOT NULL
+    - CHECK (work_style IN ('FOCUS', 'CHAT_OK'))
+- max_members
+    - SMALLINT
+    - NOT NULL
+    - CHECK (max_members BETWEEN 2 AND 12)
+- visibility
+    - VARCHAR(20)
+    - NOT NULL
+    - DEFAULT 'PUBLIC'
+    - CHECK (visibility IN ('PUBLIC', 'INVITE_ONLY', 'FRIENDS_ONLY'))
+- status
+    - VARCHAR(20)
+    - NOT NULL
+    - DEFAULT 'OPEN'
+    - CHECK (status IN ('OPEN', 'CLOSED'))
+- closed_at
+    - TIMESTAMPTZ
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- updated_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+
+# room_categories
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- name
+    - VARCHAR(100)
+    - NOT NULL
+    - UNIQUE
+- description
+    - VARCHAR(500)
+- is_active
+    - BOOLEAN
+    - NOT NULL
+    - DEFAULT TRUE
+- sort_order
+    - INT
+    - NOT NULL
+    - DEFAULT 0
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- updated_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+
+# room_members
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- room_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE
+- user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
+- joined_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- left_at
+    - TIMESTAMPTZ
+- UNIQUE INDEX
+    - (room_id, user_id)
+    - WHERE left_at IS NULL
+
+# room_invites
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- room_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE
+- created_by
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id)
+- token
+    - VARCHAR(255)
+    - NOT NULL
+    - UNIQUE
+- expires_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT (CURRENT_TIMESTAMP + INTERVAL '1 hour')
+- invalidated_at
+    - TIMESTAMPTZ
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+
+# messages
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- room_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE
+- user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id)
+- content
+    - VARCHAR(500)
+    - NOT NULL
+- sent_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+
+# friends
+
+- user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
+- friend_user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
+- is_favorite
+    - BOOLEAN
+    - NOT NULL
+    - DEFAULT FALSE
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- updated_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- PRIMARY KEY
+    - (user_id, friend_user_id)
+- CHECK
+    - user_id <> friend_user_id
+
+# blocks
+
+- blocker_user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
+- blocked_user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- PRIMARY KEY
+    - (blocker_user_id, blocked_user_id)
+- CHECK
+    - blocker_user_id <> blocked_user_id
+
+# reports
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- reporter_user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id)
+- target_user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id)
+- room_id
+    - BIGINT
+    - FOREIGN KEY REFERENCES rooms(id)
+- reason
+    - VARCHAR(30)
+    - NOT NULL
+    - CHECK (reason IN ('HARASSMENT', 'DEFAMATION', 'SPAM', 'FRAUD_OR_IMPERSONATION', 'INAPPROPRIATE_CONTENT', 'OTHER'))
+- details
+    - TEXT
+- status
+    - VARCHAR(20)
+    - NOT NULL
+    - DEFAULT 'PENDING'
+    - CHECK (status IN ('PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED'))
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- updated_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- CHECK
+    - reporter_user_id <> target_user_id
+
+# admin_actions
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- report_id
+    - BIGINT
+    - FOREIGN KEY REFERENCES reports(id)
+- admin_user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id)
+- target_user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id)
+- action_type
+    - VARCHAR(30)
+    - NOT NULL
+    - CHECK (action_type IN ('WARNING', 'TEMPORARY_SUSPENSION', 'PERMANENT_SUSPENSION'))
+- reason
+    - TEXT
+    - NOT NULL
+- starts_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- ends_at
+    - TIMESTAMPTZ
+- notification_sent_at
+    - TIMESTAMPTZ
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- CHECK
+    - ends_at IS NULL OR ends_at >= starts_at
+
+# work_sessions
+
+- id
+    - BIGSERIAL
+    - PRIMARY KEY
+- user_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
+- room_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES rooms(id)
+- category_id
+    - BIGINT
+    - NOT NULL
+    - FOREIGN KEY REFERENCES room_categories(id)
+- started_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- ended_at
+    - TIMESTAMPTZ
+- created_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- updated_at
+    - TIMESTAMPTZ
+    - NOT NULL
+    - DEFAULT CURRENT_TIMESTAMP
+- CHECK
+    - ended_at IS NULL OR ended_at >= started_at
+- UNIQUE INDEX
+    - (user_id)
+    - WHERE ended_at IS NULL
