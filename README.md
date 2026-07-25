@@ -25,8 +25,7 @@ docker compose up
 起動後のURL:
 
 - Proxy: http://localhost:8088
-- Frontend Vite: http://localhost:5173
-- Backend MVC: http://localhost:8080
+- Backend MVC: http://localhost:8081
 - MailDev: http://localhost:1080
 - PostgreSQL: localhost:5432
 
@@ -65,7 +64,7 @@ Browser -> nginx
   └─ /ws      -> Spring Boot
 ```
 
-開発時は `proxy` コンテナ経由、または `frontend` コンテナの Vite dev server に直接アクセスして開発します。作業者ごとの Node.js バージョン差を避けるため、Node.js 環境はコンテナ内に用意します。
+開発時は `proxy` コンテナ経由で `frontend` コンテナの Vite dev server にアクセスします。作業者ごとの Node.js バージョン差を避けるため、Node.js 環境はコンテナ内に用意します。
 
 ```text
 Browser -> proxy container

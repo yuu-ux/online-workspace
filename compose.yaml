@@ -6,20 +6,18 @@ services:
     ports:
       - "8088:80"
     volumes:
-      - ./docker/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/config:/etc/nginx/conf.d:ro
     depends_on:
       - frontend
       - backend
 
   frontend:
-    image: node:22-alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     container_name: online-workspace-frontend
     working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    ports:
-      - "5173:5173"
-    environment:
-      VITE_API_BASE_URL: http://localhost:8088
+    command: npm run dev -- --host 0.0.0.0
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
@@ -32,7 +30,7 @@ services:
     working_dir: /app
     command: ./gradlew bootRun --no-daemon
     ports:
-      - "8080:8080"
+      - "${BACKEND_HOST_PORT:-8081}:8080"
     environment:
       DB_URL: jdbc:postgresql://db:5432/postgres
       DB_USERNAME: postgres
@@ -40,7 +38,11 @@ services:
       MAIL_HOST: maildev
       MAIL_PORT: 1025
     volumes:
-      - .:/app
+      - ./build.gradle:/app/build.gradle:ro
+      - ./settings.gradle:/app/settings.gradle:ro
+      - ./gradle:/app/gradle:ro
+      - ./gradlew:/app/gradlew:ro
+      - ./src:/app/src
       - gradle_cache:/root/.gradle
     depends_on:
       db:
