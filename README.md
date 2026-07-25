@@ -22,6 +22,13 @@ Spring Boot + Thymeleaf + MyBatis + PostgreSQL で作成したオンライン作
 docker compose up
 ```
 
+ホストの UID/GID が `1000:1000` 以外の Linux 環境では、bind mount
+への書き込み権限を合わせて起動します。
+
+```bash
+HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up
+```
+
 起動後のURL:
 
 - Proxy: http://localhost:8088

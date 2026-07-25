@@ -17,6 +17,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: online-workspace-frontend
     working_dir: /app
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     command: npm run dev -- --host 0.0.0.0
     volumes:
       - ./frontend:/app
