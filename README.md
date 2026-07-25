@@ -25,7 +25,7 @@ docker compose up
 起動後のURL:
 
 - Proxy: http://localhost:8088
-- Backend MVC: http://localhost:8081
+- Backend MVC: http://localhost:8080
 - MailDev: http://localhost:1080
 - PostgreSQL: localhost:5432
 

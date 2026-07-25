@@ -30,7 +30,7 @@ services:
     working_dir: /app
     command: ./gradlew bootRun --no-daemon
     ports:
-      - "${BACKEND_HOST_PORT:-8081}:8080"
+      - "${BACKEND_HOST_PORT:-8080}:8080"
     environment:
       DB_URL: jdbc:postgresql://db:5432/postgres
       DB_USERNAME: postgres
