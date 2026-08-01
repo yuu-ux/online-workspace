@@ -70,6 +70,12 @@
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
+### アカウント利用可否の判定
+
+認証時のアクセス許可は、`deleted_at IS NULL`、`account_status_id = ACTIVE`、かつ `suspended_until IS NULL OR suspended_until <= CURRENT_TIMESTAMP` のすべてを満たす場合に限る。`ACTIVE` であっても `suspended_until` が未来の場合や、`deleted_at` が設定されている場合はアクセスを拒否する。`role_id` は利用可能なアカウントに対する認可にのみ使用し、アカウント自体の利用可否には影響させない。
+
+通常時に整合する状態の組み合わせは、利用中が `ACTIVE` と `suspended_until IS NULL`、一時停止中が `SUSPENDED` と未来の `suspended_until`、永久停止が `BANNED` と `suspended_until IS NULL` とする。一時停止の期限に到達したレコードは移行状態として扱い、アプリケーションが認証処理または定期処理で `account_status_id` を `ACTIVE`、`suspended_until` を `NULL` へ同一トランザクション内で更新する。更新が完了するまではアクセスを許可しない。`deleted_at` はこれらの状態と独立しており、値がある場合は常に退会済みとして扱う。
+
 ## profiles テーブル
 
 ユーザーが公開するプロフィール情報を、認証情報と分離して管理する。プロフィール独自の状態は持たず、アカウントの利用状態は `users.account_status_id` を参照する。
@@ -132,8 +138,14 @@
 
 ### インデックス・制約
 
+- `CHECK (left_at IS NULL OR left_at >= joined_at)`
+  - 退出日時が入室日時より前になることを防ぐ。
 - `UNIQUE INDEX (room_id, user_id) WHERE left_at IS NULL`
   - 同じユーザーが同じルームへ重複参加することを防ぐ。
+
+### 参加処理
+
+参加処理では、同一トランザクション内で対象の `rooms` 行を `SELECT ... FOR UPDATE` によりロックし、`status_id = OPEN` であることを確認する。続けて `room_members` の `room_id` が一致し `left_at IS NULL` であるレコードを数え、その件数が `rooms.max_members` 未満の場合に限り参加履歴を `INSERT` する。同じルームへの参加処理を行ロックで直列化することで、単にトランザクションを使用するだけでは防げない同時参加による上限超過を防ぐ。
 
 ## room_invites テーブル
 
@@ -149,7 +161,9 @@
 | invalidated_at | TIMESTAMPTZ | DEFAULT NULL | 無効化日時。ルームが閉じられたときに設定し、有効な間は `NULL` |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 
-同じルームに対して招待リンクは複数発行でき、発行ごとに新しいレコードを作成する。`expires_at > CURRENT_TIMESTAMP` かつ `invalidated_at IS NULL` の場合に有効と判定する。現要件では手動無効化を提供しない。
+同じルームに対して招待リンクは複数発行でき、発行ごとに新しいレコードを作成する。招待リンクの受け入れは、参加処理で対象の `rooms` 行をロックした後、`expires_at > CURRENT_TIMESTAMP`、`invalidated_at IS NULL`、かつ参照先の `rooms.status_id = OPEN` のすべてを満たす場合に限る。現要件では手動無効化を提供しない。
+
+ルームを閉じる処理では、同一トランザクション内で `rooms.status_id` を `CLOSED` に更新して `closed_at` を設定し、そのルームに属する `invalidated_at IS NULL` の招待リンクすべてに `invalidated_at` を設定する。参加処理と同じ `rooms` 行をロックしてから更新することで、ルームの閉鎖と招待リンクの受け入れ・無効化が競合しないようにする。
 
 ## messages テーブル
 
@@ -249,8 +263,11 @@
 
 ### 制約
 
-- `CHECK (ends_at IS NULL OR ends_at >= starts_at)`
-  - 終了日時が開始日時より前になることを防ぐ。
+- `CHECK (ends_at IS NULL OR ends_at > starts_at)`
+  - 終了日時が設定される場合に、開始日時より後でない日時になることを防ぐ。
+- `BEFORE INSERT OR UPDATE OF action_type_id, starts_at, ends_at` トリガー
+  - `admin_action_types.code = TEMPORARY_SUSPENSION` の場合は `ends_at` を必須とし、`starts_at` より後の日時であることを検証する。
+  - `admin_action_types.code` が `WARNING` または `PERMANENT_SUSPENSION` の場合は `ends_at IS NULL` であることを検証する。
 
 ## work_sessions テーブル
 
