@@ -1,0 +1,31 @@
+name: OpenAPI lint
+
+on:
+  pull_request:
+    paths:
+      - docs/openapi.yaml
+      - redocly.yaml
+      - .github/workflows/openapi-lint.yml
+  push:
+    branches:
+      - main
+    paths:
+      - docs/openapi.yaml
+      - redocly.yaml
+      - .github/workflows/openapi-lint.yml
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Lint OpenAPI document
+        run: npx --yes @redocly/cli@2.43.2 lint online-workspace@v1

@@ -1,0 +1,16 @@
+apis:
+  online-workspace@v1:
+    root: ./docs/openapi.yaml
+    x-openapi-ts:
+      output: ./build/generated/openapi.d.ts
+
+extends:
+  - recommended
+
+rules:
+  info-license: off
+  no-server-example.com: off
+  operation-4xx-response: error
+  operation-operationId: error
+  operation-summary: error
+  security-defined: error

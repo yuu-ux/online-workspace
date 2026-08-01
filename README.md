@@ -93,3 +93,14 @@ React source -> npm run build -> dist/ -> nginx
 ```bash
 ./gradlew test
 ```
+
+## API 契約
+
+REST API の契約は `docs/openapi.yaml` で管理する。API を変更する Issue では実装と同じ PR で仕様を更新し、次のコマンドで検証する。
+
+```bash
+npx --yes @redocly/cli@2.43.2 lint online-workspace@v1
+npx --yes openapi-typescript@7.13.0
+```
+
+詳細は [API 契約の更新手順](docs/api_development.md) を参照する。
