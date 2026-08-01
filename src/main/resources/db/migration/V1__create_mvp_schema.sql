@@ -140,8 +140,10 @@ CREATE TABLE room_categories (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO room_categories (name, description) VALUES
-    ('未分類', 'ルーム作成時にカテゴリが指定されなかった場合の既定カテゴリ');
+INSERT INTO room_categories (id, name, description) VALUES
+    (1, '未分類', 'ルーム作成時にカテゴリが指定されなかった場合の既定カテゴリ');
+
+SELECT setval(pg_get_serial_sequence('room_categories', 'id'), 1, true);
 
 CREATE TABLE profiles (
     id BIGSERIAL PRIMARY KEY,
@@ -174,7 +176,8 @@ CREATE TABLE room_members (
     room_id BIGINT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    left_at TIMESTAMPTZ DEFAULT NULL
+    left_at TIMESTAMPTZ DEFAULT NULL,
+    CONSTRAINT chk_room_members_period CHECK (left_at IS NULL OR left_at >= joined_at)
 );
 
 CREATE UNIQUE INDEX uq_room_members_active
@@ -245,8 +248,35 @@ CREATE TABLE admin_actions (
     starts_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ends_at TIMESTAMPTZ DEFAULT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_admin_actions_period CHECK (ends_at IS NULL OR ends_at >= starts_at)
+    CONSTRAINT chk_admin_actions_period CHECK (ends_at IS NULL OR ends_at > starts_at)
 );
+
+CREATE FUNCTION validate_admin_action_period()
+RETURNS TRIGGER AS $$
+DECLARE
+    action_code VARCHAR(50);
+BEGIN
+    SELECT code INTO action_code
+    FROM admin_action_types
+    WHERE id = NEW.action_type_id;
+
+    IF action_code = 'TEMPORARY_SUSPENSION' THEN
+        IF NEW.ends_at IS NULL OR NEW.ends_at <= NEW.starts_at THEN
+            RAISE EXCEPTION 'TEMPORARY_SUSPENSION requires ends_at after starts_at';
+        END IF;
+    ELSIF action_code IN ('WARNING', 'PERMANENT_SUSPENSION') AND NEW.ends_at IS NOT NULL THEN
+        RAISE EXCEPTION '% requires ends_at to be NULL', action_code;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_validate_admin_action_period
+    BEFORE INSERT OR UPDATE OF action_type_id, starts_at, ends_at
+    ON admin_actions
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_admin_action_period();
 
 CREATE TABLE work_sessions (
     id BIGSERIAL PRIMARY KEY,
