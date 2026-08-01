@@ -101,9 +101,9 @@
 | name | VARCHAR(100) | NOT NULL | ルーム名 |
 | description | VARCHAR(500) | NOT NULL, DEFAULT '' | ルームの説明 |
 | created_by | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 作成者のユーザーID |
-| category_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES room_categories(id) | 作業カテゴリID |
-| work_style_id | SMALLINT | NOT NULL, FOREIGN KEY REFERENCES work_styles(id) | 作業スタイル。自由入力ではなくマスターから選択する |
-| max_members | SMALLINT | NOT NULL, CHECK (max_members BETWEEN 2 AND 12) | 参加人数の上限 |
+| category_id | BIGINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES room_categories(id) | 作業カテゴリID。既定値は `未分類` |
+| work_style_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES work_styles(id) | 作業スタイル。自由入力ではなくマスターから選択し、既定値は `FOCUS` |
+| max_members | SMALLINT | NOT NULL, DEFAULT 12, CHECK (max_members BETWEEN 2 AND 12) | 参加人数の上限 |
 | visibility_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES visibilities(id) | 公開範囲。既定値は `PUBLIC` |
 | status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES room_statuses(id) | ルームが参加受付中か、閉じられているか。既定値は `OPEN` |
 | closed_at | TIMESTAMPTZ | DEFAULT NULL | ルームを閉じた日時。受付中の場合は `NULL` |
@@ -113,6 +113,8 @@
 ## room_categories テーブル
 
 運営が用意する作業カテゴリのマスターデータを管理する。同じカテゴリレコードを複数のルームやプロフィールから参照する。
+
+初期データとして `id = 1`、名称 `未分類` のレコードを登録し、カテゴリをまだ指定できない既存のルーム作成処理ではこのレコードを使用する。
 
 | カラム名 | 型 | オプション | 説明 |
 |:--|:--|:--|:--|
