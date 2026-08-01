@@ -1,16 +1,21 @@
 # online-workspace
 
-Spring Boot + Thymeleaf + MyBatis + PostgreSQL で作成したオンライン作業スペースアプリのMVP実装です。
+オンラインで他のユーザーと一緒に作業できるWebアプリケーションです。
 
-## 主な機能（MVP）
+最終版の要件に基づき、React + Spring Boot + MyBatis + PostgreSQLで開発しています。
+旧MVPのThymeleaf実装は削除し、Reactから利用するREST APIを中心に実装します。
 
-- ユーザー登録 / ログイン
-- ホーム画面での公開ルーム一覧表示
-- ルーム作成 / 参加 / 退出
-- 作業ルーム内チャット（送信者名・送信時刻表示）
-- WebSocket によるリアルタイム更新（入退室・チャット・参加人数更新）
-- 画面内通知（成功 / 失敗）
-- プライバシーポリシー / 利用規約ページ
+仕様は以下のドキュメントを参照してください。
+
+- [要件定義](docs/requirements.md)
+- [DBスキーマ](docs/db_schema.md)
+- [システム構成](docs/system_architecture.pdf)
+
+## 技術スタック
+
+- Frontend: React / React Router / Tailwind CSS
+- Backend: Spring Boot / Spring Security / MyBatis / Bean Validation / WebSocket
+- Database: PostgreSQL / Flyway
 
 ## ローカル起動
 
@@ -32,7 +37,7 @@ HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up
 起動後のURL:
 
 - Proxy: http://localhost:8088
-- Backend MVC: http://localhost:8080
+- Backend: http://localhost:8080
 - MailDev: http://localhost:1080
 - PostgreSQL: localhost:5432
 
