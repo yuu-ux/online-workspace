@@ -1,375 +1,275 @@
-# users
+# DB スキーマ
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- name
-    - VARCHAR(100)
-    - NOT NULL
-- email
-    - VARCHAR(255)
-    - NOT NULL
-    - UNIQUE
-- password_hash
-    - VARCHAR(255)
-    - NOT NULL
-- role
-    - VARCHAR(20)
-    - NOT NULL
-    - DEFAULT 'USER'
-    - CHECK (role IN ('USER', 'ADMIN'))
-- account_status
-    - VARCHAR(20)
-    - NOT NULL
-    - DEFAULT 'ACTIVE'
-    - CHECK (account_status IN ('ACTIVE', 'SUSPENDED', 'BANNED'))
-- suspended_until
-    - TIMESTAMPTZ
-- deleted_at
-    - TIMESTAMPTZ
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- updated_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
+## 設計方針
 
-# profiles
+- 日時はタイムゾーン付きで保存する。
+- 外部キー制約を使用し、参照整合性をデータベースでも保証する。
+- 権限や公開範囲などの固定選択肢はマスターテーブルで管理し、業務テーブルからIDで参照する。
+- `updated_at` はアプリケーション、またはデータベースのトリガーで更新する。
+- `DEFAULT NULL` は、値が設定されるまで未確定であることを明示するために記載する。
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- user_id
-    - BIGINT
-    - NOT NULL
-    - UNIQUE
-    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
-- icon_url
-    - VARCHAR(500)
-- bio
-    - VARCHAR(500)
-    - NOT NULL
-    - DEFAULT ''
-- work_category_id
-    - BIGINT
-    - FOREIGN KEY REFERENCES room_categories(id)
-- is_public
-    - BOOLEAN
-    - NOT NULL
-    - DEFAULT TRUE
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- updated_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
+## 固定選択肢のマスターテーブル
 
-# rooms
+権限、状態、公開範囲などを文字列の `CHECK` 制約だけで管理せず、表示名や説明も含めて管理する。各マスターテーブルは次の共通カラムを持つ。
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- name
-    - VARCHAR(100)
-    - NOT NULL
-- description
-    - VARCHAR(500)
-- created_by
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id)
-- category_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES room_categories(id)
-- work_style
-    - VARCHAR(20)
-    - NOT NULL
-    - CHECK (work_style IN ('FOCUS', 'CHAT_OK'))
-- max_members
-    - SMALLINT
-    - NOT NULL
-    - CHECK (max_members BETWEEN 2 AND 12)
-- visibility
-    - VARCHAR(20)
-    - NOT NULL
-    - DEFAULT 'PUBLIC'
-    - CHECK (visibility IN ('PUBLIC', 'INVITE_ONLY', 'FRIENDS_ONLY'))
-- status
-    - VARCHAR(20)
-    - NOT NULL
-    - DEFAULT 'OPEN'
-    - CHECK (status IN ('OPEN', 'CLOSED'))
-- closed_at
-    - TIMESTAMPTZ
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- updated_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | SMALLINT | PRIMARY KEY | 業務テーブルから参照する固定ID |
+| code | VARCHAR(50) | NOT NULL, UNIQUE | アプリケーションで使用する変更しない識別子 |
+| name | VARCHAR(100) | NOT NULL | 画面に表示する名称 |
+| description | VARCHAR(500) | NOT NULL, DEFAULT '' | 選択肢の説明 |
 
-# room_categories
+初期データは次のとおりとする。既定値から参照するため、IDは環境間で共通にする。
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- name
-    - VARCHAR(100)
-    - NOT NULL
-    - UNIQUE
-- description
-    - VARCHAR(500)
-- is_active
-    - BOOLEAN
-    - NOT NULL
-    - DEFAULT TRUE
-- sort_order
-    - INT
-    - NOT NULL
-    - DEFAULT 0
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- updated_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
+| テーブル名 | ID | code | name |
+|:--|--:|:--|:--|
+| roles | 1 | `USER` | 一般ユーザー |
+| roles | 2 | `ADMIN` | 管理者 |
+| account_statuses | 1 | `ACTIVE` | 利用中 |
+| account_statuses | 2 | `SUSPENDED` | 一時停止 |
+| account_statuses | 3 | `BANNED` | 永久停止 |
+| work_styles | 1 | `FOCUS` | 黙って集中 |
+| work_styles | 2 | `CHAT_OK` | 雑談OK |
+| visibilities | 1 | `PUBLIC` | 公開 |
+| visibilities | 2 | `INVITE_ONLY` | 招待のみ |
+| visibilities | 3 | `FRIENDS_ONLY` | フレンドのみ |
+| room_statuses | 1 | `OPEN` | 受付中 |
+| room_statuses | 2 | `CLOSED` | 終了 |
+| room_category_statuses | 1 | `ACTIVE` | 利用中 |
+| room_category_statuses | 2 | `INACTIVE` | 利用停止 |
+| friend_statuses | 1 | `ACTIVE` | フレンド |
+| friend_statuses | 2 | `REMOVED` | 解除済み |
+| report_reasons | 1 | `HARASSMENT` | ハラスメント |
+| report_reasons | 2 | `DEFAMATION` | 誹謗中傷 |
+| report_reasons | 3 | `SPAM` | スパム |
+| report_reasons | 4 | `FRAUD_OR_IMPERSONATION` | 詐欺・なりすまし |
+| report_reasons | 5 | `INAPPROPRIATE_CONTENT` | 不適切コンテンツ |
+| report_reasons | 6 | `OTHER` | その他 |
+| report_statuses | 1 | `PENDING` | 未確認 |
+| report_statuses | 2 | `REVIEWING` | 確認中 |
+| report_statuses | 3 | `RESOLVED` | 対応済み |
+| report_statuses | 4 | `DISMISSED` | 対応不要 |
+| admin_action_types | 1 | `WARNING` | 警告 |
+| admin_action_types | 2 | `TEMPORARY_SUSPENSION` | 一時停止 |
+| admin_action_types | 3 | `PERMANENT_SUSPENSION` | 永久停止 |
 
-# room_members
+## users テーブル
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- room_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE
-- user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
-- joined_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- left_at
-    - TIMESTAMPTZ
-- UNIQUE INDEX
-    - (room_id, user_id)
-    - WHERE left_at IS NULL
+ログイン情報、権限、およびアカウントの利用状態を管理する。
 
-# room_invites
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | ユーザーID |
+| name | VARCHAR(100) | NOT NULL | 表示名 |
+| email | VARCHAR(255) | NOT NULL, UNIQUE | ログインに使用するメールアドレス |
+| password_hash | VARCHAR(255) | NOT NULL | bcrypt でハッシュ化したパスワード |
+| role_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES roles(id) | ユーザー権限。既定値は `USER` |
+| account_status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES account_statuses(id) | アカウントの利用状態。既定値は `ACTIVE` |
+| suspended_until | TIMESTAMPTZ | DEFAULT NULL | 一時停止の終了日時。曜日ではなく日時を保存し、無期限停止または停止中でない場合は `NULL` |
+| deleted_at | TIMESTAMPTZ | DEFAULT NULL | 退会日時。未退会の場合は `NULL` |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- room_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE
-- created_by
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id)
-- token
-    - VARCHAR(255)
-    - NOT NULL
-    - UNIQUE
-- expires_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT (CURRENT_TIMESTAMP + INTERVAL '1 hour')
-- invalidated_at
-    - TIMESTAMPTZ
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
+## profiles テーブル
 
-# messages
+ユーザーが公開するプロフィール情報を、認証情報と分離して管理する。プロフィール独自の状態は持たず、アカウントの利用状態は `users.account_status_id` を参照する。
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- room_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE
-- user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id)
-- content
-    - VARCHAR(500)
-    - NOT NULL
-- sent_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | プロフィールID |
+| user_id | BIGINT | NOT NULL, UNIQUE, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | ユーザーID |
+| icon_url | VARCHAR(500) | DEFAULT NULL | アイコン画像のURL |
+| bio | VARCHAR(500) | NOT NULL, DEFAULT '' | 自己紹介 |
+| work_category_id | BIGINT | DEFAULT NULL, FOREIGN KEY REFERENCES room_categories(id) | 主な作業カテゴリ |
+| is_public | BOOLEAN | NOT NULL, DEFAULT TRUE | プロフィールを他ユーザーへ公開するか |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
-# friends
+## rooms テーブル
 
-- user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
-- friend_user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
-- is_favorite
-    - BOOLEAN
-    - NOT NULL
-    - DEFAULT FALSE
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- updated_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- PRIMARY KEY
-    - (user_id, friend_user_id)
-- CHECK
-    - user_id <> friend_user_id
+ユーザーが作成する作業ルームと、その参加条件を管理する。
 
-# blocks
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | ルームID |
+| name | VARCHAR(100) | NOT NULL | ルーム名 |
+| description | VARCHAR(500) | NOT NULL, DEFAULT '' | ルームの説明 |
+| created_by | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 作成者のユーザーID |
+| category_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES room_categories(id) | 作業カテゴリID |
+| work_style_id | SMALLINT | NOT NULL, FOREIGN KEY REFERENCES work_styles(id) | 作業スタイル。自由入力ではなくマスターから選択する |
+| max_members | SMALLINT | NOT NULL, CHECK (max_members BETWEEN 2 AND 12) | 参加人数の上限 |
+| visibility_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES visibilities(id) | 公開範囲。既定値は `PUBLIC` |
+| status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES room_statuses(id) | ルームが参加受付中か、閉じられているか。既定値は `OPEN` |
+| closed_at | TIMESTAMPTZ | DEFAULT NULL | ルームを閉じた日時。受付中の場合は `NULL` |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
-- blocker_user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
-- blocked_user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- PRIMARY KEY
-    - (blocker_user_id, blocked_user_id)
-- CHECK
-    - blocker_user_id <> blocked_user_id
+## room_categories テーブル
 
-# reports
+運営が用意する作業カテゴリのマスターデータを管理する。同じカテゴリレコードを複数のルームやプロフィールから参照する。
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- reporter_user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id)
-- target_user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id)
-- room_id
-    - BIGINT
-    - FOREIGN KEY REFERENCES rooms(id)
-- reason
-    - VARCHAR(30)
-    - NOT NULL
-    - CHECK (reason IN ('HARASSMENT', 'DEFAMATION', 'SPAM', 'FRAUD_OR_IMPERSONATION', 'INAPPROPRIATE_CONTENT', 'OTHER'))
-- details
-    - TEXT
-- status
-    - VARCHAR(20)
-    - NOT NULL
-    - DEFAULT 'PENDING'
-    - CHECK (status IN ('PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED'))
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- updated_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- CHECK
-    - reporter_user_id <> target_user_id
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | カテゴリID |
+| name | VARCHAR(100) | NOT NULL, UNIQUE | カテゴリ名 |
+| description | VARCHAR(500) | NOT NULL, DEFAULT '' | カテゴリの説明 |
+| status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES room_category_statuses(id) | カテゴリの利用状態。既定値は `ACTIVE` |
+| sort_order | INT | NOT NULL, DEFAULT 0 | 選択肢を表示する順番。昇順で表示する |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
-# admin_actions
+## room_members テーブル
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- report_id
-    - BIGINT
-    - FOREIGN KEY REFERENCES reports(id)
-- admin_user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id)
-- target_user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id)
-- action_type
-    - VARCHAR(30)
-    - NOT NULL
-    - CHECK (action_type IN ('WARNING', 'TEMPORARY_SUSPENSION', 'PERMANENT_SUSPENSION'))
-- reason
-    - TEXT
-    - NOT NULL
-- starts_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- ends_at
-    - TIMESTAMPTZ
-- notification_sent_at
-    - TIMESTAMPTZ
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- CHECK
-    - ends_at IS NULL OR ends_at >= starts_at
+ユーザーのルーム参加履歴を管理する。退出後に同じルームへ再参加した場合は、新しいレコードを作成する。
 
-# work_sessions
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | 参加履歴ID |
+| room_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE | 参加したルームID |
+| user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | 参加したユーザーID |
+| joined_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 入室日時 |
+| left_at | TIMESTAMPTZ | DEFAULT NULL | 退出日時。参加中の場合は `NULL` |
 
-- id
-    - BIGSERIAL
-    - PRIMARY KEY
-- user_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
-- room_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES rooms(id)
-- category_id
-    - BIGINT
-    - NOT NULL
-    - FOREIGN KEY REFERENCES room_categories(id)
-- started_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- ended_at
-    - TIMESTAMPTZ
-- created_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- updated_at
-    - TIMESTAMPTZ
-    - NOT NULL
-    - DEFAULT CURRENT_TIMESTAMP
-- CHECK
-    - ended_at IS NULL OR ended_at >= started_at
-- UNIQUE INDEX
-    - (user_id)
-    - WHERE ended_at IS NULL
+### インデックス・制約
+
+- `UNIQUE INDEX (room_id, user_id) WHERE left_at IS NULL`
+  - 同じユーザーが同じルームへ重複参加することを防ぐ。
+
+## room_invites テーブル
+
+招待制ルームに参加するための招待リンクを管理する。招待リンクを知っているログインユーザーは、期限内であれば対象ルームへ参加できる。
+
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | 招待リンクID |
+| room_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE | 招待先ルームID |
+| created_by | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 発行者のユーザーID |
+| token | VARCHAR(255) | NOT NULL, UNIQUE | 招待リンクに含める、推測困難なトークン |
+| expires_at | TIMESTAMPTZ | NOT NULL, DEFAULT (CURRENT_TIMESTAMP + INTERVAL '1 hour') | 有効期限。要件で既定値を1時間としている |
+| invalidated_at | TIMESTAMPTZ | DEFAULT NULL | 無効化日時。ルームが閉じられたときに設定し、有効な間は `NULL` |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+
+同じルームに対して招待リンクは複数発行でき、発行ごとに新しいレコードを作成する。`expires_at > CURRENT_TIMESTAMP` かつ `invalidated_at IS NULL` の場合に有効と判定する。現要件では手動無効化を提供しない。
+
+## messages テーブル
+
+ルーム内チャットのメッセージを管理する。
+
+現要件では送信済みメッセージの取消し・削除を提供しない。追加する場合は、物理削除ではなく `deleted_at` による論理削除を検討する。
+
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | メッセージID |
+| room_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE | 送信先ルームID |
+| user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 送信者のユーザーID |
+| content | VARCHAR(500) | NOT NULL | メッセージ本文 |
+| sent_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 送信日時 |
+
+### インデックス
+
+- `INDEX (room_id, sent_at)`
+  - ルームごとのメッセージを送信日時順に取得する。
+
+## friends テーブル
+
+ユーザーが一方向に登録したフレンドと、お気に入り・解除状態を管理する。フレンド解除時はレコードを削除せず、状態を `REMOVED` に更新する。
+
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | フレンド登録ID |
+| user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | 登録したユーザーID |
+| friend_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | 登録されたユーザーID |
+| is_favorite | BOOLEAN | NOT NULL, DEFAULT FALSE | お気に入りに登録しているか |
+| status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES friend_statuses(id) | フレンド状態。既定値は `ACTIVE` |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
+
+### インデックス・制約
+
+- `UNIQUE INDEX (user_id, friend_user_id)`
+  - 同じ相手の重複登録を防ぎ、`user_id` を使うフレンド一覧検索にも利用する。
+- `CHECK (user_id <> friend_user_id)`
+  - 自分自身のフレンド登録を防ぐ。
+
+## blocks テーブル
+
+ブロックしたユーザーとブロックされたユーザーの関係を管理する。ブロック成立時にはフレンド状態を `REMOVED` に更新する。ブロックはフレンド解除後も接触制限の判定に必要なため、フレンド状態へ統合せず独立した一方向の関係として扱う。
+
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| blocker_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | ブロックしたユーザーID |
+| blocked_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | ブロックされたユーザーID |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+
+### インデックス・制約
+
+- `PRIMARY KEY (blocker_user_id, blocked_user_id)`
+  - 同じ相手の重複ブロックを防ぎ、ブロックした相手の一覧検索にも利用する。
+- `CHECK (blocker_user_id <> blocked_user_id)`
+  - 自分自身のブロックを防ぐ。
+
+## reports テーブル
+
+ユーザーに対する通報と、その確認状況を管理する。現要件では通報対象はメッセージ単位ではなくユーザー単位とする。
+
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | 通報ID |
+| reporter_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 通報したユーザーID |
+| target_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 通報対象のユーザーID |
+| room_id | BIGINT | DEFAULT NULL, FOREIGN KEY REFERENCES rooms(id) | 問題が起きたルームID |
+| reason_id | SMALLINT | NOT NULL, FOREIGN KEY REFERENCES report_reasons(id) | 選択式の通報理由。自由入力ではなくマスターから選択する |
+| details | TEXT | DEFAULT NULL | 通報者が任意入力する詳細説明 |
+| status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES report_statuses(id) | 通報の確認状況。既定値は `PENDING` |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 通報日時 |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
+
+### 制約
+
+- `CHECK (reporter_user_id <> target_user_id)`
+  - 自分自身への通報を防ぐ。
+
+## admin_actions テーブル
+
+管理者がユーザーへ行った警告・一時停止・永久停止の履歴を管理する。
+
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | 管理者対応ID |
+| report_id | BIGINT | DEFAULT NULL, FOREIGN KEY REFERENCES reports(id) | 対応の契機となった通報ID。通報を伴わない対応の場合は `NULL` |
+| admin_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 対応した管理者のユーザーID |
+| target_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 対応を受けたユーザーID |
+| action_type_id | SMALLINT | NOT NULL, FOREIGN KEY REFERENCES admin_action_types(id) | 対応種別。自由入力ではなくマスターから選択する |
+| reason | TEXT | NOT NULL | 対応理由 |
+| starts_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 対応の適用開始日時 |
+| ends_at | TIMESTAMPTZ | DEFAULT NULL | 対応の適用終了日時。警告・永久停止では `NULL` |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 履歴の作成日時 |
+
+`users.account_status_id` と `users.suspended_until` は現在の利用可否を高速に判定するために使い、`admin_actions.starts_at` と `admin_actions.ends_at` は過去を含む対応履歴として保持する。メールの送信状態は管理者対応そのものではないため、このテーブルでは管理せず通知機能側の配信履歴で管理する。
+
+### 制約
+
+- `CHECK (ends_at IS NULL OR ends_at >= starts_at)`
+  - 終了日時が開始日時より前になることを防ぐ。
+
+## work_sessions テーブル
+
+ユーザーがルームに入室してから退出するまでの自動計測結果を、作業履歴として管理する。任意の手動タイマーそのものを管理するテーブルではない。
+
+| カラム名 | 型 | オプション | 説明 |
+|:--|:--|:--|:--|
+| id | BIGSERIAL | PRIMARY KEY | 作業履歴ID |
+| user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | 作業したユーザーID |
+| room_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES rooms(id) | 作業したルームID |
+| category_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES room_categories(id) | 作業時点のカテゴリID |
+| started_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 入室して自動計測を開始した日時 |
+| ended_at | TIMESTAMPTZ | DEFAULT NULL | 退出して自動計測を終了した日時。計測中は `NULL` |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
+
+### インデックス・制約
+
+- `CHECK (ended_at IS NULL OR ended_at >= started_at)`
+  - 終了日時が開始日時より前になることを防ぐ。
+- `UNIQUE INDEX (user_id) WHERE ended_at IS NULL`
+  - 1人のユーザーが複数のルームで同時に計測を開始することを防ぐ。
