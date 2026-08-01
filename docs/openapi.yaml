@@ -6,8 +6,12 @@ info:
     Online Workspace の React クライアントと Spring Boot サーバー間の REST API 契約。
     日時は RFC 3339、ID は 64 bit integer、JSON の property 名は lowerCamelCase とする。
 
-    ブラウザ向け API は `SESSION` cookie を使用する。状態変更リクエストでは Spring Security が
-    発行する CSRF token を `X-CSRF-TOKEN` header に設定する。監視用 health check は API key を使用する。
+    ブラウザ向け API は `SESSION` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
+    CSRF token を取得し、状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
+
+    API key 認証と rate limit の採点対象は、ルーム一覧、作成、詳細、更新、削除の5 operation とする。
+    API key は発行先のユーザーまたはservice principalへ紐付き、各operationの認可判定にもその主体を使用する。
+    監視用 health check も API key で保護する。
 servers:
   - url: /api/v1
     description: 同一 origin の API
@@ -47,7 +51,8 @@ paths:
       tags: [Authentication]
       summary: ユーザーを登録する
       operationId: registerUser
-      security: []
+      security:
+        - csrfToken: []
       requestBody:
         required: true
         content:
@@ -75,7 +80,8 @@ paths:
       tags: [Authentication]
       summary: ログインする
       operationId: login
-      security: []
+      security:
+        - csrfToken: []
       requestBody:
         required: true
         content:
@@ -106,6 +112,9 @@ paths:
       tags: [Authentication]
       summary: ログアウトする
       operationId: logout
+      security:
+        - sessionAuth: []
+          csrfToken: []
       responses:
         '204':
           description: ログアウト完了
@@ -128,6 +137,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SessionStatus'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/csrf:
+    get:
+      tags: [Authentication]
+      summary: CSRF tokenを取得する
+      description: |
+        セッションの有無にかかわらず呼び出せる。返却された `token` を、以降の状態変更リクエストで
+        `X-CSRF-TOKEN` headerへ設定する。同じtokenを持つ `XSRF-TOKEN` cookieも発行する。
+      operationId: getCsrfToken
+      security: []
+      responses:
+        '200':
+          description: 現在のsessionに対応するCSRF token
+          headers:
+            Set-Cookie:
+              description: "XSRF-TOKEN cookie。Reactから読み取れるようHttpOnlyは付与しない"
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsrfToken'
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
@@ -200,6 +233,9 @@ paths:
       tags: [Users]
       summary: 自分のプロフィールを更新する
       operationId: updateMyProfile
+      security:
+        - sessionAuth: []
+          csrfToken: []
       requestBody:
         required: true
         content:
@@ -227,6 +263,9 @@ paths:
       tags: [Users]
       summary: 退会する
       operationId: withdrawCurrentUser
+      security:
+        - sessionAuth: []
+          csrfToken: []
       requestBody:
         required: true
         content:
@@ -267,6 +306,9 @@ paths:
       tags: [Rooms]
       summary: 参加可能なルームを取得する
       operationId: listRooms
+      security:
+        - sessionAuth: []
+        - apiKeyAuth: []
       parameters:
         - name: categoryId
           in: query
@@ -289,10 +331,16 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
     post:
       tags: [Rooms]
       summary: ルームを作成する
       operationId: createRoom
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - apiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -314,6 +362,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /rooms/{roomId}:
     parameters:
@@ -322,6 +372,9 @@ paths:
       tags: [Rooms]
       summary: ルーム詳細を取得する
       operationId: getRoom
+      security:
+        - sessionAuth: []
+        - apiKeyAuth: []
       responses:
         '200':
           description: ルーム詳細
@@ -335,11 +388,17 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
     put:
       tags: [Rooms]
       summary: ルーム設定を更新する
       description: ルーム作成者だけが実行できる。
       operationId: updateRoom
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - apiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -365,11 +424,17 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
     delete:
       tags: [Rooms]
       summary: ルームを閉じる
       description: ルーム作成者だけが実行できる。関連する有効な招待も無効化する。
       operationId: closeRoom
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - apiKeyAuth: []
       responses:
         '204':
           description: ルームを閉じた
@@ -381,6 +446,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /rooms/{roomId}/members:
     get:
@@ -413,6 +480,9 @@ paths:
       tags: [Rooms]
       summary: ルームへ参加する
       operationId: joinRoom
+      security:
+        - sessionAuth: []
+          csrfToken: []
       responses:
         '201':
           description: 参加情報。作業 session も開始する
@@ -432,6 +502,9 @@ paths:
       tags: [Rooms]
       summary: ルームから退出する
       operationId: leaveRoom
+      security:
+        - sessionAuth: []
+          csrfToken: []
       responses:
         '204':
           description: 退出完了。作業 session も終了する
@@ -470,6 +543,9 @@ paths:
       summary: 招待リンクを発行する
       description: ルーム作成者だけが実行できる。
       operationId: createRoomInvite
+      security:
+        - sessionAuth: []
+          csrfToken: []
       parameters:
         - $ref: '#/components/parameters/RoomId'
       requestBody:
@@ -501,6 +577,9 @@ paths:
       tags: [Invites]
       summary: 招待リンクを使ってルームへ参加する
       operationId: joinRoomByInvite
+      security:
+        - sessionAuth: []
+          csrfToken: []
       parameters:
         - name: token
           in: path
@@ -555,6 +634,9 @@ paths:
       summary: チャットメッセージを送信する
       description: ルーム参加者だけが実行できる。作成後、WebSocket でも配信する。
       operationId: createRoomMessage
+      security:
+        - sessionAuth: []
+          csrfToken: []
       parameters:
         - $ref: '#/components/parameters/RoomId'
       requestBody:
@@ -608,6 +690,9 @@ paths:
       tags: [Friends]
       summary: フレンドを追加する
       operationId: createFriend
+      security:
+        - sessionAuth: []
+          csrfToken: []
       requestBody:
         required: true
         content:
@@ -639,6 +724,9 @@ paths:
       tags: [Friends]
       summary: フレンドのお気に入り状態を更新する
       operationId: updateFriend
+      security:
+        - sessionAuth: []
+          csrfToken: []
       requestBody:
         required: true
         content:
@@ -664,6 +752,9 @@ paths:
       tags: [Friends]
       summary: フレンドを解除する
       operationId: deleteFriend
+      security:
+        - sessionAuth: []
+          csrfToken: []
       responses:
         '204':
           description: フレンド解除完了
@@ -695,6 +786,9 @@ paths:
       tags: [Blocks]
       summary: ユーザーをブロックする
       operationId: createBlock
+      security:
+        - sessionAuth: []
+          csrfToken: []
       requestBody:
         required: true
         content:
@@ -722,6 +816,9 @@ paths:
       tags: [Blocks]
       summary: ブロックを解除する
       operationId: deleteBlock
+      security:
+        - sessionAuth: []
+          csrfToken: []
       parameters:
         - $ref: '#/components/parameters/BlockedUserId'
       responses:
@@ -816,6 +913,9 @@ paths:
       tags: [Reports]
       summary: ユーザーを通報する
       operationId: createReport
+      security:
+        - sessionAuth: []
+          csrfToken: []
       requestBody:
         required: true
         content:
@@ -921,6 +1021,9 @@ paths:
       summary: 通報状態を更新する
       description: ADMIN role が必要。
       operationId: updateAdminReport
+      security:
+        - sessionAuth: []
+          csrfToken: []
       requestBody:
         required: true
         content:
@@ -976,6 +1079,9 @@ paths:
       summary: 警告またはアカウント停止を実行する
       description: ADMIN role が必要。作成後に対象ユーザーへメールを送信する。
       operationId: createAdminAction
+      security:
+        - sessionAuth: []
+          csrfToken: []
       requestBody:
         required: true
         content:
@@ -1035,11 +1141,19 @@ components:
       in: cookie
       name: SESSION
       description: Spring Security の server-side session cookie
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-TOKEN
+      description: |
+        `GET /auth/csrf` で取得するCSRF token。session認証で状態を変更するoperationでは必須。
     apiKeyAuth:
       type: apiKey
       in: header
       name: X-API-Key
-      description: 監視クライアント向け API key
+      description: |
+        ユーザーまたはservice principalに紐付くAPI key。ルームAPIの採点対象5 operationと
+        監視用health checkで使用する。key単位でrate limitを適用する。
 
   parameters:
     Page:
@@ -1275,6 +1389,22 @@ components:
             - $ref: '#/components/schemas/AuthenticatedUser'
           nullable: true
 
+    CsrfToken:
+      type: object
+      additionalProperties: false
+      required: [token, headerName, parameterName]
+      properties:
+        token:
+          type: string
+          minLength: 1
+          description: 状態変更リクエストに設定するtoken値
+        headerName:
+          type: string
+          enum: [X-CSRF-TOKEN]
+        parameterName:
+          type: string
+          enum: [_csrf]
+
     UserSummary:
       type: object
       required: [id, name, iconUrl]
@@ -1291,10 +1421,65 @@ components:
           nullable: true
 
     UserProfile:
+      description: 公開設定に応じたプロフィール。非公開時は名前とアイコン以外のプロフィール情報を返さない。
+      oneOf:
+        - $ref: '#/components/schemas/PublicUserProfile'
+        - $ref: '#/components/schemas/HiddenUserProfile'
+
+    PublicUserProfile:
       allOf:
         - $ref: '#/components/schemas/UserSummary'
         - type: object
           required: [isPublic, bio, workCategory, friendship, blocked]
+          properties:
+            isPublic:
+              type: boolean
+              enum: [true]
+            bio:
+              type: string
+              maxLength: 500
+            workCategory:
+              type: object
+              allOf:
+                - $ref: '#/components/schemas/RoomCategory'
+              nullable: true
+            friendship:
+              type: string
+              enum: [NONE, FRIEND]
+            blocked:
+              type: boolean
+
+    HiddenUserProfile:
+      type: object
+      additionalProperties: false
+      required: [name, iconUrl, isPublic]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        iconUrl:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+        isPublic:
+          type: boolean
+          enum: [false]
+
+    MyProfile:
+      allOf:
+        - $ref: '#/components/schemas/UserSummary'
+        - type: object
+          required:
+            - isPublic
+            - bio
+            - workCategory
+            - friendship
+            - blocked
+            - email
+            - role
+            - accountStatus
+            - createdAt
           properties:
             isPublic:
               type: boolean
@@ -1311,13 +1496,6 @@ components:
               enum: [NONE, FRIEND]
             blocked:
               type: boolean
-
-    MyProfile:
-      allOf:
-        - $ref: '#/components/schemas/UserProfile'
-        - type: object
-          required: [email, role, accountStatus, createdAt]
-          properties:
             email:
               type: string
               format: email

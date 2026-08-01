@@ -32,6 +32,13 @@ npx --yes @redocly/cli@2.43.2 lint online-workspace@v1
 npx --yes openapi-typescript@7.13.0
 ```
 
+## 認証とrate limit
+
+- Reactは最初に `GET /api/v1/auth/csrf` を呼び、返却されたtokenをsession認証の状態変更リクエストで `X-CSRF-TOKEN` headerへ設定する。
+- API keyの採点対象は `GET /rooms`、`POST /rooms`、`GET /rooms/{roomId}`、`PUT /rooms/{roomId}`、`DELETE /rooms/{roomId}` の5 operationとする。
+- 採点対象5 operationはsession認証またはAPI key認証を受け付ける。API keyはユーザーまたはservice principalへ紐付け、同じ認可ルールを適用する。
+- 採点対象5 operationにはkey単位のrate limitを適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。
+
 ## レビュー観点
 
 - `operationId` が一意で、フロントエンドの関数名として理解できるか
