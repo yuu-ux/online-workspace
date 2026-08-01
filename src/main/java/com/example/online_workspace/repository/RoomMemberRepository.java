@@ -15,7 +15,7 @@ public interface RoomMemberRepository {
     @Insert("""
         INSERT INTO room_members (room_id, user_id)
         VALUES (#{roomId}, #{userId})
-        ON CONFLICT (room_id, user_id) DO NOTHING
+        ON CONFLICT (room_id, user_id) WHERE left_at IS NULL DO NOTHING
         """)
     void addMember(@Param("roomId") Long roomId, @Param("userId") Long userId);
 

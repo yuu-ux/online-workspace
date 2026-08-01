@@ -140,6 +140,9 @@ CREATE TABLE room_categories (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+INSERT INTO room_categories (name, description) VALUES
+    ('未分類', 'ルーム作成時にカテゴリが指定されなかった場合の既定カテゴリ');
+
 CREATE TABLE profiles (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -156,9 +159,9 @@ CREATE TABLE rooms (
     name VARCHAR(100) NOT NULL,
     description VARCHAR(500) NOT NULL DEFAULT '',
     created_by BIGINT NOT NULL REFERENCES users(id),
-    category_id BIGINT NOT NULL REFERENCES room_categories(id),
-    work_style_id SMALLINT NOT NULL REFERENCES work_styles(id),
-    max_members SMALLINT NOT NULL CHECK (max_members BETWEEN 2 AND 12),
+    category_id BIGINT NOT NULL DEFAULT 1 REFERENCES room_categories(id),
+    work_style_id SMALLINT NOT NULL DEFAULT 1 REFERENCES work_styles(id),
+    max_members SMALLINT NOT NULL DEFAULT 12 CHECK (max_members BETWEEN 2 AND 12),
     visibility_id SMALLINT NOT NULL DEFAULT 1 REFERENCES visibilities(id),
     status_id SMALLINT NOT NULL DEFAULT 1 REFERENCES room_statuses(id),
     closed_at TIMESTAMPTZ DEFAULT NULL,
