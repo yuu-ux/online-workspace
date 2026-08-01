@@ -1,0 +1,7 @@
+.git
+.gradle
+build
+bin
+frontend/node_modules
+frontend/dist
+HELP.md

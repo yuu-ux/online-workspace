@@ -1,7 +1,59 @@
 services:
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: online-workspace-proxy
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+    volumes:
+      - ./docker/nginx/config:/etc/nginx/conf.d:ro
+    depends_on:
+      - frontend
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: online-workspace-frontend
+    working_dir: /app
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+
+  backend:
+    image: eclipse-temurin:25-jdk
+    container_name: online-workspace-backend
+    working_dir: /app
+    command: ./gradlew bootRun --no-daemon
+    ports:
+      - "${BACKEND_HOST_PORT:-8080}:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: password
+      MAIL_HOST: maildev
+      MAIL_PORT: 1025
+    volumes:
+      - ./build.gradle:/app/build.gradle:ro
+      - ./settings.gradle:/app/settings.gradle:ro
+      - ./gradle:/app/gradle:ro
+      - ./gradlew:/app/gradlew:ro
+      - ./src:/app/src
+      - gradle_cache:/root/.gradle
+    depends_on:
+      db:
+        condition: service_healthy
+      maildev:
+        condition: service_started
+
   db:
     image: postgres:16
-    container_name: postgresql
+    container_name: online-workspace-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: postgres
@@ -17,5 +69,20 @@ services:
       timeout: 5s
       retries: 5
 
+  maildev:
+    image: maildev/maildev:2.1.0
+    container_name: online-workspace-maildev
+    restart: unless-stopped
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:1080 >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  frontend_node_modules:
+  gradle_cache:

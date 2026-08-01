@@ -14,10 +14,44 @@ Spring Boot + Thymeleaf + MyBatis + PostgreSQL で作成したオンライン作
 
 ## ローカル起動
 
+### Docker Compose で起動
+
+開発時は proxy / backend / frontend / db / maildev をまとめて起動できます。
+
+```bash
+docker compose up
+```
+
+ホストの UID/GID が `1000:1000` 以外の Linux 環境では、bind mount
+への書き込み権限を合わせて起動します。
+
+```bash
+HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up
+```
+
+起動後のURL:
+
+- Proxy: http://localhost:8088
+- Backend MVC: http://localhost:8080
+- MailDev: http://localhost:1080
+- PostgreSQL: localhost:5432
+
+コンテナ構成:
+
+- `proxy`: 開発用 nginx reverse proxy
+- `frontend`: Vite React dev server
+- `backend`: Spring Boot dev server
+- `db`: PostgreSQL 16
+- `maildev`: 開発用メール確認サーバー
+
+### Backend 単体で起動
+
 1. PostgreSQL を起動し、接続情報を環境変数で設定します（未設定時はデフォルト値を利用）。
    - `DB_URL` (default: `jdbc:postgresql://localhost:5432/postgres`)
    - `DB_USERNAME` (default: `postgres`)
    - `DB_PASSWORD` (default: `password`)
+   - `MAIL_HOST` (default: `localhost`)
+   - `MAIL_PORT` (default: `1025`)
 2. アプリを起動します。
 
 ```bash
@@ -37,15 +71,15 @@ Browser -> nginx
   └─ /ws      -> Spring Boot
 ```
 
-開発時は nginx を経由せず、`frontend` コンテナで Vite dev server を起動して開発します。作業者ごとの Node.js バージョン差を避けるため、Node.js 環境はコンテナ内に用意します。
+開発時は `proxy` コンテナ経由で `frontend` コンテナの Vite dev server にアクセスします。作業者ごとの Node.js バージョン差を避けるため、Node.js 環境はコンテナ内に用意します。
 
 ```text
-Browser -> frontend container
-  └─ Vite dev server
-       ├─ React 開発用ファイル配信
-       ├─ HMR
-       ├─ /api/* -> Spring Boot
-       └─ /ws    -> Spring Boot
+Browser -> proxy container
+  ├─ /        -> frontend container
+  │              ├─ React 開発用ファイル配信
+  │              └─ HMR
+  ├─ /api/*   -> backend container
+  └─ /ws      -> backend container
 ```
 
 React のビルドは Node.js 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
