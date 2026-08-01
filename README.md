@@ -109,3 +109,14 @@ npx --yes openapi-typescript@7.13.0
 ```
 
 詳細は [API 契約の更新手順](docs/api_development.md) を参照する。
+
+### Swagger UI
+
+Backend 起動後、次のURLで `docs/openapi.yaml` を表示できる。
+
+- Swagger UI: http://localhost:8080/swagger-ui.html
+- OpenAPI YAML: http://localhost:8080/openapi.yaml
+
+認証が必要な API を `Try it out` で確認する場合は、先に同じブラウザで http://localhost:8080/login からログインする。session cookie は同一 origin のリクエストに自動で付与される。API key 認証は Swagger UI 右上の `Authorize` から `X-API-Key` を設定する。
+
+状態を変更する API では CSRF token が必要になる。Swagger UI は `XSRF-TOKEN` cookie の値を `X-CSRF-TOKEN` header として送信する設定になっている。
