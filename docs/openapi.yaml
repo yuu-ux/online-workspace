@@ -60,6 +60,8 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 登録したユーザー
           content:
@@ -89,6 +91,8 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: ログインしたユーザー。`SESSION` cookie を設定する
           headers:
@@ -116,6 +120,8 @@ paths:
         - sessionAuth: []
           csrfToken: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: ログアウト完了
         '401':
@@ -131,6 +137,8 @@ paths:
       operationId: getSession
       security: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 現在の認証状態
           content:
@@ -150,6 +158,8 @@ paths:
       operationId: getCsrfToken
       security: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 現在のsessionに対応するCSRF token
           headers:
@@ -181,6 +191,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: ユーザー検索結果
           content:
@@ -202,6 +214,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UserId'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 公開範囲を反映したプロフィール
           content:
@@ -221,6 +235,8 @@ paths:
       summary: 自分のプロフィールを取得する
       operationId: getMyProfile
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 自分のプロフィール
           content:
@@ -243,6 +259,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateProfileRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 更新後のプロフィール
           content:
@@ -273,6 +291,8 @@ paths:
             schema:
               $ref: '#/components/schemas/WithdrawRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: 退会完了。現在の session も無効化する
         '400':
@@ -290,6 +310,8 @@ paths:
       summary: 利用可能なルームカテゴリを取得する
       operationId: listRoomCategories
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 表示順に並んだカテゴリ
           content:
@@ -321,6 +343,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 公開範囲とブロック関係を反映したルーム一覧
           content:
@@ -348,6 +372,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateRoomRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 作成したルーム。作成者は参加済みになる
           content:
@@ -376,6 +402,8 @@ paths:
         - sessionAuth: []
         - apiKeyAuth: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: ルーム詳細
           content:
@@ -406,6 +434,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateRoomRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 更新後のルーム
           content:
@@ -436,6 +466,8 @@ paths:
           csrfToken: []
         - apiKeyAuth: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: ルームを閉じた
         '401':
@@ -457,6 +489,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/RoomId'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 参加中のメンバー
           content:
@@ -484,6 +518,8 @@ paths:
         - sessionAuth: []
           csrfToken: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 参加情報。作業 session も開始する
           content:
@@ -506,6 +542,8 @@ paths:
         - sessionAuth: []
           csrfToken: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: 退出完了。作業 session も終了する
         '401':
@@ -524,6 +562,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/RoomId'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 招待リンク一覧
           content:
@@ -555,6 +595,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateInviteRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 発行した招待リンク
           content:
@@ -589,6 +631,8 @@ paths:
             minLength: 32
             maxLength: 255
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 参加したルームと参加情報
           content:
@@ -615,6 +659,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 新しい順のメッセージ
           content:
@@ -646,6 +692,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateMessageRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 送信したメッセージ
           content:
@@ -676,6 +724,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: フレンド一覧
           content:
@@ -700,6 +750,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateFriendRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 追加したフレンド
           content:
@@ -734,6 +786,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateFriendRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 更新後のフレンド
           content:
@@ -756,6 +810,8 @@ paths:
         - sessionAuth: []
           csrfToken: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: フレンド解除完了
         '401':
@@ -772,6 +828,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: ブロック一覧
           content:
@@ -796,6 +854,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateBlockRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 作成したブロック。既存のフレンド関係は解除する
           content:
@@ -822,6 +882,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/BlockedUserId'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: ブロック解除完了
         '401':
@@ -852,6 +914,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 作業履歴
           content:
@@ -880,6 +944,8 @@ paths:
             type: string
             format: date
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 累計、カテゴリ別、日別の作業時間
           content:
@@ -897,6 +963,8 @@ paths:
       summary: 通報理由を取得する
       operationId: listReportReasons
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 通報理由一覧
           content:
@@ -923,6 +991,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateReportRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 作成した通報
           content:
@@ -982,6 +1052,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 通報一覧
           content:
@@ -1004,6 +1076,8 @@ paths:
       description: ADMIN role が必要。
       operationId: getAdminReport
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 通報詳細
           content:
@@ -1031,6 +1105,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateReportRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 更新後の通報
           content:
@@ -1062,6 +1138,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 管理者対応履歴
           content:
@@ -1089,6 +1167,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateAdminActionRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 作成した管理者対応
           content:
@@ -1119,6 +1199,8 @@ paths:
       security:
         - apiKeyAuth: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 正常稼働中
           content:
@@ -1235,6 +1317,19 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    InternalServerError:
+      description: 予期しないサーバーエラー
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            status: 500
+            code: INTERNAL_SERVER_ERROR
+            message: 予期しないエラーが発生しました。
+            path: /api/v1/rooms/42
+            timestamp: '2026-08-04T12:34:56Z'
+            traceId: 2f1c16cb-9c67-44a8-9e85-81efba46b85a
     ValidationError:
       description: 入力 validation に失敗した
       content:
