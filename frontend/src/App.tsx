@@ -1,4 +1,10 @@
+import { AccountWithdrawalPage } from "./pages/AccountWithdrawalPage";
+
 export function App() {
+  if (window.location.pathname === "/account/withdrawal") {
+    return <AccountWithdrawalPage />;
+  }
+
   return (
     <main className="app-shell">
       <section className="panel">
@@ -12,6 +18,7 @@ export function App() {
         <div className="links">
           <a href="http://localhost:8080">Current MVC app</a>
           <a href="http://localhost:1080">MailDev</a>
+          <a href="/account/withdrawal">退会確認画面</a>
         </div>
       </section>
     </main>

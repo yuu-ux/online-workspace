@@ -9,6 +9,7 @@
 
 - [要件定義](docs/requirements.md)
 - [DBスキーマ](docs/db_schema.md)
+- [退会時のデータ保持・削除方針](docs/account_withdrawal_data_policy.md)
 - [システム構成](docs/system_architecture.pdf)
 
 ## 技術スタック
