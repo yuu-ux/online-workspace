@@ -10,10 +10,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-public class ApiSecurityConfig {
+public class SecurityConfig {
 
 	@Bean
-	public SecurityFilterChain apiSecurityFilterChain(
+	public SecurityFilterChain securityFilterChain(
 		HttpSecurity http,
 		ApiErrorWriter apiErrorWriter
 	) throws Exception {
