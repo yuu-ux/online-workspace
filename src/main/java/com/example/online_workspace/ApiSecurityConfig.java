@@ -2,7 +2,7 @@ package com.example.online_workspace;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
-import com.example.online_workspace.api.error.ApiErrorWriter;
+import com.example.online_workspace.exceptions.ApiErrorWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;

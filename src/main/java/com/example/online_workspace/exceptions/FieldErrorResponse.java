@@ -1,4 +1,4 @@
-package com.example.online_workspace.api.error;
+package com.example.online_workspace.exceptions;
 
 public record FieldErrorResponse(
 	String field,
