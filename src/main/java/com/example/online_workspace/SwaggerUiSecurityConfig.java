@@ -1,7 +1,5 @@
 package com.example.online_workspace;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,8 +19,7 @@ public class SwaggerUiSecurityConfig {
 					"/v3/api-docs/swagger-config"
 				).permitAll()
 				.anyRequest().authenticated()
-			)
-			.formLogin(withDefaults());
+			);
 		return http.build();
 	}
 }
