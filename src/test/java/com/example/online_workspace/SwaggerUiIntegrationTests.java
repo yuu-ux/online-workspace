@@ -1,8 +1,10 @@
 package com.example.online_workspace;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -48,5 +50,42 @@ class SwaggerUiIntegrationTests {
 	void generatedOpenApiEndpointIsDisabled() throws Exception {
 		mockMvc.perform(get("/v3/api-docs").with(user("tester")))
 			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void unauthenticatedApiRequestDoesNotRedirectToLoginPage() throws Exception {
+		mockMvc.perform(get("/api/v1/rooms"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(header().doesNotExist("Location"));
+	}
+
+	@Test
+	void sessionApiDoesNotRequireAuthentication() throws Exception {
+		mockMvc.perform(get("/api/v1/auth/session"))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void csrfApiDoesNotRequireAuthentication() throws Exception {
+		mockMvc.perform(get("/api/v1/auth/csrf"))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void registerApiDoesNotRequireSessionAuthentication() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/register").with(csrf()))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void loginApiDoesNotRequireSessionAuthentication() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/login").with(csrf()))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void stateChangingApiRejectsRequestWithoutCsrfToken() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/login"))
+			.andExpect(status().isForbidden());
 	}
 }
