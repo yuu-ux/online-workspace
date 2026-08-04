@@ -43,6 +43,7 @@ services:
       - ./settings.gradle:/app/settings.gradle:ro,z
       - ./gradle:/app/gradle:ro,z
       - ./gradlew:/app/gradlew:ro,z
+      - ./docs/openapi.yaml:/app/docs/openapi.yaml:ro,z
       - ./src:/app/src:z
       - gradle_cache:/root/.gradle
     depends_on:
