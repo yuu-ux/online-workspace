@@ -68,7 +68,10 @@ class SwaggerUiIntegrationTests {
 	@Test
 	void csrfApiDoesNotRequireAuthentication() throws Exception {
 		mockMvc.perform(get("/api/v1/auth/csrf"))
-			.andExpect(status().isNotFound());
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.headerName").value("X-CSRF-TOKEN"))
+			.andExpect(jsonPath("$.parameterName").value("_csrf"))
+			.andExpect(jsonPath("$.token").isString());
 	}
 
 	@Test

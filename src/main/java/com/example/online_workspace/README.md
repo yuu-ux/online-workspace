@@ -3,7 +3,15 @@
 ## カレントディレクトリ
 
 - OnlineWorkspaceApplication.java ... エントリーポイント(URLルーティング)
-- SwaggerUiSecurityConfig.java ...... OpenAPIの定義をUI上に表示するためのもの
+- SwaggerUiSecurityConfig.java ... API/API Web security 設定
+
+## configs/securityディレクトリ
+
+セキュリティ設定（SecurityFilterChain）をまとめる場所
+
+## controllers/authディレクトリ
+
+認証系API（/api/v1/auth/**）のコントローラーをまとめる場所
 
 <br>
 

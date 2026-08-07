@@ -1,4 +1,4 @@
-package com.example.online_workspace;
+package com.example.online_workspace.configs.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
