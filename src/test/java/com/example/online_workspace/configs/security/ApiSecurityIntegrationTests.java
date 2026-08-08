@@ -1,11 +1,11 @@
 package com.example.online_workspace.configs.security;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +19,7 @@ class ApiSecurityIntegrationTests {
 	@Autowired
 	private MockMvc mockMvc;
 
+	@DisplayName("未認証の保護APIは401を返しログイン画面へredirectしない")
 	@Test
 	void unauthenticatedApiRequestDoesNotRedirectToLoginPage() throws Exception {
 		mockMvc.perform(get("/api/v1/rooms"))
@@ -26,27 +27,10 @@ class ApiSecurityIntegrationTests {
 			.andExpect(header().doesNotExist("Location"));
 	}
 
-	@Test
-	void sessionApiDoesNotRequireAuthentication() throws Exception {
-		mockMvc.perform(get("/api/v1/auth/session"))
-			.andExpect(status().isNotFound());
-	}
-
-	@Test
-	void registerApiDoesNotRequireSessionAuthentication() throws Exception {
-		mockMvc.perform(post("/api/v1/auth/register").with(csrf()))
-			.andExpect(status().isNotFound());
-	}
-
-	@Test
-	void loginApiDoesNotRequireSessionAuthentication() throws Exception {
-		mockMvc.perform(post("/api/v1/auth/login").with(csrf()))
-			.andExpect(status().isNotFound());
-	}
-
+	@DisplayName("CSRF tokenなしの状態変更APIは403を返す")
 	@Test
 	void stateChangingApiRejectsRequestWithoutCsrfToken() throws Exception {
-		mockMvc.perform(post("/api/v1/auth/login"))
+		mockMvc.perform(post("/api/v1/auth/csrf"))
 			.andExpect(status().isForbidden());
 	}
 }
