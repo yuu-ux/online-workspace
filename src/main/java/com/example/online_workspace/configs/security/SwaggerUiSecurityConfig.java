@@ -15,12 +15,13 @@ public class SwaggerUiSecurityConfig {
 	@Bean
 	@Order(1)
 	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+		CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+		csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
+
 		http
 			.securityMatcher("/api/v1/**")
 			.csrf(csrf -> csrf
-				.csrfTokenRepository(
-					CookieCsrfTokenRepository.withHttpOnlyFalse()
-				)
+				.csrfTokenRepository(csrfTokenRepository)
 			)
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(
