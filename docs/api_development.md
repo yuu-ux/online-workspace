@@ -35,6 +35,7 @@ npx --yes openapi-typescript@7.13.0
 ## 認証とrate limit
 
 - Reactは最初に `GET /api/v1/auth/csrf` を呼び、返却されたtokenをsession認証の状態変更リクエストで `X-CSRF-TOKEN` headerへ設定する。
+- Spring SecurityのBREACH対策により、レスポンスのtokenと `XSRF-TOKEN` cookieの値は文字列として一致しない場合がある。Headerにはレスポンスのtokenを設定し、cookieはブラウザに自動送信させる。
 - API keyの採点対象は `GET /rooms`、`POST /rooms`、`GET /rooms/{roomId}`、`PUT /rooms/{roomId}`、`DELETE /rooms/{roomId}` の5 operationとする。
 - 採点対象5 operationはsession認証またはAPI key認証を受け付ける。API keyはユーザーまたはservice principalへ紐付け、同じ認可ルールを適用する。
 - 採点対象5 operationにはkey単位のrate limitを適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。

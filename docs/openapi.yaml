@@ -146,7 +146,9 @@ paths:
       summary: CSRF tokenを取得する
       description: |
         セッションの有無にかかわらず呼び出せる。返却された `token` を、以降の状態変更リクエストで
-        `X-CSRF-TOKEN` headerへ設定する。同じtokenを持つ `XSRF-TOKEN` cookieも発行する。
+        `X-CSRF-TOKEN` headerへ設定する。Reactから参照できる `XSRF-TOKEN` cookieも発行する。
+        Spring SecurityのBREACH対策により、レスポンスの `token` とcookieの値は文字列として
+        一致しない場合がある。Headerにはレスポンスの `token` を設定し、cookieはブラウザに自動送信させる。
       operationId: getCsrfToken
       security: []
       responses:
