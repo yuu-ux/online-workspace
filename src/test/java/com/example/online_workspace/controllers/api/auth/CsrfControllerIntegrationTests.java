@@ -74,4 +74,22 @@ class CsrfControllerIntegrationTests {
 					.header("X-CSRF-TOKEN", csrfToken + "-wrong"))
 			.andExpect(status().isForbidden());
 	}
+
+	@DisplayName("XSRF-TOKEN cookieの値をheaderに設定すれば状態変更リクエストは通過する")
+	@Test
+	void stateChangingApiAcceptsCookieTokenInHeader() throws Exception {
+		MvcResult csrfResponse = mockMvc.perform(get("/api/v1/auth/csrf"))
+			.andExpect(status().isOk())
+			.andExpect(cookie().exists("XSRF-TOKEN"))
+			.andReturn();
+
+		Cookie xsrfCookie = csrfResponse.getResponse().getCookie("XSRF-TOKEN");
+		assertNotNull(xsrfCookie);
+
+		mockMvc.perform(
+				post("/api/v1/auth/csrf")
+					.cookie(xsrfCookie)
+					.header("X-CSRF-TOKEN", xsrfCookie.getValue()))
+			.andExpect(status().isMethodNotAllowed());
+	}
 }

@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
 public class ApiSecurityConfig {
@@ -17,11 +18,13 @@ public class ApiSecurityConfig {
 	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
 		CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 		csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
+		CsrfTokenRequestAttributeHandler csrfRequestHandler = new CsrfTokenRequestAttributeHandler();
 
 		http
 			.securityMatcher("/api/v1/**")
 			.csrf(csrf -> csrf
 				.csrfTokenRepository(csrfTokenRepository)
+				.csrfTokenRequestHandler(csrfRequestHandler)
 			)
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(
