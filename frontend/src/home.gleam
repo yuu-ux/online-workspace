@@ -43,7 +43,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("Home (guest)"),
         button([on_click(ToLogin)], [text("login")]),
-        button([on_click(ToMyPage)], [text("mypage")])
+        // button([on_click(ToMyPage)], [text("mypage")])
       ])
     }
     session.Authenticated(jwt, user_id) -> {
