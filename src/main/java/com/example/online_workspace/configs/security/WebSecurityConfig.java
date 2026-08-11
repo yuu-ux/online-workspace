@@ -3,10 +3,9 @@ package com.example.online_workspace.configs.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 @Configuration
 public class WebSecurityConfig {
@@ -27,10 +26,7 @@ public class WebSecurityConfig {
 				// anyRequest() より前に個別ルールを追加する。
 				.anyRequest().authenticated()
 			)
-			.exceptionHandling((exceptions) -> exceptions
-				.authenticationEntryPoint(
-					new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-			);
+			.formLogin(Customizer.withDefaults());
 
 		return http.build();
 	}
