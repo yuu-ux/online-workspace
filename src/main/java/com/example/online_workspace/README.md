@@ -3,7 +3,8 @@
 ## カレントディレクトリ
 
 - OnlineWorkspaceApplication.java ... エントリーポイント(URLルーティング)
-- SwaggerUiSecurityConfig.java ... API/API Web security 設定
+- configs/security/ApiSecurityConfig.java ... APIの認証・CSRF設定
+- configs/security/WebSecurityConfig.java ... Web・Swagger UIの認証設定
 
 ## configs/securityディレクトリ
 
