@@ -7,9 +7,19 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * Web画面とSwagger UI向けの認証設定を構成する。
+ */
 @Configuration
 public class WebSecurityConfig {
 
+	/**
+	 * Web用のSecurityFilterChainを生成する。
+	 *
+	 * @param http HTTPセキュリティの設定オブジェクト
+	 * @return Web用のSecurityFilterChain
+	 * @throws Exception セキュリティ設定に失敗した場合
+	 */
 	@Bean
 	@Order(2)
 	public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {

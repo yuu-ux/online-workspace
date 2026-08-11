@@ -10,9 +10,19 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
+/**
+ * API向けの認証・認可とCSRF保護を構成する。
+ */
 @Configuration
 public class ApiSecurityConfig {
 
+	/**
+	 * API用のSecurityFilterChainを生成する。
+	 *
+	 * @param http HTTPセキュリティの設定オブジェクト
+	 * @return API用のSecurityFilterChain
+	 * @throws Exception セキュリティ設定に失敗した場合
+	 */
 	@Bean
 	@Order(1)
 	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
