@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.auth;
+package com.example.online_workspace.controllers.api.auth;
 
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.auth;
+package com.example.online_workspace.controllers.api.auth;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
