@@ -10,9 +10,12 @@
 
 セキュリティ設定（SecurityFilterChain）をまとめる場所
 
-## controllers/authディレクトリ
+## controllersディレクトリ
 
-認証系API（/api/v1/auth/**）のコントローラーをまとめる場所
+- `controllers/api/`: JSONを返すREST Controller。URLは `/api/v1/**` とする。
+- `controllers/mvc/`: HTML画面を返すMVC Controller。React中心の現在は使用しない。
+
+認証系API（/api/v1/auth/**）のコントローラーは `controllers/api/auth/` にまとめる。
 
 <br>
 
