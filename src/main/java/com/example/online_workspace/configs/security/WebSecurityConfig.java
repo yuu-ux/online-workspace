@@ -36,6 +36,9 @@ public class WebSecurityConfig {
 				// anyRequest() より前に個別ルールを追加する。
 				.anyRequest().authenticated()
 			)
+			// React側のログイン画面とログインAPIが実装されるまでは、
+			// Swagger UIなどのWeb利用向けにSpring Securityのログイン画面を維持する。
+			// ログイン機能のReact移行時にformLoginを削除する。
 			.formLogin(Customizer.withDefaults());
 
 		return http.build();
