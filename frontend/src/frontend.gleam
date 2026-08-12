@@ -1,19 +1,23 @@
+import room
 import lustre/element
 import lustre/effect
 import lustre
 import gleam/io
 
-import session/session
+import session/session.{stringify_session}
 import home
 import login
 import register
 import privacypolicy
+import create_room
 
 pub type Page {
   Home(home.Model)
   MyPage
   Login(login.Model)
   Register(register.Model)
+  CreateRoom(create_room.Model)
+  Room(room.Model)
 }
 
 pub type Model {
@@ -27,6 +31,8 @@ pub type Msg {
   HomeMsg(home.Msg)
   LoginMsg(login.Msg)
   RegisterMsg(register.Msg)
+  CreateRoomMsg(create_room.Msg)
+  RoomMsg(room.Msg)
 }
 
 fn init(_flag) -> #(Model, effect.Effect(Msg)) {
@@ -50,6 +56,11 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       io.println("home, ToLogin")
       let #(init_login_model, _) = login.init(session.Guest)
       #(Model(..model, current_page: Login(init_login_model)), effect.none())
+    }
+
+    Home(home_model), HomeMsg(home.ToCreateRoom) -> {
+      let #(init_create_room_model, _) = create_room.init(home_model.session)
+      #(Model(..model, current_page: CreateRoom(init_create_room_model)), effect.none())
     }
 
     Home(home_model), HomeMsg(home.ToLogout) -> {
@@ -109,6 +120,29 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, current_page: Register(update_register_model)), update_effect |> effect.map(RegisterMsg))
     }
 
+    // -- create room --
+
+    CreateRoom(create_room_model), CreateRoomMsg(create_room.ToHome) -> {
+      let #(init_create_room_model, _) = create_room.update(create_room_model, create_room.ToHome)
+      let #(init_home_model, _) = home.init(init_create_room_model.session)
+      #(Model(session: init_create_room_model.session, current_page: Home(init_home_model)), effect.none())
+    }
+
+    CreateRoom(create_room_model), CreateRoomMsg(create_room.ToRoom(room_id)) -> {
+      let #(init_create_room_model, _) = create_room.update(create_room_model, create_room.ToRoom(room_id))
+      let #(init_room_model, _) = room.init(init_create_room_model.session, room_id)
+      #(Model(..model, current_page: Room(init_room_model)), effect.none())
+    }
+
+    // create room other
+
+    CreateRoom(create_room_model), CreateRoomMsg(other) -> {
+      let #(update_create_room_model, update_effect) = create_room.update(create_room_model, other)
+      #(Model(..model, current_page: CreateRoom(update_create_room_model)), update_effect |> effect.map(CreateRoomMsg))
+    }
+
+    // TODO
+
     // unreachables
     _, HomeMsg(_) -> {
       io.println("unreachables")
@@ -119,6 +153,14 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(model, effect.none())
     }
     _, RegisterMsg(_) -> {
+      io.println("unreachables")
+      #(model, effect.none())
+    }
+    _, CreateRoomMsg(_) -> {
+      io.println("unreachables")
+      #(model, effect.none())
+    }
+    _, RoomMsg(_) -> {
       io.println("unreachables")
       #(model, effect.none())
     }
@@ -135,6 +177,12 @@ fn view (model: Model) -> element.Element(Msg) {
     }
     Register(register_model) -> {
       register.view(register_model) |> element.map(RegisterMsg)
+    }
+    CreateRoom(create_room_model) -> {
+      create_room.view(create_room_model) |> element.map(CreateRoomMsg)
+    }
+    Room(room_model) -> {
+      room.view(room_model) |> element.map(RoomMsg)
     }
     MyPage -> {
     }

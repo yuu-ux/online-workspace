@@ -14,6 +14,7 @@ pub type Model {
 }
 
 pub type Msg {
+  ToCreateRoom
   ToLogin
   ToLogout
   ToMyPage
@@ -28,6 +29,7 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
+    ToCreateRoom -> {}
     ToLogin -> {}
     ToLogout -> {}
     ToMyPage -> {}
@@ -52,6 +54,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ],
       [
         text("Home (logined)"),
+        button([on_click(ToCreateRoom)], [text("create room")]),
         button([on_click(ToLogout)], [text("logout")]),
         button([on_click(ToMyPage)], [text("mypage")])
       ])
