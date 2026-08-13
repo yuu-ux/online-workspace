@@ -18,7 +18,7 @@ import org.springframework.dao.TransientDataAccessResourceException;
 class DataRetentionCleanupServiceTests {
 
 	private final DataRetentionRepository repository = org.mockito.Mockito.mock(DataRetentionRepository.class);
-	private final DataRetentionProperties properties = new DataRetentionProperties();
+	private final DataRetentionProperties properties = new DataRetentionProperties(3, 30);
 	private final DataRetentionCleanupService service =
 		new DataRetentionCleanupService(repository, properties);
 

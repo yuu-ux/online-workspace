@@ -1,9 +1,8 @@
 package com.example.online_workspace.services;
 
-import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -17,14 +16,9 @@ import org.springframework.stereotype.Component;
 public class DataRetentionCleanupScheduler {
 
 	private final DataRetentionCleanupService cleanupService;
-	private final Clock clock;
 
-	public DataRetentionCleanupScheduler(
-		DataRetentionCleanupService cleanupService,
-		@Qualifier("dataRetentionClock") Clock clock
-	) {
+	public DataRetentionCleanupScheduler(DataRetentionCleanupService cleanupService) {
 		this.cleanupService = cleanupService;
-		this.clock = clock;
 	}
 
 	@Scheduled(
@@ -32,6 +26,6 @@ public class DataRetentionCleanupScheduler {
 		zone = "${app.data-retention.zone:UTC}"
 	)
 	public void cleanupExpiredData() {
-		cleanupService.cleanupExpiredData(OffsetDateTime.now(clock));
+		cleanupService.cleanupExpiredData(OffsetDateTime.now(ZoneOffset.UTC));
 	}
 }

@@ -31,9 +31,9 @@ public class DataRetentionCleanupService {
 	public DataRetentionCleanupResult cleanupExpiredData(OffsetDateTime executionTime) {
 		Objects.requireNonNull(executionTime, "executionTime must not be null");
 
-		OffsetDateTime chatHistoryCutoff = executionTime.minusMonths(properties.getChatHistoryMonths());
+		OffsetDateTime chatHistoryCutoff = executionTime.minusMonths(properties.chatHistoryMonths());
 		OffsetDateTime withdrawnWorkHistoryCutoff =
-			executionTime.minusDays(properties.getWithdrawnWorkHistoryDays());
+			executionTime.minusDays(properties.withdrawnWorkHistoryDays());
 
 		int deletedMessages = repository.deleteMessagesSentBefore(chatHistoryCutoff);
 		int deletedWorkSessions =
