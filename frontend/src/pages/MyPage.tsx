@@ -1,14 +1,13 @@
 import { ArrowRight, BarChart3, Clock3, UserRound } from "lucide-react";
-import { Link } from "react-router-dom";
 
 export function MyPage() {
   return (
     <div className="site-shell">
       <header className="topbar">
-        <Link className="brand" to="/my-page" aria-label="Online Workspace ホーム">
+        <a className="brand" href="/my-page" aria-label="Online Workspace ホーム">
           <span className="brand-mark">OW</span>
           <span>Online Workspace</span>
-        </Link>
+        </a>
       </header>
 
       <main className="my-page page-width">
@@ -33,7 +32,7 @@ export function MyPage() {
             </div>
           </div>
 
-          <Link className="history-link-card" to="/work-history">
+          <a className="history-link-card" href="/work-history">
             <span className="history-link-icon">
               <BarChart3 size={26} />
             </span>
@@ -46,7 +45,7 @@ export function MyPage() {
               これまでの記録
             </span>
             <ArrowRight className="history-link-arrow" size={22} aria-hidden="true" />
-          </Link>
+          </a>
         </section>
       </main>
     </div>

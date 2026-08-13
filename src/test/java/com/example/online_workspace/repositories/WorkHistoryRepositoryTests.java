@@ -7,6 +7,7 @@ import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 
 @MybatisTest
@@ -18,6 +19,9 @@ class WorkHistoryRepositoryTests {
 
 	@Autowired
 	private WorkHistoryRepository repository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Test
 	void loadsACompleteHistoryRowAndOverlappingParticipants() {
@@ -37,14 +41,19 @@ class WorkHistoryRepositoryTests {
 
 	@Test
 	void aggregatesCategoryAndUtcDateDurations() {
+		jdbcTemplate.update("""
+			INSERT INTO work_sessions (id, user_id, room_id, category_id, started_at, ended_at)
+			VALUES (101, 10, 20, 2, TIMESTAMP WITH TIME ZONE '2099-01-01 00:00:00+00', NULL)
+			""");
 		var byCategory = repository.summarizeByCategory(10L, null, null);
 		var byDate = repository.summarizeByDate(10L, null, null);
 
 		assertThat(byCategory).hasSize(1);
 		assertThat(byCategory.getFirst().categoryName()).isEqualTo("開発");
 		assertThat(byCategory.getFirst().durationSeconds()).isEqualTo(5400L);
-		assertThat(byDate).hasSize(1);
+		assertThat(byDate).hasSize(2);
 		assertThat(byDate.getFirst().workDate()).hasToString("2026-08-03");
 		assertThat(byDate.getFirst().durationSeconds()).isEqualTo(5400L);
+		assertThat(byDate).allMatch(row -> row.durationSeconds() >= 0);
 	}
 }

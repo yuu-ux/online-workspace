@@ -121,7 +121,7 @@ public interface WorkHistoryRepository {
 		  rc.name AS category_name,
 		  rc.description AS category_description,
 		  rc.sort_order AS category_sort_order,
-		  CAST(COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at))), 0) AS BIGINT) AS duration_seconds
+		  CAST(COALESCE(SUM(GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at)))), 0) AS BIGINT) AS duration_seconds
 		FROM work_sessions ws
 		JOIN room_categories rc ON rc.id = ws.category_id
 		WHERE ws.user_id = #{userId}
@@ -145,7 +145,7 @@ public interface WorkHistoryRepository {
 		<script>
 		SELECT
 		  CAST(ws.started_at AT TIME ZONE 'UTC' AS DATE) AS work_date,
-		  CAST(COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at))), 0) AS BIGINT) AS duration_seconds
+		  CAST(COALESCE(SUM(GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at)))), 0) AS BIGINT) AS duration_seconds
 		FROM work_sessions ws
 		WHERE ws.user_id = #{userId}
 		<if test="fromInclusive != null">

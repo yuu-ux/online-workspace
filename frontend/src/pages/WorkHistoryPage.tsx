@@ -10,7 +10,6 @@ import {
   UsersRound,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   fetchWorkSessionSummary,
   fetchWorkSessions,
@@ -147,14 +146,14 @@ export function WorkHistoryPage() {
   return (
     <div className="site-shell">
       <header className="topbar">
-        <Link className="brand" to="/my-page" aria-label="Online Workspace ホーム">
+        <a className="brand" href="/my-page" aria-label="Online Workspace ホーム">
           <span className="brand-mark">OW</span>
           <span>Online Workspace</span>
-        </Link>
-        <Link className="back-link" to="/my-page">
+        </a>
+        <a className="back-link" href="/my-page">
           <ArrowLeft size={18} />
           マイページへ戻る
-        </Link>
+        </a>
       </header>
 
       <main className="history-page page-width">
