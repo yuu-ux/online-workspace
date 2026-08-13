@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -104,24 +101,6 @@ public class GlobalApiExceptionHandler {
 		);
 	}
 
-	@ExceptionHandler(ResponseStatusException.class)
-	ResponseEntity<ApiErrorResponse> handleResponseStatus(
-		ResponseStatusException exception,
-		HttpServletRequest request
-	) {
-		HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
-		if (!status.is4xxClientError()) {
-			return internalServerError(exception, request);
-		}
-
-		return apiProblem(
-			request,
-			status,
-			statusCode(status),
-			exception.getReason() == null ? statusMessage(status) : exception.getReason()
-		);
-	}
-
 	@ExceptionHandler(NoResourceFoundException.class)
 	ResponseEntity<ApiErrorResponse> handleNoResourceFound(
 		NoResourceFoundException exception,
@@ -148,32 +127,6 @@ public class GlobalApiExceptionHandler {
 		);
 	}
 
-	@ExceptionHandler(AuthenticationException.class)
-	ResponseEntity<ApiErrorResponse> handleAuthentication(
-		AuthenticationException exception,
-		HttpServletRequest request
-	) {
-		return apiProblem(
-			request,
-			HttpStatus.UNAUTHORIZED,
-			"UNAUTHORIZED",
-			"認証が必要です。"
-		);
-	}
-
-	@ExceptionHandler(AccessDeniedException.class)
-	ResponseEntity<ApiErrorResponse> handleAccessDenied(
-		AccessDeniedException exception,
-		HttpServletRequest request
-	) {
-		return apiProblem(
-			request,
-			HttpStatus.FORBIDDEN,
-			"FORBIDDEN",
-			"この操作を行う権限がありません。"
-		);
-	}
-
 	@ExceptionHandler(Exception.class)
 	ResponseEntity<ApiErrorResponse> handleUnexpectedException(
 		Exception exception,
@@ -194,32 +147,6 @@ public class GlobalApiExceptionHandler {
 		);
 		log.error("Unexpected API error traceId={} path={}", response.traceId(), response.path(), exception);
 		return problem(HttpStatus.INTERNAL_SERVER_ERROR, response);
-	}
-
-	private String statusCode(HttpStatus status) {
-		return switch (status) {
-			case BAD_REQUEST -> "BAD_REQUEST";
-			case UNAUTHORIZED -> "UNAUTHORIZED";
-			case FORBIDDEN -> "FORBIDDEN";
-			case NOT_FOUND -> "RESOURCE_NOT_FOUND";
-			case CONFLICT -> "CONFLICT";
-			case UNPROCESSABLE_CONTENT -> "VALIDATION_FAILED";
-			case TOO_MANY_REQUESTS -> "TOO_MANY_REQUESTS";
-			default -> status.name();
-		};
-	}
-
-	private String statusMessage(HttpStatus status) {
-		return switch (status) {
-			case BAD_REQUEST -> "リクエストが不正です。";
-			case UNAUTHORIZED -> "認証が必要です。";
-			case FORBIDDEN -> "この操作を行う権限がありません。";
-			case NOT_FOUND -> "対象のリソースが見つかりません。";
-			case CONFLICT -> "現在の状態では操作できません。";
-			case UNPROCESSABLE_CONTENT -> "入力内容を確認してください。";
-			case TOO_MANY_REQUESTS -> "リクエスト回数が上限を超えました。";
-			default -> "リクエストを処理できませんでした。";
-		};
 	}
 
 	private FieldErrorResponse toFieldErrorResponse(FieldError fieldError) {

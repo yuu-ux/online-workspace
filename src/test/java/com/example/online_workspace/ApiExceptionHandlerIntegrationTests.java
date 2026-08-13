@@ -1,8 +1,6 @@
 package com.example.online_workspace;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
-import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,17 +9,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.example.online_workspace.exceptions.BusinessException;
-import com.example.online_workspace.exceptions.ResourceNotFoundException;
+import com.example.online_workspace.exceptions.ApiException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(ApiExceptionHandlerIntegrationTests.ErrorEndpointConfiguration.class)
+@Import(ApiExceptionHandlerIntegrationTests.ErrorEndpoint.class)
 class ApiExceptionHandlerIntegrationTests {
 
 	private static final String TRACE_ID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
@@ -135,17 +131,7 @@ class ApiExceptionHandlerIntegrationTests {
 			.andExpect(jsonPath("$.status").value(500))
 			.andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"))
 			.andExpect(jsonPath("$.message").value("予期しないエラーが発生しました。"))
-			.andExpect(jsonPath("$.message").value(not(containsString("secret"))))
 			.andExpect(jsonPath("$.traceId", matchesPattern(TRACE_ID_PATTERN)));
-	}
-
-	@TestConfiguration(proxyBeanMethods = false)
-	static class ErrorEndpointConfiguration {
-
-		@Bean
-		ErrorEndpoint errorEndpoint() {
-			return new ErrorEndpoint();
-		}
 	}
 
 	@RestController
@@ -158,7 +144,8 @@ class ApiExceptionHandlerIntegrationTests {
 
 		@GetMapping("/not-found")
 		void notFound() {
-			throw new ResourceNotFoundException(
+			throw new ApiException(
+				HttpStatus.NOT_FOUND,
 				"TEST_RESOURCE_NOT_FOUND",
 				"テスト用リソースが見つかりません。"
 			);
@@ -166,7 +153,7 @@ class ApiExceptionHandlerIntegrationTests {
 
 		@GetMapping("/business")
 		void businessError() {
-			throw new BusinessException("TEST_STATE_CONFLICT", "現在の状態では操作できません。");
+			throw new ApiException(HttpStatus.CONFLICT, "TEST_STATE_CONFLICT", "現在の状態では操作できません。");
 		}
 
 		@GetMapping("/unexpected")

@@ -9,8 +9,6 @@ import org.springframework.http.HttpStatus;
 
 final class ApiErrorResponseFactory {
 
-	private static final String TRACE_ID_ATTRIBUTE = ApiErrorResponseFactory.class.getName() + ".traceId";
-
 	private ApiErrorResponseFactory() {
 	}
 
@@ -26,7 +24,7 @@ final class ApiErrorResponseFactory {
 			message,
 			request.getRequestURI(),
 			Instant.now(),
-			traceId(request)
+			UUID.randomUUID().toString()
 		);
 	}
 
@@ -40,19 +38,8 @@ final class ApiErrorResponseFactory {
 			"入力内容を確認してください。",
 			request.getRequestURI(),
 			Instant.now(),
-			traceId(request),
+			UUID.randomUUID().toString(),
 			List.copyOf(fieldErrors)
 		);
-	}
-
-	private static String traceId(HttpServletRequest request) {
-		Object existingTraceId = request.getAttribute(TRACE_ID_ATTRIBUTE);
-		if (existingTraceId instanceof String traceId) {
-			return traceId;
-		}
-
-		String traceId = UUID.randomUUID().toString();
-		request.setAttribute(TRACE_ID_ATTRIBUTE, traceId);
-		return traceId;
 	}
 }
