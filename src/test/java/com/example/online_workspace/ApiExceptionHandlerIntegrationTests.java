@@ -82,7 +82,29 @@ class ApiExceptionHandlerIntegrationTests {
 				.with(user("tester"))
 				.param("page", "-1"))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.status").value(400));
+			.andExpect(jsonPath("$.status").value(400))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("page"))
+			.andExpect(jsonPath("$.fieldErrors[0].code").value("RANGE"))
+			.andExpect(jsonPath("$.fieldErrors[0].message").isString());
+	}
+
+	@Test
+	void frameworkClientErrorsPreserveTheirStatus() throws Exception {
+		mockMvc.perform(post("/api/v1/test/errors/validation")
+				.with(user("tester"))
+				.with(csrf())
+				.contentType(MediaType.TEXT_PLAIN)
+				.content("name=test"))
+			.andExpect(status().isUnsupportedMediaType())
+			.andExpect(jsonPath("$.status").value(415))
+			.andExpect(jsonPath("$.code").value("UNSUPPORTED_MEDIA_TYPE"));
+
+		mockMvc.perform(get("/api/v1/test/errors/json")
+				.with(user("tester"))
+				.accept(MediaType.TEXT_PLAIN))
+			.andExpect(status().isNotAcceptable())
+			.andExpect(jsonPath("$.status").value(406))
+			.andExpect(jsonPath("$.code").value("NOT_ACCEPTABLE"));
 	}
 
 	@Test
@@ -189,6 +211,11 @@ class ApiExceptionHandlerIntegrationTests {
 
 		@GetMapping("/parameter-validation")
 		void validateParameter(@RequestParam @Min(0) int page) {
+		}
+
+		@GetMapping(value = "/json", produces = MediaType.APPLICATION_JSON_VALUE)
+		String json() {
+			return "{}";
 		}
 
 		@GetMapping("/authentication")

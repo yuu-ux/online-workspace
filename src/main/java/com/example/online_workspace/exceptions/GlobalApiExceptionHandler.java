@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.web.ErrorResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -62,11 +64,18 @@ public class GlobalApiExceptionHandler {
 		HandlerMethodValidationException exception,
 		HttpServletRequest request
 	) {
-		return validationProblem(
-			request,
-			HttpStatus.BAD_REQUEST,
-			List.of(new FieldErrorResponse("request", "INVALID", "入力値が不正です。"))
-		);
+		List<FieldErrorResponse> fieldErrors = exception.getParameterValidationResults().stream()
+			.flatMap(result -> {
+				String parameterName = result.getMethodParameter().getParameterName();
+				return result.getResolvableErrors().stream()
+					.map(error -> new FieldErrorResponse(
+						parameterName == null ? "request" : parameterName,
+						validationCode(error),
+						error.getDefaultMessage() == null ? "入力値が不正です。" : error.getDefaultMessage()
+					));
+			})
+			.toList();
+		return validationProblem(request, HttpStatus.BAD_REQUEST, fieldErrors);
 	}
 
 	@ExceptionHandler(ConstraintViolationException.class)
@@ -176,6 +185,20 @@ public class GlobalApiExceptionHandler {
 		Exception exception,
 		HttpServletRequest request
 	) {
+		if (exception instanceof ErrorResponse errorResponse) {
+			HttpStatusCode status = errorResponse.getStatusCode();
+			HttpStatus httpStatus = HttpStatus.resolve(status.value());
+			return problem(
+				status,
+				errorResponse.getHeaders(),
+				ApiErrorResponseFactory.create(
+					request,
+					status,
+					httpStatus == null ? "HTTP_ERROR" : httpStatus.name(),
+					errorResponse.getBody().getDetail()
+				)
+			);
+		}
 		return internalServerError(exception, request);
 	}
 
@@ -214,6 +237,11 @@ public class GlobalApiExceptionHandler {
 			case "Pattern" -> "PATTERN";
 			default -> "INVALID";
 		};
+	}
+
+	private String validationCode(MessageSourceResolvable error) {
+		String[] codes = error.getCodes();
+		return validationCode(codes == null || codes.length == 0 ? null : codes[codes.length - 1]);
 	}
 
 	private ResponseEntity<ApiErrorResponse> apiProblem(
