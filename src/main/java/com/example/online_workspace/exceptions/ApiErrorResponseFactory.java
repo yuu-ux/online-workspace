@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 
 final class ApiErrorResponseFactory {
 
@@ -14,7 +15,7 @@ final class ApiErrorResponseFactory {
 
 	static ApiErrorResponse create(
 		HttpServletRequest request,
-		HttpStatus status,
+		HttpStatusCode status,
 		String code,
 		String message
 	) {
@@ -30,10 +31,11 @@ final class ApiErrorResponseFactory {
 
 	static ValidationApiErrorResponse createValidation(
 		HttpServletRequest request,
+		HttpStatus status,
 		List<FieldErrorResponse> fieldErrors
 	) {
 		return new ValidationApiErrorResponse(
-			HttpStatus.UNPROCESSABLE_CONTENT.value(),
+			status.value(),
 			"VALIDATION_FAILED",
 			"入力内容を確認してください。",
 			request.getRequestURI(),

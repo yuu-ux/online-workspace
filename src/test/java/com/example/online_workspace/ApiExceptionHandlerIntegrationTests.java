@@ -6,25 +6,32 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.online_workspace.exceptions.ApiException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -70,6 +77,15 @@ class ApiExceptionHandlerIntegrationTests {
 	}
 
 	@Test
+	void requestParameterValidationUsesBadRequest() throws Exception {
+		mockMvc.perform(get("/api/v1/test/errors/parameter-validation")
+				.with(user("tester"))
+				.param("page", "-1"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value(400));
+	}
+
+	@Test
 	void authenticationErrorsUseTheCommonJsonFormat() throws Exception {
 		mockMvc.perform(get("/api/v1/test/errors/not-found"))
 			.andExpect(status().isUnauthorized())
@@ -91,6 +107,35 @@ class ApiExceptionHandlerIntegrationTests {
 			.andExpect(jsonPath("$.status").value(403))
 			.andExpect(jsonPath("$.code").value("FORBIDDEN"))
 			.andExpect(jsonPath("$.message").value("この操作を行う権限がありません。"));
+	}
+
+	@Test
+	void controllerAuthenticationExceptionsPreserveUnauthorizedStatus() throws Exception {
+		mockMvc.perform(get("/api/v1/test/errors/authentication").with(user("tester")))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+	}
+
+	@Test
+	void controllerAccessDeniedExceptionsPreserveForbiddenStatus() throws Exception {
+		mockMvc.perform(get("/api/v1/test/errors/access-denied").with(user("tester")))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("FORBIDDEN"));
+	}
+
+	@Test
+	void responseStatusExceptionsPreserveDeclaredStatus() throws Exception {
+		mockMvc.perform(get("/api/v1/test/errors/status").with(user("tester")))
+			.andExpect(status().isGone())
+			.andExpect(jsonPath("$.status").value(410))
+			.andExpect(jsonPath("$.message").value("このリソースは廃止されました。"));
+	}
+
+	@Test
+	void methodNotAllowedPreservesAllowHeader() throws Exception {
+		mockMvc.perform(get("/api/v1/test/errors/validation").with(user("tester")))
+			.andExpect(status().isMethodNotAllowed())
+			.andExpect(header().string(HttpHeaders.ALLOW, "POST"));
 	}
 
 	@Test
@@ -140,6 +185,25 @@ class ApiExceptionHandlerIntegrationTests {
 
 		@PostMapping("/validation")
 		void validate(@Valid @RequestBody ValidationRequest request) {
+		}
+
+		@GetMapping("/parameter-validation")
+		void validateParameter(@RequestParam @Min(0) int page) {
+		}
+
+		@GetMapping("/authentication")
+		void authenticationError() {
+			throw new BadCredentialsException("invalid credentials");
+		}
+
+		@GetMapping("/access-denied")
+		void accessDeniedError() {
+			throw new AccessDeniedException("forbidden");
+		}
+
+		@GetMapping("/status")
+		void responseStatusError() {
+			throw new ResponseStatusException(HttpStatus.GONE, "このリソースは廃止されました。");
 		}
 
 		@GetMapping("/not-found")

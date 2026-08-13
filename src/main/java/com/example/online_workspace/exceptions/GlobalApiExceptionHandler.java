@@ -6,10 +6,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -49,7 +54,7 @@ public class GlobalApiExceptionHandler {
 		List<FieldErrorResponse> fieldErrors = exception.getBindingResult().getFieldErrors().stream()
 			.map(this::toFieldErrorResponse)
 			.toList();
-		return validationProblem(request, fieldErrors);
+		return validationProblem(request, HttpStatus.UNPROCESSABLE_CONTENT, fieldErrors);
 	}
 
 	@ExceptionHandler(HandlerMethodValidationException.class)
@@ -59,6 +64,7 @@ public class GlobalApiExceptionHandler {
 	) {
 		return validationProblem(
 			request,
+			HttpStatus.BAD_REQUEST,
 			List.of(new FieldErrorResponse("request", "INVALID", "入力値が不正です。"))
 		);
 	}
@@ -75,7 +81,7 @@ public class GlobalApiExceptionHandler {
 				violation.getMessage()
 			))
 			.toList();
-		return validationProblem(request, fieldErrors);
+		return validationProblem(request, HttpStatus.UNPROCESSABLE_CONTENT, fieldErrors);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
@@ -119,11 +125,49 @@ public class GlobalApiExceptionHandler {
 		HttpRequestMethodNotSupportedException exception,
 		HttpServletRequest request
 	) {
-		return apiProblem(
-			request,
+		return problem(
 			HttpStatus.METHOD_NOT_ALLOWED,
-			"METHOD_NOT_ALLOWED",
-			"このHTTPメソッドは利用できません。"
+			exception.getHeaders(),
+			ApiErrorResponseFactory.create(
+				request,
+				HttpStatus.METHOD_NOT_ALLOWED,
+				"METHOD_NOT_ALLOWED",
+				"このHTTPメソッドは利用できません。"
+			)
+		);
+	}
+
+	@ExceptionHandler(AuthenticationException.class)
+	ResponseEntity<ApiErrorResponse> handleAuthentication(
+		AuthenticationException exception,
+		HttpServletRequest request
+	) {
+		return apiProblem(request, HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "認証が必要です。");
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	ResponseEntity<ApiErrorResponse> handleAccessDenied(
+		AccessDeniedException exception,
+		HttpServletRequest request
+	) {
+		return apiProblem(request, HttpStatus.FORBIDDEN, "FORBIDDEN", "この操作を行う権限がありません。");
+	}
+
+	@ExceptionHandler(ResponseStatusException.class)
+	ResponseEntity<ApiErrorResponse> handleResponseStatus(
+		ResponseStatusException exception,
+		HttpServletRequest request
+	) {
+		HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
+		return problem(
+			status,
+			exception.getHeaders(),
+			ApiErrorResponseFactory.create(
+				request,
+				status,
+				status.name(),
+				exception.getReason() == null ? status.getReasonPhrase() : exception.getReason()
+			)
 		);
 	}
 
@@ -174,7 +218,7 @@ public class GlobalApiExceptionHandler {
 
 	private ResponseEntity<ApiErrorResponse> apiProblem(
 		HttpServletRequest request,
-		HttpStatus status,
+		HttpStatusCode status,
 		String code,
 		String message
 	) {
@@ -183,16 +227,22 @@ public class GlobalApiExceptionHandler {
 
 	private ResponseEntity<ValidationApiErrorResponse> validationProblem(
 		HttpServletRequest request,
+		HttpStatus status,
 		List<FieldErrorResponse> fieldErrors
 	) {
 		return problem(
-			HttpStatus.UNPROCESSABLE_CONTENT,
-			ApiErrorResponseFactory.createValidation(request, fieldErrors)
+			status,
+			ApiErrorResponseFactory.createValidation(request, status, fieldErrors)
 		);
 	}
 
-	private <T> ResponseEntity<T> problem(HttpStatus status, T response) {
+	private <T> ResponseEntity<T> problem(HttpStatusCode status, T response) {
+		return problem(status, HttpHeaders.EMPTY, response);
+	}
+
+	private <T> ResponseEntity<T> problem(HttpStatusCode status, HttpHeaders headers, T response) {
 		return ResponseEntity.status(status)
+			.headers(headers)
 			.contentType(MediaType.APPLICATION_PROBLEM_JSON)
 			.body(response);
 	}
