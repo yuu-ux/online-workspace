@@ -1,6 +1,7 @@
 package com.example.online_workspace;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -101,6 +102,13 @@ class AccountWithdrawalIntegrationTests {
 			.andExpect(status().isBadRequest());
 
 		assertThat(repository.findActiveByEmail(EMAIL)).isPresent();
+	}
+
+	@Test
+	void purgeRejectsNonPositiveRetentionPeriod() {
+		assertThatThrownBy(() -> new WithdrawnAccountPurgeService(repository, 0))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("retentionDays must be positive");
 	}
 
 	@Test

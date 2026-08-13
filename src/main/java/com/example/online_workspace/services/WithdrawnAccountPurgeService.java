@@ -20,6 +20,9 @@ public class WithdrawnAccountPurgeService {
 		AccountWithdrawalRepository repository,
 		@Value("${app.account-withdrawal.retention-days:30}") long retentionDays
 	) {
+		if (retentionDays < 1) {
+			throw new IllegalArgumentException("retentionDays must be positive");
+		}
 		this.repository = repository;
 		this.retentionDays = retentionDays;
 	}
