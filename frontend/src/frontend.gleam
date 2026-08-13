@@ -4,7 +4,7 @@ import lustre/effect
 import lustre
 import gleam/io
 
-import session/session.{stringify_session}
+import types/session.{stringify_session}
 import home
 import login
 import register
@@ -53,7 +53,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     Home(_), HomeMsg(home.ToLogin) -> {
-      io.println("home, ToLogin")
       let #(init_login_model, _) = login.init(session.Guest)
       #(Model(..model, current_page: Login(init_login_model)), effect.none())
     }
@@ -66,17 +65,21 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     Home(home_model), HomeMsg(home.ToLogout) -> {
     }
 
+    Home(home_model), HomeMsg(home.ToRoom(room_id)) -> {
+      let #(update_home_model, _) = home.update(home_model, home.ToRoom(room_id))
+      let #(init_room_model, _) = room.init(update_home_model.session, room_id)
+      #(Model(..model, current_page: Room(init_room_model)), effect.none())
+    }
+
     // -- login --
 
     Login(login_model), LoginMsg(login.ToHome) -> {
-      io.println("Login, LoginHome")
       let #(init_login_model, _) = login.update(login_model, login.ToHome)
       let #(init_home_model, _) = home.init(init_login_model.session)
       #(Model(session: init_login_model.session, current_page: Home(init_home_model)), effect.none())
     }
 
     Login(_login_model), LoginMsg(login.ToRegister) -> {
-      io.println("home, ToRegister")
       let #(init_register_model, _) = register.init(session.Guest)
       #(Model(..model, current_page: Register(init_register_model)), effect.none())
     }
@@ -96,7 +99,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // -- register --
 
     Register(_register_model), RegisterMsg(register.ToLogin) -> {
-      io.println("register, ToLogin")
       let #(init_login_model, _) = login.init(session.Guest)
       #(Model(..model, current_page: Login(init_login_model)), effect.none())
     }
@@ -129,8 +131,8 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     CreateRoom(create_room_model), CreateRoomMsg(create_room.ToRoom(room_id)) -> {
-      let #(init_create_room_model, _) = create_room.update(create_room_model, create_room.ToRoom(room_id))
-      let #(init_room_model, _) = room.init(init_create_room_model.session, room_id)
+      let #(update_create_room_model, _) = create_room.update(create_room_model, create_room.ToRoom(room_id))
+      let #(init_room_model, _) = room.init(update_create_room_model.session, room_id)
       #(Model(..model, current_page: Room(init_room_model)), effect.none())
     }
 

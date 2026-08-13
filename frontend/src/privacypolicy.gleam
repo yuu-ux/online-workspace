@@ -5,7 +5,7 @@ import lustre/effect
 import gleam/io
 import lustre/element/html.{button, div, h1, h3, hr, span, style, text}
 
-import session/session.{type Session}
+import types/session.{type Session}
 
 pub type Model {
   Model

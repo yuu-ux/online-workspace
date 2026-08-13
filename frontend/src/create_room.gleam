@@ -6,8 +6,27 @@ import lustre/effect
 import gleam/io
 import gleam/list
 import lustre/element/html.{button, div, text, input, textarea, select, option}
+import types/room.{
+  type CategoryType,
+  type WorkStyleType,
+  type VisibilityType,
+  type RoomId,
+  type RoomNameType,
+  type DescriptionType,
+  RoomNameType,
+  DescriptionType,
+  RoomId,
+  Cat1,
+  Cat2,
+  Cat3,
+  CasualChat,
+  Quiet,
+  Public,
+  Invite,
+  Friend,
+}
 
-import session/session.{type Session}
+import types/session.{type Session}
 
 pub type InputType {
   RoomName
@@ -34,26 +53,9 @@ pub type Model {
 pub type Msg {
   ToHome
   ToLogin
-  ToRoom(room_id: String)
+  ToRoom(RoomId)
   InputUpdated(target: InputType, str: String)
   SubmitClicked
-}
-
-pub type CategoryType {
-  Cat1
-  Cat2
-  Cat3
-}
-
-pub type WorkStyleType {
-  CasualChat
-  Quiet
-}
-
-pub type VisibilityType {
-  Public
-  Invite
-  Friend
 }
 
 pub type CreateRoomErr {
@@ -62,15 +64,15 @@ pub type CreateRoomErr {
 
 /// 新しいRoomIdを発行して返す
 fn create_room_proc(
-  roomname: String,
-  description: String,
+  roomname: RoomNameType,
+  description: DescriptionType,
   category_type: Result(CategoryType, Nil),
   workstyle_type: Result(WorkStyleType, Nil),
   visibility: Result(VisibilityType, Nil),
   max_number_of_member: Result(Int, Nil)
-) -> Result(String, CreateRoomErr) {
+) -> Result(RoomId, CreateRoomErr) {
   // TODO SERVER API
-  Ok("Room1") // example room id
+  Ok(RoomId(0)) // example room id
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
@@ -136,9 +138,9 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     SubmitClicked -> {
       // io.println("current_email_input:" <> model.current_email_input)
       // io.println("current_password_input:" <> model.current_password_input)
-      let room_name = model.current_roomname_input
+      let room_name = RoomNameType(model.current_roomname_input)
 
-      let description = model.current_description_input
+      let description = DescriptionType(model.current_description_input)
 
       let category = case model.current_category_input {
         "category 1" -> { Ok(Cat1) }

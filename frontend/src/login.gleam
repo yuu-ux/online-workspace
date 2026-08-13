@@ -6,7 +6,7 @@ import gleam/io
 import gleam/list
 import lustre/element/html.{button, div, h1, h3, hr, span, style, text, input}
 
-import session/session.{type Session}
+import types/session.{type Session, Token, UserId}
 
 pub type InputType {
   Email
@@ -43,10 +43,10 @@ fn login_proc(email: String, password: String) -> Result(session.Session, LoginE
       Error(DummyError)
     }
     "tom@example.com", "0427" -> {
-      Ok(session.Authenticated(jwt: "toms jwt", user_id: "Tom"))
+      Ok(session.Authenticated(jwt: Token("toms jwt"), user_id: UserId("Tom")))
     }
     _, _ -> {
-      Ok(session.Authenticated(jwt: "dummy", user_id: "dummy_user id"))
+      Ok(session.Authenticated(jwt: Token("dummy"), user_id: UserId("dummy_user id")))
     }
   }
 }

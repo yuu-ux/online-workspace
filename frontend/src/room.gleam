@@ -6,7 +6,27 @@ import gleam/io
 import gleam/list
 import lustre/element/html.{button, div, text, input}
 
-import session/session.{type Session}
+import types/session.{type Session}
+import types/room.{
+  type CategoryType,
+  type WorkStyleType,
+  type VisibilityType,
+  type RoomId,
+  type RoomNameType,
+  type DescriptionType,
+  RoomNameType,
+  DescriptionType,
+  RoomId,
+  Cat1,
+  Cat2,
+  Cat3,
+  CasualChat,
+  Quiet,
+  Public,
+  Invite,
+  Friend,
+}
+
 
 pub type InputType {
   ChatMsg
@@ -23,7 +43,7 @@ pub type Chat {
 pub type Model {
   Model(
     session: Session,
-    room_id: String,
+    room_id: RoomId,
     chat_list: List(Chat), // 会話履歴表示用
     current_message_input: String,
     messages: List(String)
@@ -37,23 +57,6 @@ pub type Msg {
   SubmitClicked
 }
 
-pub type CategoryType {
-  Cat1
-  Cat2
-  Cat3
-}
-
-pub type WorkStyleType {
-  CasualChat
-  Quiet
-}
-
-pub type VisibilityType {
-  Public
-  Invite
-  Friend
-}
-
 pub type RoomErr {
   DummyError
 }
@@ -64,7 +67,7 @@ fn room_send_msg_proc(
   // TODO SERVER API
 }
 
-pub fn init(session: Session, room_id: String) -> #(Model, effect.Effect(Msg)) {
+pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
   #(
     Model(
       session: session,

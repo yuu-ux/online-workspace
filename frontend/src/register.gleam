@@ -6,7 +6,7 @@ import gleam/io
 import gleam/list
 import lustre/element/html.{button, div, text, input}
 
-import session/session.{type Session}
+import types/session.{type Session}
 
 pub type InputType {
   UserName
