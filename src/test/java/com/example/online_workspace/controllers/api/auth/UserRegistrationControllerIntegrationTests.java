@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.UUID;
 
-import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -68,7 +67,7 @@ class UserRegistrationControllerIntegrationTests {
 		String password
 	) throws Exception {
 		MvcResult csrfResponse = mockMvc.perform(get("/api/v1/auth/csrf"))
-			.andExpect(status().isOk())
+			.andExpect(status().isNoContent())
 			.andReturn();
 
 		Cookie xsrfCookie = csrfResponse.getResponse().getCookie("XSRF-TOKEN");
