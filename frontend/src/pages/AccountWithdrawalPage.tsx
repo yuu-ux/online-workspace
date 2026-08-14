@@ -77,7 +77,7 @@ export function AccountWithdrawalPage() {
           <h2>退会する前にご確認ください</h2>
           <ul>
             <li>退会完了後は、このアカウントでログインできません。</li>
-            <li>作業履歴とプロフィール情報は、退会から30日後に削除されます。</li>
+            <li>退会後も、作業履歴とプロフィール情報は保持されます。</li>
             <li>参加中のルームから退出し、現在の作業計測は終了します。</li>
           </ul>
         </div>
@@ -103,7 +103,7 @@ export function AccountWithdrawalPage() {
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
             />
-            <span>退会後はログインできず、30日後に対象データが削除されることを確認しました。</span>
+            <span>退会後はログインできず、登録データが保持されることを確認しました。</span>
           </label>
 
           {error && (

@@ -67,7 +67,6 @@
 | account_status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES account_statuses(id) | アカウントの利用状態。既定値は `ACTIVE` |
 | suspended_until | TIMESTAMPTZ | DEFAULT NULL | 一時停止の終了日時。曜日ではなく日時を保存し、無期限停止または停止中でない場合は `NULL` |
 | deleted_at | TIMESTAMPTZ | DEFAULT NULL | 退会日時。未退会の場合は `NULL` |
-| personal_data_purged_at | TIMESTAMPTZ | DEFAULT NULL | 退会後の保持期限が終了し、個人データの削除・匿名化が完了した日時 |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
