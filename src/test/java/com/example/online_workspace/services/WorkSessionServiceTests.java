@@ -79,15 +79,14 @@ class WorkSessionServiceTests {
 		when(repository.findActiveByUserIdForUpdate(USER_ID)).thenReturn(active);
 		when(repository.endById(active.id(), ENDED_AT)).thenReturn(1);
 
-		assertThat(service.end(USER_ID, ROOM_ID, ENDED_AT))
-			.hasValueSatisfying(session -> assertThat(session.endedAt()).isEqualTo(ENDED_AT));
+		assertThat(service.end(USER_ID, ROOM_ID, ENDED_AT)).isTrue();
 	}
 
 	@Test
 	void repeatedEndIsIdempotent() {
 		when(repository.findActiveByUserIdForUpdate(USER_ID)).thenReturn(null);
 
-		assertThat(service.end(USER_ID, ROOM_ID, ENDED_AT)).isEmpty();
+		assertThat(service.end(USER_ID, ROOM_ID, ENDED_AT)).isFalse();
 
 		verify(repository, never()).endById(1L, ENDED_AT);
 	}
@@ -97,7 +96,7 @@ class WorkSessionServiceTests {
 		WorkSession active = session(1L, OTHER_ROOM_ID, STARTED_AT, null);
 		when(repository.findActiveByUserIdForUpdate(USER_ID)).thenReturn(active);
 
-		assertThat(service.end(USER_ID, ROOM_ID, ENDED_AT)).isEmpty();
+		assertThat(service.end(USER_ID, ROOM_ID, ENDED_AT)).isFalse();
 
 		verify(repository, never()).endById(active.id(), ENDED_AT);
 	}
@@ -108,8 +107,7 @@ class WorkSessionServiceTests {
 		when(repository.findActiveByUserIdForUpdate(USER_ID)).thenReturn(active);
 		when(repository.endById(active.id(), ENDED_AT)).thenReturn(1);
 
-		assertThat(service.recoverUnfinished(USER_ID, ENDED_AT))
-			.hasValueSatisfying(session -> assertThat(session.endedAt()).isEqualTo(ENDED_AT));
+		assertThat(service.recoverUnfinished(USER_ID, ENDED_AT)).isTrue();
 	}
 
 	@Test
