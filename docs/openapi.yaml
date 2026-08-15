@@ -7,7 +7,7 @@ info:
     日時は RFC 3339、ID は 64 bit integer、JSON の property 名は lowerCamelCase とする。
 
     ブラウザ向け API は `SESSION` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
-    CSRF token を取得し、状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
+    `XSRF-TOKEN` cookieを発行し、その値を状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
 
     API key 認証と rate limit の採点対象は、ルーム一覧、作成、詳細、更新、削除の5 operation とする。
     API key は発行先のユーザーまたはservice principalへ紐付き、各operationの認可判定にもその主体を使用する。
@@ -143,24 +143,21 @@ paths:
   /auth/csrf:
     get:
       tags: [Authentication]
-      summary: CSRF tokenを取得する
+      summary: CSRF token用Cookieを初期化する
       description: |
-        セッションの有無にかかわらず呼び出せる。返却された `token` を、以降の状態変更リクエストで
-        `X-CSRF-TOKEN` headerへ設定する。同じtokenを持つ `XSRF-TOKEN` cookieも発行する。
+        セッションの有無にかかわらず呼び出せる。CSRF tokenを遅延生成して `XSRF-TOKEN` cookieを発行する。
+        レスポンス本文は返さず、クライアントはcookieの値を以降の状態変更リクエストの
+        `X-CSRF-TOKEN` headerへ設定する。
       operationId: getCsrfToken
       security: []
       responses:
-        '200':
-          description: 現在のsessionに対応するCSRF token
+        '204':
+          description: XSRF-TOKEN cookieを発行した。レスポンス本文は空。
           headers:
             Set-Cookie:
               description: "XSRF-TOKEN cookie。Reactから読み取れるようHttpOnlyは付与しない"
               schema:
                 type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CsrfToken'
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
@@ -1146,7 +1143,7 @@ components:
       in: header
       name: X-CSRF-TOKEN
       description: |
-        `GET /auth/csrf` で取得するCSRF token。session認証で状態を変更するoperationでは必須。
+        `GET /auth/csrf` で発行された `XSRF-TOKEN` cookieの値。session認証で状態を変更するoperationでは必須。
     apiKeyAuth:
       type: apiKey
       in: header
@@ -1388,22 +1385,6 @@ components:
           allOf:
             - $ref: '#/components/schemas/AuthenticatedUser'
           nullable: true
-
-    CsrfToken:
-      type: object
-      additionalProperties: false
-      required: [token, headerName, parameterName]
-      properties:
-        token:
-          type: string
-          minLength: 1
-          description: 状態変更リクエストに設定するtoken値
-        headerName:
-          type: string
-          enum: [X-CSRF-TOKEN]
-        parameterName:
-          type: string
-          enum: [_csrf]
 
     UserSummary:
       type: object
