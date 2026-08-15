@@ -1720,10 +1720,10 @@ components:
 
     JoinRoomResult:
       type: object
-      required: [room, membership]
+      required: [roomId, membership]
       properties:
-        room:
-          $ref: '#/components/schemas/RoomDetail'
+        roomId:
+          $ref: '#/components/schemas/Id'
         membership:
           $ref: '#/components/schemas/RoomMember'
 
