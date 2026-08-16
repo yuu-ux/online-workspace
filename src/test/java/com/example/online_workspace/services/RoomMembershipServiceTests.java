@@ -46,7 +46,10 @@ class RoomMembershipServiceTests {
 		assertThat(member.userId()).isEqualTo(2L);
 		assertThat(member.userName()).isEqualTo("member");
 		assertThat(member.iconUrl()).isEqualTo("https://example.com/member.png");
-		assertThat(membershipRepository.isActiveMember(10L, 2L)).isTrue();
+		assertThat(jdbcTemplate.queryForObject(
+			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NULL",
+			Integer.class
+		)).isOne();
 		assertThat(workSessionRepository.findActiveByUserIdForUpdate(2L).roomId()).isEqualTo(10L);
 	}
 
