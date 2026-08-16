@@ -1,12 +1,12 @@
 package com.example.online_workspace.configs.security;
 
+import com.example.online_workspace.exceptions.ApiErrorWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
@@ -20,12 +20,13 @@ public class ApiSecurityConfig {
 	 * API用のSecurityFilterChainを生成する。
 	 *
 	 * @param http HTTPセキュリティの設定オブジェクト
+	 * @param apiErrorWriter APIエラーレスポンスの出力処理
 	 * @return API用のSecurityFilterChain
 	 * @throws Exception セキュリティ設定に失敗した場合
 	 */
 	@Bean
 	@Order(1)
-	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ApiErrorWriter apiErrorWriter) throws Exception {
 		CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 		csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
 		CsrfTokenRequestAttributeHandler csrfRequestHandler = new CsrfTokenRequestAttributeHandler();
@@ -46,9 +47,20 @@ public class ApiSecurityConfig {
 				.anyRequest().authenticated()
 			)
 			.exceptionHandling(exceptions -> exceptions
-				.authenticationEntryPoint(
-					new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
-				)
+				.authenticationEntryPoint((request, response, exception) -> apiErrorWriter.write(
+					request,
+					response,
+					HttpStatus.UNAUTHORIZED,
+					"UNAUTHORIZED",
+					"認証が必要です。"
+				))
+				.accessDeniedHandler((request, response, exception) -> apiErrorWriter.write(
+					request,
+					response,
+					HttpStatus.FORBIDDEN,
+					"FORBIDDEN",
+					"この操作を行う権限がありません。"
+				))
 			);
 
 		return http.build();
