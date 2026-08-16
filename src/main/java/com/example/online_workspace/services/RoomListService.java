@@ -1,0 +1,39 @@
+package com.example.online_workspace.services;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.online_workspace.exceptions.ApiException;
+import com.example.online_workspace.models.RoomListItem;
+import com.example.online_workspace.repositories.RoomListRepository;
+
+@Service
+public class RoomListService {
+
+	private final RoomListRepository repository;
+
+	public RoomListService(RoomListRepository repository) {
+		this.repository = repository;
+	}
+
+	@Transactional(readOnly = true)
+	public Result list(String email, Long categoryId, String workStyle, int page, int size) {
+		Long userId = email == null ? null : repository.findActiveUserIdByEmail(email);
+		if (userId == null) {
+			throw new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "認証が必要です。");
+		}
+
+		long totalElements = repository.countPublicRooms(categoryId, workStyle);
+		long offset = (long) page * size;
+		List<RoomListItem> items = offset >= totalElements
+			? List.of()
+			: repository.findPublicRooms(userId, categoryId, workStyle, size, offset);
+		return new Result(items, totalElements);
+	}
+
+	public record Result(List<RoomListItem> items, long totalElements) {
+	}
+}
