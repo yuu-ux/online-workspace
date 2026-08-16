@@ -20,7 +20,6 @@ public class WorkSessionService {
 
 	@Transactional
 	public WorkSession start(long userId, long roomId, Instant startedAt) {
-		validateIdentifiers(userId, roomId);
 		requireTimestamp(startedAt, "startedAt");
 		lockUser(userId);
 
@@ -47,7 +46,6 @@ public class WorkSessionService {
 
 	@Transactional
 	public boolean end(long userId, long roomId, Instant endedAt) {
-		validateIdentifiers(userId, roomId);
 		requireTimestamp(endedAt, "endedAt");
 		lockUser(userId);
 
@@ -89,15 +87,6 @@ public class WorkSessionService {
 		}
 		if (workSessionRepository.endById(session.id(), endedAt) != 1) {
 			throw new IllegalStateException("The active work session could not be ended");
-		}
-	}
-
-	private void validateIdentifiers(long userId, long roomId) {
-		if (userId <= 0) {
-			throw new IllegalArgumentException("userId must be positive");
-		}
-		if (roomId <= 0) {
-			throw new IllegalArgumentException("roomId must be positive");
 		}
 	}
 
