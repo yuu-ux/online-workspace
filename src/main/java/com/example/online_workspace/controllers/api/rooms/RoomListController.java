@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import org.springframework.security.core.Authentication;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,7 +16,6 @@ import com.example.online_workspace.models.RoomListItem;
 import com.example.online_workspace.services.RoomListService;
 import com.example.online_workspace.services.RoomListService.Result;
 
-@Validated
 @RestController
 @RequestMapping("/api/v1/rooms")
 public class RoomListController {
