@@ -87,6 +87,26 @@ class RoomMembershipServiceTests {
 	}
 
 	@Test
+	void rejectsJoinWhenUserIsActiveInAnotherRoom() {
+		jdbcTemplate.update(
+			"INSERT INTO room_members (room_id, user_id, joined_at) VALUES (10, 2, CURRENT_TIMESTAMP)"
+		);
+		jdbcTemplate.update("""
+			INSERT INTO work_sessions (user_id, room_id, category_id, started_at)
+			VALUES (2, 10, 100, CURRENT_TIMESTAMP)
+			""");
+
+		assertThatThrownBy(() -> service.join(11L, "member@example.com"))
+			.isInstanceOfSatisfying(ResponseStatusException.class,
+				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
+		assertThat(jdbcTemplate.queryForObject(
+			"SELECT COUNT(*) FROM room_members WHERE user_id = 2 AND left_at IS NULL",
+			Integer.class
+		)).isOne();
+		assertThat(workSessionRepository.findActiveByUserIdForUpdate(2L).roomId()).isEqualTo(10L);
+	}
+
+	@Test
 	void rejectsJoinWhenEitherUserHasBlockedTheOther() {
 		jdbcTemplate.update(
 			"INSERT INTO blocks (blocker_user_id, blocked_user_id) VALUES (?, ?)",
@@ -116,7 +136,7 @@ class RoomMembershipServiceTests {
 
 		service.leave(10L, "member@example.com");
 
-		assertThat(membershipRepository.isActiveMember(10L, 2L)).isFalse();
+		assertThat(membershipRepository.hasActiveMembership(2L)).isFalse();
 		assertThat(workSessionRepository.findActiveByUserIdForUpdate(2L)).isNull();
 		assertThat(jdbcTemplate.queryForObject(
 			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NOT NULL",

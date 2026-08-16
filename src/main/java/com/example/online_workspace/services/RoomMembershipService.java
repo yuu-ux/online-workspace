@@ -72,8 +72,8 @@ public class RoomMembershipService {
 	}
 
 	private RoomMember joinLockedRoom(JoinPolicy room, long userId, Instant joinedAt) {
-		if (repository.isActiveMember(room.id(), userId)) {
-			throw conflict("The user is already in this room");
+		if (repository.hasActiveMembership(userId)) {
+			throw conflict("The user is already in a room");
 		}
 		if (repository.hasBlockConflict(room.id(), userId)) {
 			throw forbidden("A block relationship prevents joining this room");
@@ -97,7 +97,7 @@ public class RoomMembershipService {
 		if (email == null || email.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 		}
-		Long userId = repository.findActiveUserIdByEmail(email);
+		Long userId = repository.findActiveUserIdByEmailForUpdate(email);
 		if (userId == null) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 		}

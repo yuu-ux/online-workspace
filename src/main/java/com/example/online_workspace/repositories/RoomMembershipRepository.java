@@ -16,8 +16,9 @@ public interface RoomMembershipRepository {
 	@Select("""
 		SELECT id FROM users
 		WHERE email = #{email} AND deleted_at IS NULL
+		FOR UPDATE
 		""")
-	Long findActiveUserIdByEmail(@Param("email") String email);
+	Long findActiveUserIdByEmailForUpdate(@Param("email") String email);
 
 	@Select("""
 		SELECT r.id, r.created_by, r.max_members,
@@ -26,7 +27,7 @@ public interface RoomMembershipRepository {
 		JOIN visibilities v ON v.id = r.visibility_id
 		JOIN room_statuses rs ON rs.id = r.status_id
 		WHERE r.id = #{roomId}
-		FOR UPDATE
+		FOR UPDATE OF r
 		""")
 	JoinPolicy lockRoomById(@Param("roomId") long roomId);
 
@@ -51,12 +52,11 @@ public interface RoomMembershipRepository {
 	@Select("""
 		SELECT EXISTS (
 			SELECT 1 FROM room_members
-			WHERE room_id = #{roomId}
-			  AND user_id = #{userId}
+			WHERE user_id = #{userId}
 			  AND left_at IS NULL
 		)
 		""")
-	boolean isActiveMember(@Param("roomId") long roomId, @Param("userId") long userId);
+	boolean hasActiveMembership(@Param("userId") long userId);
 
 	@Select("""
 		SELECT COUNT(*) FROM room_members
