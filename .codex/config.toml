@@ -1,0 +1,10 @@
+default_permissions = "project-edit"
+
+[permissions.project-edit.filesystem]
+":minimal" = "read"
+
+[permissions.project-edit.filesystem.":workspace_roots"]
+"." = "write"
+".codex" = "write"
+".git" = "write"
+"**/*.env" = "deny"
