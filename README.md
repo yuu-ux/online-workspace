@@ -10,6 +10,7 @@
 - [要件定義](docs/requirements.md)
 - [DBスキーマ](docs/db_schema.md)
 - [システム構成](docs/system_architecture.pdf)
+- [ブランチ命名規則](docs/branch_naming_convention.md)
 
 ## 技術スタック
 

@@ -1,4 +1,4 @@
-package com.example.online_workspace;
+package com.example.online_workspace.configs;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;

@@ -154,6 +154,19 @@ class ApiExceptionHandlerIntegrationTests {
 	}
 
 	@Test
+	void responseStatusExceptionsHandleNonStandardAndSanitizeServerErrors() throws Exception {
+		mockMvc.perform(get("/api/v1/test/errors/non-standard-status").with(user("tester")))
+			.andExpect(status().is(499))
+			.andExpect(jsonPath("$.status").value(499))
+			.andExpect(jsonPath("$.code").value("HTTP_499"));
+
+		mockMvc.perform(get("/api/v1/test/errors/server-status").with(user("tester")))
+			.andExpect(status().isInternalServerError())
+			.andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"))
+			.andExpect(jsonPath("$.message").value("予期しないエラーが発生しました。"));
+	}
+
+	@Test
 	void methodNotAllowedPreservesAllowHeader() throws Exception {
 		mockMvc.perform(get("/api/v1/test/errors/validation").with(user("tester")))
 			.andExpect(status().isMethodNotAllowed())
@@ -231,6 +244,16 @@ class ApiExceptionHandlerIntegrationTests {
 		@GetMapping("/status")
 		void responseStatusError() {
 			throw new ResponseStatusException(HttpStatus.GONE, "このリソースは廃止されました。");
+		}
+
+		@GetMapping("/non-standard-status")
+		void nonStandardStatusError() {
+			throw new ResponseStatusException(499, null, null);
+		}
+
+		@GetMapping("/server-status")
+		void serverStatusError() {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "secret implementation detail");
 		}
 
 		@GetMapping("/not-found")

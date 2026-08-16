@@ -167,15 +167,21 @@ public class GlobalApiExceptionHandler {
 		ResponseStatusException exception,
 		HttpServletRequest request
 	) {
-		HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
+		HttpStatusCode status = exception.getStatusCode();
+		if (status.is5xxServerError()) {
+			return internalServerError(exception, request);
+		}
+		HttpStatus resolved = HttpStatus.resolve(status.value());
 		return problem(
 			status,
 			exception.getHeaders(),
 			ApiErrorResponseFactory.create(
 				request,
 				status,
-				status.name(),
-				exception.getReason() == null ? status.getReasonPhrase() : exception.getReason()
+				resolved == null ? "HTTP_" + status.value() : resolved.name(),
+				exception.getReason() == null
+					? (resolved == null ? "リクエストを処理できません。" : resolved.getReasonPhrase())
+					: exception.getReason()
 			)
 		);
 	}
