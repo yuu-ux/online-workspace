@@ -4,14 +4,15 @@ import lustre
 import gleam/io
 
 import types/session.{stringify_session}
-import home
-import login
-import register
-import privacypolicy
-import create_room
-import room
-import report
-import invitation
+
+import pages/home
+import pages/login
+import pages/register
+import pages/privacypolicy
+import pages/create_room
+import pages/room
+import pages/report
+import pages/invitation
 
 pub type Page {
   Home(home.Model)
