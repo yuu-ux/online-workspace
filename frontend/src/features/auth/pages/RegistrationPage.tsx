@@ -19,7 +19,6 @@ export function RegistrationPage() {
   const [errors, setErrors] = useState<RegistrationErrors>({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
 
   const updateField = (field: keyof RegistrationForm, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -70,7 +69,7 @@ export function RegistrationPage() {
         setFormError("このメールアドレスはすでに登録されています。");
         return;
       }
-      if (registrationResponse.status === 400) {
+      if (registrationResponse.status === 400 || registrationResponse.status === 422) {
         setFormError("入力内容を確認してください。");
         return;
       }
@@ -78,28 +77,13 @@ export function RegistrationPage() {
         throw new Error("Registration failed");
       }
 
-      setIsRegistered(true);
+      window.location.replace("/login?registered=1");
     } catch {
       setFormError("登録に失敗しました。時間をおいて再度お試しください。");
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  if (isRegistered) {
-    return (
-      <main className="app-shell">
-        <section className="panel registration-panel" aria-live="polite">
-          <p className="eyebrow">Online Workspace</p>
-          <h1>登録が完了しました</h1>
-          <p>登録したメールアドレスでログインしてください。</p>
-          <a className="primary-button" href="http://localhost:8080/login">
-            ログイン画面へ
-          </a>
-        </section>
-      </main>
-    );
-  }
 
   return (
     <main className="app-shell">
@@ -170,7 +154,7 @@ export function RegistrationPage() {
           </button>
         </form>
 
-        <a className="secondary-button" href="http://localhost:8080/login">
+        <a className="secondary-button" href="/login">
           ログインへ戻る
         </a>
       </section>

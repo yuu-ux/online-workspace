@@ -63,11 +63,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
         '201':
-          description: 登録したユーザー
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthenticatedUser'
+          description: ユーザー登録完了。ログインセッションは作成しない
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
