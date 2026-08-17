@@ -1,9 +1,6 @@
-name: PR 78 temporary tests
+name: Gradle tests
 
 on:
-  push:
-    branches:
-      - agent/issue-22-room-membership
   pull_request:
 
 permissions:
