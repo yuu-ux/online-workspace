@@ -12,8 +12,12 @@ import com.example.online_workspace.models.RoomListItem;
 public interface RoomListRepository {
 
 	@Select("""
-		SELECT id FROM users
-		WHERE email = #{email} AND deleted_at IS NULL
+		SELECT u.id FROM users u
+		JOIN account_statuses s ON s.id = u.account_status_id
+		WHERE u.email = #{email}
+		  AND u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
 		""")
 	Long findActiveUserIdByEmail(@Param("email") String email);
 

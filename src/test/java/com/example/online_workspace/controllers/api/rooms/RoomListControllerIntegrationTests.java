@@ -27,7 +27,7 @@ class RoomListControllerIntegrationTests {
 	void listsOnlyOpenPublicRoomsWithJoinability() throws Exception {
 		mockMvc.perform(get("/api/v1/rooms").with(user("viewer@example.com")))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.items", hasSize(3)))
+			.andExpect(jsonPath("$.items", hasSize(4)))
 			.andExpect(jsonPath("$.items[0].id").value(14))
 			.andExpect(jsonPath("$.items[0].currentMembers").value(2))
 			.andExpect(jsonPath("$.items[0].joinable").value(false))
@@ -41,8 +41,21 @@ class RoomListControllerIntegrationTests {
 			.andExpect(jsonPath("$.items[2].currentMembers").value(1))
 			.andExpect(jsonPath("$.items[2].createdAt").exists())
 			.andExpect(jsonPath("$.items[2].joinable").value(true))
-			.andExpect(jsonPath("$.page.totalElements").value(3))
+			.andExpect(jsonPath("$.page.totalElements").value(4))
 			.andExpect(jsonPath("$.page.totalPages").value(1));
+	}
+
+	@DisplayName("閲覧者からのブロックも参加不可として返す")
+	@Test
+	void detectsBlocksCreatedByViewer() throws Exception {
+		mockMvc.perform(get("/api/v1/rooms")
+				.param("categoryId", "2")
+				.with(user("viewer@example.com")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items", hasSize(1)))
+			.andExpect(jsonPath("$.items[0].id").value(15))
+			.andExpect(jsonPath("$.items[0].joinable").value(false))
+			.andExpect(jsonPath("$.items[0].joinRestriction").value("BLOCKED"));
 	}
 
 	@DisplayName("作業スタイルで絞り込みページングできる")
@@ -76,6 +89,13 @@ class RoomListControllerIntegrationTests {
 	@Test
 	void rejectsUnknownAuthenticatedUser() throws Exception {
 		mockMvc.perform(get("/api/v1/rooms").with(user("unknown@example.com")))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@DisplayName("停止中の認証ユーザーは401を返す")
+	@Test
+	void rejectsSuspendedAuthenticatedUser() throws Exception {
+		mockMvc.perform(get("/api/v1/rooms").with(user("suspended@example.com")))
 			.andExpect(status().isUnauthorized());
 	}
 }
