@@ -7,7 +7,8 @@ import lustre/effect
 import gleam/io
 import lustre/element/html.{button, div, h1, h3, hr, span, style, text}
 
-import types/session.{type Session,type Token, type UserId, Guest, Authenticated}
+import types/user.{type UserId}
+import types/session.{type Session,type Token, Guest, Authenticated}
 import types/room.{
   type CategoryType,
   type WorkStyleType,

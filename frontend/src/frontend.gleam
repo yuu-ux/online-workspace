@@ -1,4 +1,3 @@
-import room
 import lustre/element
 import lustre/effect
 import lustre
@@ -10,6 +9,9 @@ import login
 import register
 import privacypolicy
 import create_room
+import room
+import report
+import invitation
 
 pub type Page {
   Home(home.Model)
@@ -18,6 +20,8 @@ pub type Page {
   Register(register.Model)
   CreateRoom(create_room.Model)
   Room(room.Model)
+  Report(report.Model)
+  Invitation(invitation.Model)
 }
 
 pub type Model {
@@ -33,6 +37,8 @@ pub type Msg {
   RegisterMsg(register.Msg)
   CreateRoomMsg(create_room.Msg)
   RoomMsg(room.Msg)
+  ReportMsg(report.Msg)
+  InvitationMsg(invitation.Msg)
 }
 
 fn init(_flag) -> #(Model, effect.Effect(Msg)) {
@@ -74,9 +80,9 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // -- login --
 
     Login(login_model), LoginMsg(login.ToHome) -> {
-      let #(init_login_model, _) = login.update(login_model, login.ToHome)
-      let #(init_home_model, _) = home.init(init_login_model.session)
-      #(Model(session: init_login_model.session, current_page: Home(init_home_model)), effect.none())
+      let #(update_login_model, _) = login.update(login_model, login.ToHome)
+      let #(init_home_model, _) = home.init(update_login_model.session)
+      #(Model(session: update_login_model.session, current_page: Home(init_home_model)), effect.none())
     }
 
     Login(_login_model), LoginMsg(login.ToRegister) -> {
@@ -143,6 +149,72 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, current_page: CreateRoom(update_create_room_model)), update_effect |> effect.map(CreateRoomMsg))
     }
 
+    // -- room --
+
+    Room(room_model), RoomMsg(room.ToHome) -> {
+      let #(update_room_model, _) = room.update(room_model, room.ToHome)
+      let #(init_home_model, _) = home.init(update_room_model.session)
+
+      #(Model(session: init_home_model.session, current_page: Home(init_home_model)), effect.none())
+    }
+
+    Room(room_model), RoomMsg(room.ToReport(user_id)) -> {
+      let #(update_room_model, update_effect) = room.update(room_model, room.ToReport(user_id))
+      let #(init_report_model, _) = report.init(update_room_model.session, update_room_model.room_id, user_id)
+      #(Model(..model, current_page: Report(init_report_model)), effect.none())
+    }
+
+    Room(room_model), RoomMsg(room.ToInvitation) -> {
+      let #(update_room_model, update_effect) = room.update(room_model, room.ToInvitation)
+
+      let #(init_invitation_model, _) = invitation.init(update_room_model.session, update_room_model.room_id)
+      #(Model(..model, current_page: Invitation(init_invitation_model)), effect.none())
+    }
+
+    // room other
+
+    Room (room_model), RoomMsg(other) -> {
+      let #(update_room_model, update_effect) = room.update(room_model, other)
+      #(Model(..model, current_page: Room(update_room_model)), update_effect |> effect.map(RoomMsg))
+    }
+
+    // -- report --
+
+    // Report(report_model), ReportMsg(report.ToHome) -> {
+    //   
+    // }
+
+    Report(report_model), ReportMsg(report.BackToRoom) -> {
+      let #(update_report_model, _) = report.update(report_model, report.BackToRoom)
+      let #(init_room_model, _) = room.init(update_report_model.session, update_report_model.room_id)
+      #(Model(..model, current_page: Room(init_room_model)), effect.none())
+    }
+
+    // report other
+
+    Report(report_model), ReportMsg(other) -> {
+      let #(update_report_model, update_effect) = report.update(report_model, other)
+      #(Model(..model, current_page: Report(update_report_model)), update_effect |> effect.map(ReportMsg))
+    }
+
+    // -- invitation --
+
+    Invitation(invitation_model), InvitationMsg(invitation.ToHome) -> {
+    }
+
+    Invitation(invitation_model), InvitationMsg(invitation.BackToRoom) -> {
+      let #(update_invitation_model, _) = invitation.update(invitation_model, invitation.BackToRoom)
+      let #(init_room_model, _) = room.init(update_invitation_model.session, update_invitation_model.room_id) 
+      #(Model(..model, current_page: Room(init_room_model)), effect.none())
+    }
+
+    // invitation other
+
+    Invitation(invitation_model), InvitationMsg(other) -> {
+      let #(update_invitation_model, update_effect) = invitation.update(invitation_model, other)
+      #(Model(..model, current_page: Invitation(update_invitation_model)), update_effect |> effect.map(InvitationMsg))
+    }
+
     // TODO
 
     // unreachables
@@ -166,6 +238,14 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       io.println("unreachables")
       #(model, effect.none())
     }
+    _, ReportMsg(_) -> {
+      io.println("unreachables")
+      #(model, effect.none())
+    }
+    _, InvitationMsg(_) -> {
+      io.println("unreachables")
+      #(model, effect.none())
+    }
   }
 }
 
@@ -185,6 +265,12 @@ fn view (model: Model) -> element.Element(Msg) {
     }
     Room(room_model) -> {
       room.view(room_model) |> element.map(RoomMsg)
+    }
+    Report(report_model) -> {
+      report.view(report_model) |> element.map(ReportMsg)
+    }
+    Invitation(invitation_model) -> {
+      invitation.view(invitation_model) |> element.map(InvitationMsg)
     }
     MyPage -> {
     }

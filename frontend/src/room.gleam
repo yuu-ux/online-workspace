@@ -7,26 +7,10 @@ import gleam/list
 import lustre/element/html.{button, div, text, input}
 
 import types/session.{type Session}
-import types/room.{
-  type CategoryType,
-  type WorkStyleType,
-  type VisibilityType,
-  type RoomId,
-  type RoomNameType,
-  type DescriptionType,
-  RoomNameType,
-  DescriptionType,
-  RoomId,
-  Cat1,
-  Cat2,
-  Cat3,
-  CasualChat,
-  Quiet,
-  Public,
-  Invite,
-  Friend,
-}
+import types/room.{type RoomId}
 
+import types/user.{type UserInfo, type UserId} as user_t
+import wrap/user.{GetUserInfoListAuthErr, get_all_user_info_list}
 
 pub type InputType {
   ChatMsg
@@ -44,6 +28,7 @@ pub type Model {
   Model(
     session: Session,
     room_id: RoomId,
+    member_list: List(UserInfo),
     chat_list: List(Chat), // 会話履歴表示用
     current_message_input: String,
     messages: List(String)
@@ -52,7 +37,9 @@ pub type Model {
 
 pub type Msg {
   ToHome
-  ToLogin
+  // ToLogin
+  ToInvitation
+  ToReport(UserInfo)
   InputUpdated(target: InputType, str: String)
   SubmitClicked
 }
@@ -68,18 +55,44 @@ fn room_send_msg_proc(
 }
 
 pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
-  #(
-    Model(
-      session: session,
-      room_id: room_id,
-      chat_list: [
-        // Chat(from: "Tom", timestamp: "2026-8-12", comment: "hello"),
-        // Chat(from: "Alice", timestamp: "2026-8-12", comment: "hello"),
-      ],
-      current_message_input: "",
-      messages: []),
-    effect.none()
-  )
+  case get_all_user_info_list(session, room_id) {
+    Ok(all_user_in_room) -> {
+      #(
+        Model(
+          session: session,
+          room_id: room_id,
+          member_list: all_user_in_room,
+          chat_list: [
+            // Chat(from: "Tom", timestamp: "2026-8-12", comment: "hello"),
+            // Chat(from: "Alice", timestamp: "2026-8-12", comment: "hello"),
+          ],
+          current_message_input: "",
+          messages: []),
+        effect.none()
+      )
+    }
+    Error(e) -> {
+      let err_msg = case e {
+        GetUserInfoListAuthErr -> {
+          "userの取得に失敗しました"
+        }
+      }
+      #(
+        Model(
+          session: session,
+          room_id: room_id,
+          member_list: [],
+          chat_list: [
+            // Chat(from: "Tom", timestamp: "2026-8-12", comment: "hello"),
+            // Chat(from: "Alice", timestamp: "2026-8-12", comment: "hello"),
+          ],
+          current_message_input: "",
+          messages: [err_msg]),
+        effect.none()
+      )
+
+    }
+  }
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
@@ -88,7 +101,15 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(model, effect.none())
     }
 
-    ToLogin -> {
+    // ToLogin -> {
+    //   #(model, effect.none())
+    // }
+
+    ToReport(user_id) -> {
+      #(model, effect.none())
+    }
+
+    ToInvitation -> {
       #(model, effect.none())
     }
 
@@ -119,7 +140,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         }
       }
     }
-
   }
 }
 
@@ -142,6 +162,17 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ],
       [
         text("Room"),
+        // 参加者一覧
+        div(
+          [],
+          [
+            div([], list.map(model.member_list, fn (member) {
+              div([], [text(member.name), button([on_click(ToReport(member))], [text("通報")])])
+            }))
+          ]
+        ),
+        button([on_click(ToInvitation)], [text("招待")]),
+        // chat欄
         div([], [
           div([],
             list.map(
@@ -158,6 +189,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
           ], [text("send")])
         ]),
         button([on_click(ToHome)], [text("home")]),
+        // エラー表示用
         div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
       ])
 

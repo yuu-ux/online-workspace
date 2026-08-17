@@ -4,9 +4,10 @@ import lustre/element
 import lustre/effect
 import gleam/io
 import gleam/list
-import lustre/element/html.{button, div, h1, h3, hr, span, style, text, input}
+import lustre/element/html.{button, div, text, input}
 
-import types/session.{type Session, Token, UserId}
+import types/session.{type Session} as session_t
+import wrap/session.{login_proc, DummyError}
 
 pub type InputType {
   Email
@@ -30,25 +31,6 @@ pub type Msg {
 
   InputUpdated(target: InputType, str: String)
   SubmitClicked
-}
-
-pub type LoginErr {
-  DummyError // TODO 後で消す
-}
-
-fn login_proc(email: String, password: String) -> Result(session.Session, LoginErr) {
-  // TODO SERVER API
-  case email, password {
-    "fail", _ -> {
-      Error(DummyError)
-    }
-    "tom@example.com", "0427" -> {
-      Ok(session.Authenticated(jwt: Token("toms jwt"), user_id: UserId("Tom")))
-    }
-    _, _ -> {
-      Ok(session.Authenticated(jwt: Token("dummy"), user_id: UserId("dummy_user id")))
-    }
-  }
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
@@ -110,14 +92,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     _ -> {
       io.println("hello")
-      #(Model(..model, session: session.Guest), effect.none())
+      #(Model(..model, session: session_t.Guest), effect.none())
     }
   }
 }
 
 pub fn view (model: Model) -> element.Element(Msg) {
   case model.session {
-    session.Guest -> {
+    session_t.Guest -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
@@ -145,7 +127,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ])
     }
 
-    session.Authenticated(jwt, user_id) -> {
+    session_t.Authenticated(jwt, user_id) -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],

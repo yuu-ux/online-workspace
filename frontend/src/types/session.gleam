@@ -1,9 +1,7 @@
+import types/user.{type UserId, UserId}
+
 pub type Token {
   Token(String)
-}
-
-pub type UserId {
-  UserId(String)
 }
 
 pub type Session {
@@ -22,3 +20,4 @@ pub fn stringify_session(session: Session) -> String {
     }
   }
 }
+
