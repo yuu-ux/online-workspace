@@ -1,12 +1,14 @@
 package com.example.online_workspace.services;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 import com.example.online_workspace.models.WithdrawalAccount;
 import com.example.online_workspace.repositories.AccountWithdrawalRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -15,21 +17,26 @@ import org.springframework.web.server.ResponseStatusException;
 public class AccountWithdrawalService {
 
 	private final AccountWithdrawalRepository repository;
-	private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+	private final PasswordEncoder passwordEncoder;
 
-	public AccountWithdrawalService(AccountWithdrawalRepository repository) {
+	public AccountWithdrawalService(AccountWithdrawalRepository repository, PasswordEncoder passwordEncoder) {
 		this.repository = repository;
+		this.passwordEncoder = passwordEncoder;
 	}
 
 	@Transactional
 	public void withdraw(String email, String password) {
-		WithdrawalAccount account = repository.findActiveByEmail(email)
+		WithdrawalAccount account = repository.findWithdrawableByEmail(email)
 			.orElseThrow(() -> new ResponseStatusException(
 				HttpStatus.CONFLICT,
 				"退会できるアカウントがありません"
 			));
 
-		if (!passwordMatches(password, account.passwordHash())) {
+		if (password.getBytes(UTF_8).length > 72) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "パスワードはUTF-8で72バイト以内で入力してください");
+		}
+
+		if (!passwordEncoder.matches(password, account.passwordHash())) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "パスワードが正しくありません");
 		}
 
@@ -41,12 +48,5 @@ public class AccountWithdrawalService {
 		repository.leaveActiveRooms(account.id(), withdrawnAt);
 		repository.finishActiveWorkSessions(account.id(), withdrawnAt);
 		repository.invalidateRoomInvites(account.id(), withdrawnAt);
-	}
-
-	private boolean passwordMatches(String rawPassword, String storedHash) {
-		String bcryptHash = storedHash.startsWith("{bcrypt}")
-			? storedHash.substring("{bcrypt}".length())
-			: storedHash;
-		return passwordEncoder.matches(rawPassword, bcryptHash);
 	}
 }

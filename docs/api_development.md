@@ -17,7 +17,7 @@ WebSocket のイベント契約は `docs/websocket_events.md` で管理する。
 1. 対象 Issue の受入条件を確認し、先に `docs/openapi.yaml` の operation と schema を更新する。
 2. Spring Boot の Controller、DTO、validation、security を契約に合わせて実装する。
 3. React の型または API client を OpenAPI から再生成し、画面実装を更新する。
-4. 正常系に加え、400、401、403、404、409、422、429 など対象 operation の異常系をテストする。
+4. 正常系に加え、400、401、403、404、409、422、429、500 など対象 operation の異常系をテストする。
 5. 次の lint を実行し、error がないことを確認する。
 
 ```bash
@@ -34,7 +34,8 @@ npx --yes openapi-typescript@7.13.0
 
 ## 認証とrate limit
 
-- Reactは最初に `GET /api/v1/auth/csrf` を呼び、返却されたtokenをsession認証の状態変更リクエストで `X-CSRF-TOKEN` headerへ設定する。
+- Reactは最初に `GET /api/v1/auth/csrf` を呼び、発行された `XSRF-TOKEN` cookieの値をsession認証の状態変更リクエストで `X-CSRF-TOKEN` headerへ設定する。
+- APIはSPA向けのCSRF request handlerを使用する。ReactやSwagger UIは `XSRF-TOKEN` cookieの値を `X-CSRF-TOKEN` headerへ設定する。
 - API keyの採点対象は `GET /rooms`、`POST /rooms`、`GET /rooms/{roomId}`、`PUT /rooms/{roomId}`、`DELETE /rooms/{roomId}` の5 operationとする。
 - 採点対象5 operationはsession認証またはAPI key認証を受け付ける。API keyはユーザーまたはservice principalへ紐付け、同じ認可ルールを適用する。
 - 採点対象5 operationにはkey単位のrate limitを適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。

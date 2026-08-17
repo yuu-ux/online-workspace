@@ -3,7 +3,19 @@
 ## カレントディレクトリ
 
 - OnlineWorkspaceApplication.java ... エントリーポイント(URLルーティング)
-- SwaggerUiSecurityConfig.java ...... OpenAPIの定義をUI上に表示するためのもの
+- configs/security/ApiSecurityConfig.java ... APIの認証・CSRF設定
+- configs/security/WebSecurityConfig.java ... Web・Swagger UIの認証設定
+
+## configs/securityディレクトリ
+
+セキュリティ設定（SecurityFilterChain）をまとめる場所
+
+## controllersディレクトリ
+
+- `controllers/api/`: JSONを返すREST Controller。URLは `/api/v1/**` とする。
+- `controllers/mvc/`: HTML画面を返すMVC Controller。React中心の現在は使用しない。
+
+認証系API（/api/v1/auth/**）のコントローラーは `controllers/api/auth/` にまとめる。
 
 <br>
 

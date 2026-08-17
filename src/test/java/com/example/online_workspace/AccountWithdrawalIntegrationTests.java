@@ -15,7 +15,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -34,6 +38,12 @@ class AccountWithdrawalIntegrationTests {
 	@Autowired
 	private AccountWithdrawalRepository repository;
 
+	@Autowired
+	private SessionRegistry sessionRegistry;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
 	@BeforeEach
 	void prepareDatabase() {
 		createTables();
@@ -49,9 +59,14 @@ class AccountWithdrawalIntegrationTests {
 		jdbcTemplate.update("INSERT INTO room_invites (created_by, invalidated_at) VALUES (?, NULL)", 1);
 
 		MockHttpSession session = new MockHttpSession();
+		UserDetails principal = User.withUsername(EMAIL)
+			.password(PASSWORD)
+			.roles("USER")
+			.build();
+		sessionRegistry.registerNewSession("other-session", principal);
 		mockMvc.perform(delete("/api/v1/users/me")
 				.session(session)
-				.with(user(EMAIL))
+				.with(user(principal))
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"password\":\"correct-password\"}"))
@@ -63,6 +78,7 @@ class AccountWithdrawalIntegrationTests {
 		assertThat(count("SELECT COUNT(*) FROM work_sessions WHERE user_id = 1 AND ended_at IS NOT NULL")).isOne();
 		assertThat(count("SELECT COUNT(*) FROM room_invites WHERE created_by = 1 AND invalidated_at IS NOT NULL")).isOne();
 		assertThat(session.isInvalid()).isTrue();
+		assertThat(sessionRegistry.getSessionInformation("other-session").isExpired()).isTrue();
 	}
 
 	@Test
@@ -96,8 +112,63 @@ class AccountWithdrawalIntegrationTests {
 		assertThat(repository.findActiveByEmail(EMAIL)).isPresent();
 	}
 
+	@Test
+	void withdrawalAllowsWhitespaceOnlyRegisteredPassword() throws Exception {
+		String whitespacePassword = "        ";
+		insertUser(1, EMAIL, whitespacePassword);
+
+		mockMvc.perform(delete("/api/v1/users/me")
+				.with(user(EMAIL))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"password\":\"        \"}"))
+			.andExpect(status().isNoContent());
+
+		assertThat(repository.findWithdrawableByEmail(EMAIL)).isEmpty();
+	}
+
+	@Test
+	void withdrawalRejectsPasswordOver72Utf8Bytes() throws Exception {
+		insertUser(1, EMAIL);
+
+		mockMvc.perform(delete("/api/v1/users/me")
+				.with(user(EMAIL))
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"password\":\"あああああああああああああああああああああああああ\"}"))
+			.andExpect(status().isBadRequest());
+
+		assertThat(repository.findWithdrawableByEmail(EMAIL)).isPresent();
+	}
+
+	@Test
+	void passwordEncoderRejectsInputBeyondBcryptLimit() {
+		String password = "a".repeat(72);
+
+		assertThat(passwordEncoder.matches(password + "a", passwordEncoder.encode(password))).isFalse();
+	}
+
+	@Test
+	void authenticationLookupRejectsUnavailableAccounts() {
+		insertUser(1, EMAIL);
+		insertUser(2, "suspended@example.com");
+		insertUser(3, "banned@example.com");
+		jdbcTemplate.update(
+			"UPDATE users SET suspended_until = DATEADD('DAY', 1, CURRENT_TIMESTAMP) WHERE id = 2"
+		);
+		jdbcTemplate.update("UPDATE users SET account_status_id = 3 WHERE id = 3");
+
+		assertThat(repository.findActiveByEmail(EMAIL)).isPresent();
+		assertThat(repository.findActiveByEmail("suspended@example.com")).isEmpty();
+		assertThat(repository.findActiveByEmail("banned@example.com")).isEmpty();
+	}
+
 	private void insertUser(long id, String email) {
-		String passwordHash = new BCryptPasswordEncoder().encode(PASSWORD);
+		insertUser(id, email, PASSWORD);
+	}
+
+	private void insertUser(long id, String email, String password) {
+		String passwordHash = new BCryptPasswordEncoder().encode(password);
 		jdbcTemplate.update("""
 			INSERT INTO users (
 				id, name, email, password_hash, deleted_at, created_at, updated_at
@@ -125,6 +196,8 @@ class AccountWithdrawalIntegrationTests {
 				name VARCHAR(100) NOT NULL,
 				email VARCHAR(255) NOT NULL UNIQUE,
 				password_hash VARCHAR(255) NOT NULL,
+				account_status_id SMALLINT NOT NULL DEFAULT 1,
+				suspended_until TIMESTAMP WITH TIME ZONE,
 				deleted_at TIMESTAMP WITH TIME ZONE,
 				created_at TIMESTAMP WITH TIME ZONE NOT NULL,
 				updated_at TIMESTAMP WITH TIME ZONE NOT NULL
