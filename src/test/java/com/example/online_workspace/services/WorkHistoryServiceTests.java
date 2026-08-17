@@ -49,7 +49,7 @@ class WorkHistoryServiceTests {
 			"FOCUS",
 			8,
 			2,
-			"PUBLIC",
+			"FRIENDS_ONLY",
 			"OPEN",
 			30L,
 			"Alice",
@@ -57,7 +57,9 @@ class WorkHistoryServiceTests {
 			Instant.parse("2026-08-01T00:00:00Z"),
 			startedAt,
 			endedAt,
-			5400L
+			5400L,
+			false,
+			true
 		);
 
 		when(repository.findActiveUserIdByEmail("me@example.com")).thenReturn(1L);
@@ -79,6 +81,7 @@ class WorkHistoryServiceTests {
 		assertThat(result.items().getFirst().participants()).extracting("name")
 			.containsExactly("Me", "Tom");
 		assertThat(result.items().getFirst().durationSeconds()).isEqualTo(5400L);
+		assertThat(result.items().getFirst().room().joinable()).isTrue();
 	}
 
 	@Test

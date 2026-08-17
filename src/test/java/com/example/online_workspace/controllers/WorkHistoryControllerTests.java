@@ -42,7 +42,7 @@ class WorkHistoryControllerTests {
 			new SessionRow(
 				10L, 20L, "朝活ルーム", 3L, "資格勉強", "試験勉強", 2,
 				"FOCUS", 8, 2, "PUBLIC", "OPEN", 30L, "Alice", null,
-				Instant.parse("2026-08-01T00:00:00Z"), startedAt, endedAt, 5400L
+				Instant.parse("2026-08-01T00:00:00Z"), startedAt, endedAt, 5400L, false, false
 			)
 		));
 		when(repository.findParticipants(20L, startedAt, endedAt)).thenReturn(List.of(

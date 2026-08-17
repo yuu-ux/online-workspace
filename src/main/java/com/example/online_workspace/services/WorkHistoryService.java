@@ -56,7 +56,7 @@ public class WorkHistoryService {
 			categoryId,
 			size,
 			offset
-		).stream().map(this::toWorkSession).toList();
+		).stream().map(row -> toWorkSession(userId, row)).toList();
 
 		int totalPages = totalElements == 0 ? 0 : (int) ((totalElements + size - 1) / size);
 		PageMeta pageMeta = new PageMeta(
@@ -101,7 +101,7 @@ public class WorkHistoryService {
 		return new WorkSessionSummary(totalDurationSeconds, byCategory, byDate);
 	}
 
-	private WorkSession toWorkSession(SessionRow row) {
+	private WorkSession toWorkSession(long userId, SessionRow row) {
 		RoomCategory category = new RoomCategory(
 			row.categoryId(),
 			row.categoryName(),
@@ -113,7 +113,7 @@ public class WorkHistoryService {
 			row.creatorName(),
 			row.creatorIconUrl()
 		);
-		String joinRestriction = joinRestriction(row);
+		String joinRestriction = joinRestriction(userId, row);
 		RoomSummary room = new RoomSummary(
 			row.roomId(),
 			row.roomName(),
@@ -149,16 +149,20 @@ public class WorkHistoryService {
 		);
 	}
 
-	private String joinRestriction(SessionRow row) {
+	private String joinRestriction(long userId, SessionRow row) {
 		if (!"OPEN".equals(row.roomStatus())) {
 			return "CLOSED";
+		}
+		if (row.blocked()) {
+			return "BLOCKED";
 		}
 		if (row.currentMembers() >= row.maxMembers()) {
 			return "FULL";
 		}
 		return switch (row.visibility()) {
 			case "INVITE_ONLY" -> "INVITE_REQUIRED";
-			case "FRIENDS_ONLY" -> "FRIEND_REQUIRED";
+			case "FRIENDS_ONLY" ->
+				userId == row.creatorId() || row.creatorFriend() ? null : "FRIEND_REQUIRED";
 			default -> null;
 		};
 	}

@@ -12,10 +12,13 @@ import org.apache.ibatis.annotations.Select;
 public interface WorkHistoryRepository {
 
 	@Select("""
-		SELECT id
-		FROM users
-		WHERE email = #{email}
-		  AND deleted_at IS NULL
+		SELECT u.id
+		FROM users u
+		JOIN account_statuses s ON s.id = u.account_status_id
+		WHERE u.email = #{email}
+		  AND u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
 		""")
 	Long findActiveUserIdByEmail(@Param("email") String email);
 
@@ -66,7 +69,24 @@ public interface WorkHistoryRepository {
 		  r.created_at AS room_created_at,
 		  ws.started_at,
 		  ws.ended_at,
-		  CAST(GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at))) AS BIGINT) AS duration_seconds
+		  CAST(GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at))) AS BIGINT) AS duration_seconds,
+		  EXISTS (
+		    SELECT 1
+		    FROM room_members active_member
+		    JOIN blocks b
+		      ON (b.blocker_user_id = #{userId} AND b.blocked_user_id = active_member.user_id)
+		      OR (b.blocked_user_id = #{userId} AND b.blocker_user_id = active_member.user_id)
+		    WHERE active_member.room_id = r.id
+		      AND active_member.left_at IS NULL
+		  ) AS blocked,
+		  EXISTS (
+		    SELECT 1
+		    FROM friends f
+		    JOIN friend_statuses fs ON fs.id = f.status_id
+		    WHERE f.user_id = r.created_by
+		      AND f.friend_user_id = #{userId}
+		      AND fs.code = 'ACTIVE'
+		  ) AS creator_friend
 		FROM work_sessions ws
 		JOIN rooms r ON r.id = ws.room_id
 		JOIN room_categories rc ON rc.id = ws.category_id
@@ -104,8 +124,8 @@ public interface WorkHistoryRepository {
 		JOIN users u ON u.id = rm.user_id
 		LEFT JOIN profiles profile ON profile.user_id = u.id
 		WHERE rm.room_id = #{roomId}
-		  AND rm.joined_at <= COALESCE(#{endedAt}, CURRENT_TIMESTAMP)
-		  AND (rm.left_at IS NULL OR rm.left_at >= #{startedAt})
+		  AND rm.joined_at < COALESCE(#{endedAt}, CURRENT_TIMESTAMP)
+		  AND (rm.left_at IS NULL OR rm.left_at > #{startedAt})
 		ORDER BY u.name, u.id
 		""")
 	List<ParticipantRow> findParticipants(
@@ -183,7 +203,9 @@ public interface WorkHistoryRepository {
 		Instant roomCreatedAt,
 		Instant startedAt,
 		Instant endedAt,
-		long durationSeconds
+		long durationSeconds,
+		boolean blocked,
+		boolean creatorFriend
 	) {
 	}
 

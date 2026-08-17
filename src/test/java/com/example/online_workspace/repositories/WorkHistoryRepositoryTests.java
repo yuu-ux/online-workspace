@@ -26,6 +26,7 @@ class WorkHistoryRepositoryTests {
 	@Test
 	void loadsACompleteHistoryRowAndOverlappingParticipants() {
 		assertThat(repository.findActiveUserIdByEmail("me@example.com")).isEqualTo(10L);
+		assertThat(repository.findActiveUserIdByEmail("suspended@example.com")).isNull();
 		assertThat(repository.countSessions(10L, null, null, null)).isOne();
 
 		var sessions = repository.findSessions(10L, null, null, null, 20, 0L);
@@ -34,6 +35,8 @@ class WorkHistoryRepositoryTests {
 		assertThat(sessions.getFirst().roomName()).isEqualTo("朝活ルーム");
 		assertThat(sessions.getFirst().categoryName()).isEqualTo("開発");
 		assertThat(sessions.getFirst().durationSeconds()).isEqualTo(5400L);
+		assertThat(sessions.getFirst().blocked()).isTrue();
+		assertThat(sessions.getFirst().creatorFriend()).isTrue();
 		assertThat(repository.findParticipants(20L, STARTED_AT, ENDED_AT))
 			.extracting("name")
 			.containsExactly("共同作業者", "自分");
