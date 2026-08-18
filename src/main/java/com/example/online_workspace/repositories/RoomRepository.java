@@ -72,7 +72,7 @@ public interface RoomRepository {
 		String categoryDescription,
 		int categorySortOrder,
 		String workStyle,
-		int maxMembers,
+		short maxMembers,
 		String visibility,
 		String status,
 		long creatorId,
