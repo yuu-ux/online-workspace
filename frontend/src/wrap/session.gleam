@@ -1,5 +1,5 @@
 import types/session.{type Session, Authenticated, Token}
-import types/user.{type UserId, UserId}
+import types/user.{type UserId, UserId, UserInfo}
 
 pub type LoginErr {
   DummyError // TODO 後で消す
@@ -14,10 +14,10 @@ pub fn login_proc(email: String, password: String) -> Result(Session, LoginErr) 
       Error(DummyError)
     }
     "tom@example.com", "0427" -> {
-      Ok(Authenticated(jwt: Token("toms jwt"), user_id: UserId("Tom")))
+      Ok(Authenticated(jwt: Token("toms jwt"), user_id: UserInfo(name: "Tom", user_id: UserId("Toms UserId"))))
     }
     _, _ -> {
-      Ok(Authenticated(jwt: Token("dummy"), user_id: UserId("dummy_user id")))
+      Ok(Authenticated(jwt: Token("dummy"), user_id: UserInfo(name: "dummy", user_id: UserId("dummy_user id"))))
     }
   }
 }

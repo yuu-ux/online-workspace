@@ -85,9 +85,9 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
         effect.none()
       )
     }
-    Authenticated (jwt, user_id) -> {
+    Authenticated (jwt, user_info) -> {
       #(
-        Model(session: session, rooms: get_rooms(jwt, user_id)),
+        Model(session: session, rooms: get_rooms(jwt, user_info.user_id)),
         effect.none()
       )
     }

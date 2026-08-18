@@ -51,3 +51,9 @@ pub fn invite_user_to_room(session: Session, room_id: RoomId, user: UserId) -> R
   // TODO SERVER API
   Ok(Nil)
 }
+
+/// フレンドを取得する
+pub fn get_friends(session: Session) -> List(UserInfo) {
+  // TODO SERVER API
+  []
+}

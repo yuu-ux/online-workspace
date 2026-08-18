@@ -3,7 +3,7 @@ import lustre/effect
 import lustre
 import gleam/io
 
-import types/session.{stringify_session}
+import types/session
 
 import pages/home
 import pages/login
@@ -13,10 +13,17 @@ import pages/create_room
 import pages/room
 import pages/report
 import pages/invitation
+import pages/mypage
+import pages/friend
+import pages/profile
+import pages/history
 
 pub type Page {
   Home(home.Model)
-  MyPage
+  MyPage(mypage.Model)
+  Friend(friend.Model)
+  Profile(profile.Model)
+  History(history.Model)
   Login(login.Model)
   Register(register.Model)
   CreateRoom(create_room.Model)
@@ -33,6 +40,10 @@ pub type Model {
 }
 
 pub type Msg {
+  MyPageMsg(mypage.Msg)
+  FriendMsg(friend.Msg)
+  ProfileMsg(profile.Msg)
+  HistoryMsg(history.Msg)
   HomeMsg(home.Msg)
   LoginMsg(login.Msg)
   RegisterMsg(register.Msg)
@@ -55,8 +66,87 @@ fn init(_flag) -> #(Model, effect.Effect(Msg)) {
 fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   io.println("--- Update ---")
   case model.current_page, msg {
+
+    // -- mypage --
+
+    MyPage(mypage_model), MyPageMsg(mypage.ToHome) -> {
+      let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToHome)
+      let #(init_home_model, _) = home.init(update_mypage_model.session)
+      #(Model(session: update_mypage_model.session, current_page: Home(init_home_model)), effect.none())
+    }
+
+    MyPage(mypage_model), MyPageMsg(mypage.ToFriend) -> {
+      let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToFriend)
+      let #(init_friend_model, _) = friend.init(update_mypage_model.session)
+      #(Model(session: update_mypage_model.session, current_page: Friend(init_friend_model)), effect.none())
+    }
+
+    MyPage(mypage_model), MyPageMsg(mypage.ToHistory) -> {
+      let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToHistory)
+      let #(init_history_model, _) = history.init(update_mypage_model.session)
+      #(Model(session: update_mypage_model.session, current_page: History(init_history_model)), effect.none())
+    }
+
+    MyPage(mypage_model), MyPageMsg(mypage.ToProfile) -> {
+      let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToHistory)
+      let #(init_profile_model, _) = profile.init(update_mypage_model.session)
+      #(Model(session: init_profile_model.session, current_page: Profile(init_profile_model)), effect.none())
+    }
+
+    // mypage other
+
+    MyPage(mypage_model), MyPageMsg(other) -> {
+      let #(update_mypage_model, update_effect) = mypage.update(mypage_model, other)
+      #(Model(..model, current_page: MyPage(update_mypage_model)), update_effect |> effect.map(MyPageMsg))
+    }
+
+    // -- friend --
+
+    Friend(friend_model), FriendMsg(friend.ToMyPage) -> {
+      let #(update_friend_model, _) = friend.update(friend_model, friend.ToMyPage)
+      let #(init_mypage_model, _) = mypage.init(update_friend_model.session)
+      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
+    }
+
+    Friend(friend_model), FriendMsg(friend.ToHome) -> {
+
+    }
+
+    // friend other
+
+    // -- profile --
+
+    Profile(profile_model), ProfileMsg(profile.ToMyPage) -> {
+      let #(update_profile_model, _) = profile.update(profile_model, profile.ToMyPage)
+      let #(init_mypage_model, _) = mypage.init(update_profile_model.session)
+      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
+    }
+
+    Profile(profile_model), ProfileMsg(profile.ToHome) -> {
+
+    }
+
+    // profile other
+
+    // -- history --
+
+    History(history_model), HistoryMsg(history.ToMyPage) -> {
+      let #(update_history_model, _) = history.update(history_model, history.ToMyPage)
+      let #(init_mypage_model, _) = mypage.init(update_history_model.session)
+      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
+    }
+
+    History(history_model), HistoryMsg(history.ToHome) -> {
+
+    }
+
+    // history other
+
+
     // -- home --
-    Home(_), HomeMsg(home.ToMyPage) -> {
+    Home(home_model), HomeMsg(home.ToMyPage) -> {
+      let #(init_my_page, _) = mypage.init(home_model.session)
+      #(Model(..model, current_page: MyPage(init_my_page)), effect.none())
     }
 
     Home(_), HomeMsg(home.ToLogin) -> {
@@ -201,6 +291,9 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // -- invitation --
 
     Invitation(invitation_model), InvitationMsg(invitation.ToHome) -> {
+      let #(update_invitation_model, _) = invitation.update(invitation_model, invitation.ToHome)
+      let #(init_home_model, _) = home.init(update_invitation_model.session)
+      #(Model(session: update_invitation_model.session, current_page: Home(init_home_model)), effect.none())
     }
 
     Invitation(invitation_model), InvitationMsg(invitation.BackToRoom) -> {
@@ -247,6 +340,22 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       io.println("unreachables")
       #(model, effect.none())
     }
+    _, MyPageMsg(_) -> {
+      io.println("unreachables")
+      #(model, effect.none())
+    }
+    _, FriendMsg(_) -> {
+      io.println("unreachables")
+      #(model, effect.none())
+    }
+    _, ProfileMsg(_) -> {
+      io.println("unreachables")
+      #(model, effect.none())
+    }
+    _, HistoryMsg(_) -> {
+      io.println("unreachables")
+      #(model, effect.none())
+    }
   }
 }
 
@@ -273,7 +382,17 @@ fn view (model: Model) -> element.Element(Msg) {
     Invitation(invitation_model) -> {
       invitation.view(invitation_model) |> element.map(InvitationMsg)
     }
-    MyPage -> {
+    MyPage(mypage_model) -> {
+      mypage.view(mypage_model) |> element.map(MyPageMsg)
+    }
+    Friend(friend_model) -> {
+      friend.view(friend_model) |> element.map(FriendMsg)
+    }
+    Profile(profile_model) -> {
+      profile.view(profile_model) |> element.map(ProfileMsg)
+    }
+    History(history_model) -> {
+      history.view(history_model) |> element.map(HistoryMsg)
     }
   }
 }
