@@ -24,6 +24,13 @@ public class RoomService {
 		if (creatorId == null) {
 			throw new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "認証が必要です。");
 		}
+		if (!repository.isActiveCategory(command.categoryId())) {
+			throw new ApiException(
+				HttpStatus.BAD_REQUEST,
+				"INVALID_CATEGORY",
+				"利用可能なカテゴリを指定してください。"
+			);
+		}
 
 		RoomDraft room = new RoomDraft(
 			command.name(),
@@ -34,15 +41,7 @@ public class RoomService {
 			command.maxMembers(),
 			command.visibility()
 		);
-		int inserted = repository.insert(room);
-		if (inserted != 1) {
-			throw new ApiException(
-				HttpStatus.BAD_REQUEST,
-				"INVALID_CATEGORY",
-				"利用可能なカテゴリを指定してください。"
-			);
-		}
-		if (room.getId() == null) {
+		if (repository.insert(room) != 1 || room.getId() == null) {
 			throw new IllegalStateException("Room was not created");
 		}
 		if (repository.insertCreatorMembership(room.getId(), creatorId) != 1) {

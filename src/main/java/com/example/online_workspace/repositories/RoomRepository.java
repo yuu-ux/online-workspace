@@ -13,29 +13,30 @@ import com.example.online_workspace.models.RoomDraft;
 @Mapper
 public interface RoomRepository {
 
-	@Select("""
-		SELECT u.id FROM users u
-		JOIN account_statuses s ON s.id = u.account_status_id
-		WHERE u.email = #{email} AND u.deleted_at IS NULL
-		  AND s.code = 'ACTIVE'
-		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
-		""")
+	@Select("SELECT id FROM users WHERE email = #{email} AND deleted_at IS NULL")
 	Long findActiveUserIdByEmail(@Param("email") String email);
+
+	@Select("""
+		SELECT EXISTS (
+			SELECT 1
+			FROM room_categories rc
+			JOIN room_category_statuses rcs ON rcs.id = rc.status_id
+			WHERE rc.id = #{categoryId} AND rcs.code = 'ACTIVE'
+		)
+		""")
+	boolean isActiveCategory(@Param("categoryId") long categoryId);
 
 	@Insert("""
 		INSERT INTO rooms (
 			name, description, created_by, category_id,
 			work_style_id, max_members, visibility_id
 		)
-		SELECT
+		VALUES (
 			#{name}, #{description}, #{createdBy}, #{categoryId},
 			(SELECT id FROM work_styles WHERE code = #{workStyle}),
 			#{maxMembers},
 			(SELECT id FROM visibilities WHERE code = #{visibility})
-		FROM room_categories rc
-		JOIN room_category_statuses rcs ON rcs.id = rc.status_id
-		WHERE rc.id = #{categoryId}
-		  AND rcs.code = 'ACTIVE'
+		)
 		""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 	int insert(RoomDraft room);

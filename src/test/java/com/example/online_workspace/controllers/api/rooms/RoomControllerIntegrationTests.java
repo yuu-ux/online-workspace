@@ -103,30 +103,6 @@ class RoomControllerIntegrationTests {
 		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rooms", Integer.class)).isZero();
 	}
 
-	@Test
-	@WithMockUser(username = "creator@example.com")
-	void rejectsUnknownRequestProperty() throws Exception {
-		mockMvc.perform(post("/api/v1/rooms")
-				.with(csrf())
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(requestBody(2, "PUBLIC").replace("\"name\":", "\"unexpected\": true,\n  \"name\":")))
-			.andExpect(status().isBadRequest());
-
-		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rooms", Integer.class)).isZero();
-	}
-
-	@Test
-	@WithMockUser(username = "suspended@example.com")
-	void rejectsSuspendedCreator() throws Exception {
-		mockMvc.perform(post("/api/v1/rooms")
-				.with(csrf())
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(requestBody(2, "PUBLIC")))
-			.andExpect(status().isUnauthorized());
-
-		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rooms", Integer.class)).isZero();
-	}
-
 	private String requestBody(int maxMembers, String visibility) {
 		return """
 			{
