@@ -1,6 +1,7 @@
 package com.example.online_workspace.repositories.users;
 
 import com.example.online_workspace.models.users.UserAccount;
+import com.example.online_workspace.models.users.UserAuthentication;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -20,6 +21,28 @@ public interface UserRepository {
 	 */
 	@Select("SELECT EXISTS (SELECT 1 FROM users WHERE email = #{email})")
 	boolean existsByEmail(@Param("email") String email);
+
+	/**
+	 * ログインに必要なユーザー情報を取得する。
+	 *
+	 * @param email 正規化済みのメールアドレス
+	 * @return ユーザー情報。未登録の場合はnull
+	 */
+	@Select("""
+		SELECT u.id,
+		       u.name,
+		       u.email,
+		       u.password_hash,
+		       r.code AS role,
+		       s.code AS account_status,
+		       u.suspended_until
+		FROM users u
+		JOIN roles r ON r.id = u.role_id
+		JOIN account_statuses s ON s.id = u.account_status_id
+		WHERE u.email = #{email}
+		  AND u.deleted_at IS NULL
+		""")
+	UserAuthentication findByEmail(@Param("email") String email);
 
 	/**
 	 * ユーザーの認証情報を登録する。

@@ -1,5 +1,6 @@
 package com.example.online_workspace.controllers.api.auth;
 
+import com.example.online_workspace.models.users.AuthenticatedUser;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +27,9 @@ public class SessionController {
 			&& authentication.isAuthenticated()
 			&& !(authentication instanceof AnonymousAuthenticationToken);
 
-		return new SessionStatusResponse(authenticated, null);
+		AuthenticatedUser user = authentication != null && authentication.getPrincipal() instanceof AuthenticatedUser authenticatedUser
+			? authenticatedUser
+			: null;
+		return new SessionStatusResponse(authenticated, user);
 	}
 }

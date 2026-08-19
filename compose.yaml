@@ -38,6 +38,9 @@ services:
       DB_PASSWORD: password
       MAIL_HOST: maildev
       MAIL_PORT: 1025
+      SESSION_COOKIE_HTTP_ONLY: ${SESSION_COOKIE_HTTP_ONLY:-true}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SESSION_COOKIE_SAME_SITE: ${SESSION_COOKIE_SAME_SITE:-lax}
     volumes:
       - ./build.gradle:/app/build.gradle:ro
       - ./settings.gradle:/app/settings.gradle:ro

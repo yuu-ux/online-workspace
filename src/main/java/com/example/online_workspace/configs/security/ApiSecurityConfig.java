@@ -9,6 +9,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.context.SecurityContextRepository;
 
 /**
  * API向けの認証・認可とCSRF保護を構成する。
@@ -21,12 +24,17 @@ public class ApiSecurityConfig {
 	 *
 	 * @param http HTTPセキュリティの設定オブジェクト
 	 * @param apiErrorWriter APIエラーレスポンスの出力処理
+	 * @param securityContextRepository セキュリティコンテキストの保存先
 	 * @return API用のSecurityFilterChain
 	 * @throws Exception セキュリティ設定に失敗した場合
 	 */
 	@Bean
 	@Order(1)
-	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ApiErrorWriter apiErrorWriter) throws Exception {
+	public SecurityFilterChain apiSecurityFilterChain(
+		HttpSecurity http,
+		ApiErrorWriter apiErrorWriter,
+		SecurityContextRepository securityContextRepository
+	) throws Exception {
 		CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 		csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
 		CsrfTokenRequestAttributeHandler csrfRequestHandler = new CsrfTokenRequestAttributeHandler();
@@ -46,6 +54,9 @@ public class ApiSecurityConfig {
 				).permitAll()
 				.anyRequest().authenticated()
 			)
+			.securityContext(securityContext -> securityContext
+				.securityContextRepository(securityContextRepository)
+			)
 			.exceptionHandling(exceptions -> exceptions
 				.authenticationEntryPoint((request, response, exception) -> apiErrorWriter.write(
 					request,
@@ -64,5 +75,10 @@ public class ApiSecurityConfig {
 			);
 
 		return http.build();
+	}
+
+	@Bean
+	public SessionAuthenticationStrategy sessionAuthenticationStrategy() {
+		return new ChangeSessionIdAuthenticationStrategy();
 	}
 }
