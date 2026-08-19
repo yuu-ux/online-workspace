@@ -89,10 +89,17 @@ class UserRegistrationControllerIntegrationTests {
 			.andExpect(status().isUnprocessableEntity());
 	}
 
-	@DisplayName("bcryptの72バイト制限を超えるパスワードではユーザーを登録できない")
+	@DisplayName("ASCII以外を含むパスワードではユーザーを登録できない")
 	@Test
-	void rejectRegistrationWithPasswordOverBcryptByteLimit() throws Exception {
-		performRegister("テストユーザー", uniqueEmail(), "あ".repeat(25))
+	void rejectRegistrationWithNonAsciiPassword() throws Exception {
+		performRegister("テストユーザー", uniqueEmail(), "password-あ")
+			.andExpect(status().isUnprocessableEntity());
+	}
+
+	@DisplayName("72文字を超えるパスワードではユーザーを登録できない")
+	@Test
+	void rejectRegistrationWithPasswordOver72Characters() throws Exception {
+		performRegister("テストユーザー", uniqueEmail(), "a".repeat(73))
 			.andExpect(status().isUnprocessableEntity());
 	}
 
@@ -139,6 +146,18 @@ class UserRegistrationControllerIntegrationTests {
 			.andExpect(jsonPath("$.code").value("DUPLICATE_EMAIL"));
 	}
 
+	@DisplayName("未定義の項目を含む登録リクエストは拒否される")
+	@Test
+	void rejectRegistrationWithUnknownProperty() throws Exception {
+		String email = uniqueEmail();
+
+		performRegisterJson("""
+			{"name":"テストユーザー","email":"%s","password":"password-123","pasword":"typo"}
+			""".formatted(email))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("MALFORMED_JSON"));
+	}
+
 	@DisplayName("CSRFトークンなしのユーザー登録は拒否される")
 	@Test
 	void rejectRegistrationWithoutCsrfToken() throws Exception {
@@ -160,6 +179,10 @@ class UserRegistrationControllerIntegrationTests {
 		String email,
 		String password
 	) throws Exception {
+		return performRegisterJson(registerJson(name, email, password));
+	}
+
+	private org.springframework.test.web.servlet.ResultActions performRegisterJson(String json) throws Exception {
 		MvcResult csrfResponse = mockMvc.perform(get("/api/v1/auth/csrf"))
 			.andExpect(status().isNoContent())
 			.andReturn();
@@ -171,7 +194,7 @@ class UserRegistrationControllerIntegrationTests {
 				.cookie(xsrfCookie)
 				.header("X-CSRF-TOKEN", xsrfCookie.getValue())
 				.contentType(APPLICATION_JSON)
-				.content(registerJson(name, email, password)));
+				.content(json));
 	}
 
 	private String registerJson(String name, String email, String password) {
