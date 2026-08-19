@@ -238,7 +238,7 @@ public class GlobalApiExceptionHandler {
 			case "NotBlank", "NotEmpty", "NotNull" -> "REQUIRED";
 			case "Min", "Max", "DecimalMin", "DecimalMax", "Positive", "PositiveOrZero",
 				"Negative", "NegativeOrZero" -> "RANGE";
-			case "Size", "MaxUtf8ByteLength" -> "SIZE";
+			case "Size" -> "SIZE";
 			case "Email" -> "FORMAT";
 			case "Pattern" -> "PATTERN";
 			default -> "INVALID";

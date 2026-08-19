@@ -180,8 +180,8 @@ function validateRegistrationForm(form: RegistrationForm): RegistrationErrors {
   }
   if (form.password.length < 8) {
     errors.password = "パスワードは8文字以上で入力してください。";
-  } else if (new TextEncoder().encode(form.password).length > 72) {
-    errors.password = "パスワードはUTF-8換算で72バイト以内で入力してください。";
+  } else if (!/^[\x21-\x7E]+$/.test(form.password)) {
+    errors.password = "パスワードは半角の英字・数字・記号（空白を除く）で入力してください。";
   }
   if (form.password !== form.passwordConfirmation) {
     errors.passwordConfirmation = "パスワードが一致しません。";

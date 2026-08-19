@@ -1427,7 +1427,8 @@ components:
           format: password
           minLength: 8
           maxLength: 72
-          description: UTF-8換算で72バイト以内
+          pattern: '^[\x21-\x7E]+$'
+          description: 半角の英字・数字・記号（空白を除く）で8〜72文字
           writeOnly: true
 
     LoginRequest:
