@@ -66,12 +66,12 @@ paths:
           description: ユーザー登録完了。ログインセッションは作成しない
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
 
   /auth/login:
     post:
@@ -1427,6 +1427,7 @@ components:
           format: password
           minLength: 8
           maxLength: 72
+          description: UTF-8換算で72バイト以内
           writeOnly: true
 
     LoginRequest:
