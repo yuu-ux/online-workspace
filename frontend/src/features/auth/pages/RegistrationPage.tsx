@@ -157,6 +157,11 @@ export function RegistrationPage() {
         <a className="secondary-button" href="/login">
           ログインへ戻る
         </a>
+
+        <nav className="links" aria-label="法務情報">
+          <a href="/privacy-policy">プライバシーポリシー</a>
+          <a href="/terms-of-service">利用規約</a>
+        </nav>
       </section>
     </main>
   );
@@ -175,6 +180,8 @@ function validateRegistrationForm(form: RegistrationForm): RegistrationErrors {
   }
   if (form.password.length < 8) {
     errors.password = "パスワードは8文字以上で入力してください。";
+  } else if (new TextEncoder().encode(form.password).length > 72) {
+    errors.password = "パスワードはUTF-8換算で72バイト以内で入力してください。";
   }
   if (form.password !== form.passwordConfirmation) {
     errors.passwordConfirmation = "パスワードが一致しません。";
