@@ -102,6 +102,8 @@ paths:
                 $ref: '#/components/schemas/AuthenticatedUser'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '429':
@@ -1440,11 +1442,14 @@ components:
           type: string
           format: email
           maxLength: 255
+          description: 前後の空白を除去し、小文字化して照合する
         password:
           type: string
           format: password
           minLength: 1
           maxLength: 72
+          pattern: '^[\x21-\x7E]+$'
+          description: 半角の英字・数字・記号（空白を除く）
           writeOnly: true
 
     AuthenticatedUser:

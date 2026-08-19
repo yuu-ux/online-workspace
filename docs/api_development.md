@@ -36,6 +36,19 @@ npx --yes openapi-typescript@7.13.0
 
 - Reactは最初に `GET /api/v1/auth/csrf` を呼び、発行された `XSRF-TOKEN` cookieの値をsession認証の状態変更リクエストで `X-CSRF-TOKEN` headerへ設定する。
 - APIはSPA向けのCSRF request handlerを使用する。ReactやSwagger UIは `XSRF-TOKEN` cookieの値を `X-CSRF-TOKEN` headerへ設定する。
+- `POST /api/v1/auth/login` は #16 の登録処理と同じく、メールアドレスの前後の空白を除去して `Locale.ROOT` で小文字化して照合する。成功時は `SESSION` cookie にサーバー側セッションを保存する。
+- ログインに5回連続で失敗した場合、6回目以降の同じメールアドレス・接続元アドレスからの試行を15分間 `429 Too Many Requests` とする。429レスポンスには `Retry-After: 900` を返し、成功したログインで失敗回数をリセットする。接続元アドレスは信頼済みリバースプロキシが設定する `X-Real-IP` を使用し、直接接続時はサーバーが認識した接続元アドレスを使用する。現状は単一アプリケーションインスタンス向けの上限付きインメモリ管理であり、複数インスタンス化時は共有ストアへ差し替える。
+- `SESSION` cookieは `HttpOnly=true`、`SameSite=Lax`、ローカル開発では `Secure=false` を既定値とする。本番では `SESSION_COOKIE_SECURE=true` を設定する。`SESSION_COOKIE_HTTP_ONLY`、`SESSION_COOKIE_SECURE`、`SESSION_COOKIE_SAME_SITE` で環境ごとに変更できる。
+- `SESSION` cookieは永続CookieにせずセッションCookieとして発行する。ページリロード中は認証状態を維持するが、ブラウザ終了後のログイン状態維持（Remember Me）は対象外とする。
+
+### Reactからの認証API呼び出し
+
+1. `GET /api/v1/auth/csrf` を呼び出し、レスポンスの `XSRF-TOKEN` cookieを読み取る。
+2. `POST /api/v1/auth/login` に `{ "email": "user@example.com", "password": "..." }` をJSONで送信し、`X-CSRF-TOKEN` headerへCSRF tokenを設定する。成功時はレスポンスにユーザー情報が返り、`SESSION` cookieが発行される。
+3. リロード時やアプリ起動時は `GET /api/v1/auth/session` を呼び出す。未ログイン時も `200` で `authenticated: false` が返る。
+4. ログアウト時は再度CSRF tokenを取得し、`POST /api/v1/auth/logout` に `SESSION` cookieと `X-CSRF-TOKEN` headerを付けて送信する。成功時は `204` で、サーバーセッションと `SESSION` cookieが無効化される。
+
+ログイン失敗時は `401`、入力形式エラーは `422`、レート制限中は `429` となる。`429` では `Retry-After: 900` を再試行待機時間として使用する。
 - API keyの採点対象は `GET /rooms`、`POST /rooms`、`GET /rooms/{roomId}`、`PUT /rooms/{roomId}`、`DELETE /rooms/{roomId}` の5 operationとする。
 - 採点対象5 operationはsession認証またはAPI key認証を受け付ける。API keyはユーザーまたはservice principalへ紐付け、同じ認可ルールを適用する。
 - 採点対象5 operationにはkey単位のrate limitを適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。
