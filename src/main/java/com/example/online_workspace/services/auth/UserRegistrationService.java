@@ -1,7 +1,5 @@
 package com.example.online_workspace.services.auth;
 
-import java.util.Locale;
-
 import com.example.online_workspace.forms.auth.UserRegistrationForm;
 import com.example.online_workspace.models.users.UserAccount;
 import com.example.online_workspace.repositories.users.UserRepository;
@@ -38,7 +36,7 @@ public class UserRegistrationService {
 	 */
 	@Transactional
 	public void register(UserRegistrationForm form) {
-		String email = normalizeEmail(form.email());
+		String email = EmailNormalizer.normalize(form.email());
 		if (userRepository.existsByEmail(email)) {
 			throw new DuplicateUserEmailException();
 		}
@@ -55,9 +53,5 @@ public class UserRegistrationService {
 			// 事前確認後の同時登録でも、DBの一意制約をAPIエラーへ変換する。
 			throw new DuplicateUserEmailException();
 		}
-	}
-
-	private String normalizeEmail(String email) {
-		return email.trim().toLowerCase(Locale.ROOT);
 	}
 }
