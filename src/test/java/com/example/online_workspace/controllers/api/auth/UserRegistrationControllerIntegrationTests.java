@@ -6,7 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.util.UUID;
 
 import jakarta.servlet.http.Cookie;
@@ -19,9 +23,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -45,13 +46,77 @@ class UserRegistrationControllerIntegrationTests {
 			.andExpect(status().isCreated())
 			.andExpect(content().string(""));
 
+		String registeredName = jdbcTemplate.queryForObject(
+			"SELECT name FROM users WHERE email = ?",
+			String.class,
+			email
+		);
+		String registeredEmail = jdbcTemplate.queryForObject(
+			"SELECT email FROM users WHERE email = ?",
+			String.class,
+			email
+		);
 		String passwordHash = jdbcTemplate.queryForObject(
 			"SELECT password_hash FROM users WHERE email = ?",
 			String.class,
 			email
 		);
+		assertEquals("テストユーザー", registeredName);
+		assertEquals(email, registeredEmail);
 		assertNotNull(passwordHash);
+		assertTrue(passwordHash.matches("\\A\\$2[aby]?\\$\\d{2}\\$[./0-9A-Za-z]{53}\\z"));
 		assertTrue(passwordEncoder.matches("password-123", passwordHash));
+	}
+
+	@DisplayName("名前未入力ではユーザーを登録できない")
+	@Test
+	void rejectRegistrationWithBlankName() throws Exception {
+		performRegister("", uniqueEmail(), "password-123")
+			.andExpect(status().isUnprocessableEntity());
+	}
+
+	@DisplayName("パスワード未入力ではユーザーを登録できない")
+	@Test
+	void rejectRegistrationWithBlankPassword() throws Exception {
+		performRegister("テストユーザー", uniqueEmail(), "")
+			.andExpect(status().isUnprocessableEntity());
+	}
+
+	@DisplayName("8文字未満のパスワードではユーザーを登録できない")
+	@Test
+	void rejectRegistrationWithShortPassword() throws Exception {
+		performRegister("テストユーザー", uniqueEmail(), "1234567")
+			.andExpect(status().isUnprocessableEntity());
+	}
+
+	@DisplayName("bcryptの72バイト制限を超えるパスワードではユーザーを登録できない")
+	@Test
+	void rejectRegistrationWithPasswordOverBcryptByteLimit() throws Exception {
+		performRegister("テストユーザー", uniqueEmail(), "あ".repeat(25))
+			.andExpect(status().isUnprocessableEntity());
+	}
+
+	@DisplayName("メールアドレスは小文字に正規化して保存される")
+	@Test
+	void normalizeEmailBeforeRegistration() throws Exception {
+		String email = "User-" + UUID.randomUUID() + "@Example.COM";
+
+		performRegister("テストユーザー", email, "password-123")
+			.andExpect(status().isCreated());
+
+		String registeredEmail = jdbcTemplate.queryForObject(
+			"SELECT email FROM users WHERE email = ?",
+			String.class,
+			email.toLowerCase(Locale.ROOT)
+		);
+		assertEquals(email.toLowerCase(Locale.ROOT), registeredEmail);
+	}
+
+	@DisplayName("前後に空白があるメールアドレスではユーザーを登録できない")
+	@Test
+	void rejectRegistrationWithSurroundingWhitespaceInEmail() throws Exception {
+		performRegister("テストユーザー", " " + uniqueEmail() + " ", "password-123")
+			.andExpect(status().isUnprocessableEntity());
 	}
 
 	@DisplayName("不正なメールアドレスではユーザーを登録できない")
@@ -79,11 +144,19 @@ class UserRegistrationControllerIntegrationTests {
 	void rejectRegistrationWithoutCsrfToken() throws Exception {
 		mockMvc.perform(post("/api/v1/auth/register")
 				.contentType(APPLICATION_JSON)
-				.content(registerJson(uniqueEmail(), "password-123")))
+				.content(registerJson("テストユーザー", uniqueEmail(), "password-123")))
 			.andExpect(status().isForbidden());
 	}
 
 	private org.springframework.test.web.servlet.ResultActions performRegister(
+		String email,
+		String password
+	) throws Exception {
+		return performRegister("テストユーザー", email, password);
+	}
+
+	private org.springframework.test.web.servlet.ResultActions performRegister(
+		String name,
 		String email,
 		String password
 	) throws Exception {
@@ -98,13 +171,13 @@ class UserRegistrationControllerIntegrationTests {
 				.cookie(xsrfCookie)
 				.header("X-CSRF-TOKEN", xsrfCookie.getValue())
 				.contentType(APPLICATION_JSON)
-				.content(registerJson(email, password)));
+				.content(registerJson(name, email, password)));
 	}
 
-	private String registerJson(String email, String password) {
+	private String registerJson(String name, String email, String password) {
 		return """
-			{"name":"テストユーザー","email":"%s","password":"%s"}
-			""".formatted(email, password);
+			{"name":"%s","email":"%s","password":"%s"}
+			""".formatted(name, email, password);
 	}
 
 	private String uniqueEmail() {
