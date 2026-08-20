@@ -1,6 +1,7 @@
 package com.example.online_workspace.services.auth;
 
 import com.example.online_workspace.forms.auth.UserRegistrationForm;
+import com.example.online_workspace.exceptions.DuplicateUserEmailException;
 import com.example.online_workspace.models.users.UserAccount;
 import com.example.online_workspace.repositories.users.UserRepository;
 import org.springframework.dao.DuplicateKeyException;
