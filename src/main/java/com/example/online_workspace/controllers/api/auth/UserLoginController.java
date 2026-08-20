@@ -1,11 +1,11 @@
 package com.example.online_workspace.controllers.api.auth;
 
+import com.example.online_workspace.exceptions.InvalidLoginCredentialsException;
+import com.example.online_workspace.exceptions.TooManyLoginAttemptsException;
 import com.example.online_workspace.forms.auth.UserLoginForm;
 import com.example.online_workspace.models.users.AuthenticatedUser;
 import com.example.online_workspace.models.users.UserAuthentication;
-import com.example.online_workspace.services.auth.InvalidLoginCredentialsException;
 import com.example.online_workspace.services.auth.LoginRateLimiter;
-import com.example.online_workspace.services.auth.TooManyLoginAttemptsException;
 import com.example.online_workspace.services.auth.UserLoginService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

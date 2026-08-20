@@ -1,6 +1,5 @@
-package com.example.online_workspace.services.auth;
+package com.example.online_workspace.exceptions;
 
-import com.example.online_workspace.exceptions.ApiException;
 import org.springframework.http.HttpStatus;
 
 /**

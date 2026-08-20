@@ -1,6 +1,5 @@
 package com.example.online_workspace.exceptions;
 
-import com.example.online_workspace.services.auth.TooManyLoginAttemptsException;
 import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,5 +1,6 @@
 package com.example.online_workspace.services.auth;
 
+import com.example.online_workspace.exceptions.InvalidLoginCredentialsException;
 import com.example.online_workspace.models.users.UserAuthentication;
 import com.example.online_workspace.repositories.users.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
