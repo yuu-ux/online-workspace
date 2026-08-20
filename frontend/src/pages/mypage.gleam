@@ -64,7 +64,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     InputUpdated(target, text) -> {
       let new_model = case target {
         UserName -> {
-
+          Model(..model, current_user_name: text)
         }
       }
       #(new_model, effect.none())

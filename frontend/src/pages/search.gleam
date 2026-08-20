@@ -1,4 +1,4 @@
-// フレンド編集画面
+// ユーザー検索結果
 import gleam/int
 import gleam/list
 import lustre/event.{on_click}
@@ -11,14 +11,15 @@ import lustre/element/html.{button, div, h1, h3, hr, span, style, text}
 import types/user.{type UserId, type UserInfo} as user_t
 import types/session.{type Session,type Token, Guest, Authenticated}
 
-import components/userlist.{user_list_component}
+import wrap/user.{search_user}
 
-import wrap/user.{get_friends}
+import components/userlist.{user_list_component}
 
 pub type Model {
   Model(
     session: Session,
-    friends: List(UserInfo),
+    search_word: String,
+    search_result: List(UserInfo),
     messages: List(String)
   )
 }
@@ -29,27 +30,30 @@ pub type Msg {
   ToUserInfo(UserInfo)
 }
 
-pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
-  case get_friends(session) {
-    Ok(friends) -> {
-      #(Model(
+pub fn init(session: Session, search_word: String) -> #(Model, effect.Effect(Msg)) {
+  case search_user(search_word) {
+    Ok(search_result) -> {
+      #(
+        Model(
           session: session,
-          friends: friends,
+          search_word: search_word,
+          search_result: search_result,
           messages: []),
         effect.none()
       )
     }
     Error(err_type) -> {
-      #(Model(
+      #(
+        Model(
           session: session,
-          friends: [],
-          messages: ["フレンドの取得に失敗しました"]),
+          search_word: search_word,
+          search_result: [],
+          messages: ["検索に失敗しました"]),
         effect.none()
       )
     }
   }
 }
-
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
@@ -74,7 +78,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
       [
-        text("フレンド"),
+        text("ユーザー検索結果"),
         text("ログインしてください"),
         button([on_click(ToHome)], [text("home")]),
       ])
@@ -85,8 +89,9 @@ pub fn view (model: Model) -> element.Element(Msg) {
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
       [
-        text("フレンド"),
-        user_list_component(model.friends, ToUserInfo),
+        text("ユーザー検索結果"),
+
+        user_list_component(model.search_result, ToUserInfo),
         button([
           on_click(ToMyPage)
         ], [text("マイページに戻る")]),

@@ -11,12 +11,9 @@ import lustre/element/html.{button, div, h1, h3, hr, span, style, text}
 import types/user.{type UserInfo} as user_t
 import types/session.{type Session}
 
-import wrap/user.{get_friends}
-
 pub type Model {
   Model(
     session: Session,
-    friends: List(UserInfo),
     messages: List(String)
   )
 }
@@ -30,7 +27,6 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
   #(
     Model(
       session: session,
-      friends: get_friends(session),
       messages: []),
     effect.none()
   )

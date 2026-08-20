@@ -25,20 +25,18 @@ pub type ReportReason {
   Other
 }
 
-pub type ReportErr {
-  // TODO 後で消す
-  DummyErr
-}
-
-/// userを通報する
-pub fn report_user(session: Session, user_info: UserInfo, report_reason: ReportReason, report_details: String) -> Result(Nil, ReportErr) {
-
+pub type SearchErr {
+  SearchDummyErr
 }
 
 /// userを名前から検索する
-pub fn search_user(user_name: String) -> List(UserInfo) {
+pub fn search_user(user_name: String) -> Result(List(UserInfo), SearchErr) {
   // TODO SERVER API
-  []
+  Ok([
+    UserInfo(name: "Tom", user_id: UserId("xxx")),
+    UserInfo(name: "Alice", user_id: UserId("xyz")),
+    UserInfo(name: "Bob", user_id: UserId("123")),
+  ])
 }
 
 pub type InviteUserErr {
@@ -52,8 +50,29 @@ pub fn invite_user_to_room(session: Session, room_id: RoomId, user: UserId) -> R
   Ok(Nil)
 }
 
-/// フレンドを取得する
-pub fn get_friends(session: Session) -> List(UserInfo) {
-  // TODO SERVER API
-  []
+pub type GetFriendErr {
+  GetFriendDummyErr
 }
+
+/// すべてのフレンドを取得する
+pub fn get_friends(session: Session) -> Result(List(UserInfo), GetFriendErr) {
+  // TODO SERVER API
+  Ok([
+    UserInfo(name: "Tom", user_id: UserId("xxx")),
+    UserInfo(name: "Alice", user_id: UserId("xyz")),
+    UserInfo(name: "Bob", user_id: UserId("123")),
+  ])
+}
+
+/// self_user_idがother_user_idのフレンドかどうかを確かめる
+pub fn is_friend(self_user_id: UserId, other_user_id: UserId) -> Bool {
+  // TODO API SERVER
+  False
+}
+
+/// self_user_idがother_user_idをブロックしているかどうかを確かめる
+pub fn is_blocked(self_user_id: UserId, other_user_id: UserId) -> Bool {
+  // TODO API SERVER
+  False
+}
+

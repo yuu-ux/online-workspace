@@ -11,6 +11,7 @@ import types/room.{type RoomId}
 
 import types/user.{type UserInfo, type UserId} as user_t
 import wrap/user.{GetUserInfoListAuthErr, get_all_user_info_list}
+import components/userlist.{user_list_component}
 
 pub type InputType {
   ChatMsg
@@ -39,7 +40,7 @@ pub type Msg {
   ToHome
   // ToLogin
   ToInvitation
-  ToReport(UserInfo)
+  ToUserInfo(UserInfo)
   InputUpdated(target: InputType, str: String)
   SubmitClicked
 }
@@ -105,7 +106,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     //   #(model, effect.none())
     // }
 
-    ToReport(user_id) -> {
+    ToUserInfo(user_id) -> {
       #(model, effect.none())
     }
 
@@ -163,14 +164,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("Room"),
         // 参加者一覧
-        div(
-          [],
-          [
-            div([], list.map(model.member_list, fn (member) {
-              div([], [text(member.name), button([on_click(ToReport(member))], [text("通報")])])
-            }))
-          ]
-        ),
+        user_list_component(model.member_list, ToUserInfo),
         button([on_click(ToInvitation)], [text("招待")]),
         // chat欄
         div([], [
