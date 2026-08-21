@@ -1,3 +1,4 @@
+import components/btn
 import gleam/int
 import gleam/list
 import lustre/event.{on_click}
@@ -16,6 +17,7 @@ import types/room.{
   type RoomId,
   type RoomNameType,
   type DescriptionType,
+  type RoomInfo,
   RoomNameType,
   DescriptionType,
   RoomId,
@@ -27,7 +29,10 @@ import types/room.{
   Public,
   Invite,
   Friend,
+  RoomInfo
 }
+
+import components/rooms.{room_list_view}
 
 pub type Model {
   Model(
@@ -42,17 +47,6 @@ pub type Msg {
   ToLogout
   ToMyPage
   ToRoom(RoomId)
-}
-
-pub type RoomInfo {
-  RoomInfo(
-    roomname: RoomNameType,
-    visibility: VisibilityType,
-    category: CategoryType,
-    work_style: WorkStyleType,
-    max_number_of_member: Int,
-    room_id: RoomId
-  )
 }
 
 pub fn get_rooms(jwt: Token, user_id: UserId) -> List(RoomInfo) {
@@ -114,8 +108,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ],
       [
         text("Home (guest)"),
-        button([on_click(ToLogin)], [text("login")]),
-        // button([on_click(ToMyPage)], [text("mypage")])
+        btn.login_btn_component(ToLogin),
       ])
     }
 
@@ -125,40 +118,11 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ],
       [
         text("Home (logined)"),
-        div(
-          [], 
-          list.map(model.rooms, fn (room_info) {
-              div(
-                [],
-                [
-                  text("room name: " <> case room_info.roomname {RoomNameType(a) -> { a }}),
-                  text("category: " <> case room_info.category {
-                    Cat1 -> {
-                      "cat1"
-                    }
-                    Cat2 -> {
-                      "cat2"
-                    }
-                    Cat3 -> {
-                      "cat3"
-                    }
-                  }), 
-                  text("work_style: " <> case room_info.work_style {
-                    CasualChat -> {
-                      "CasualChat"
-                    }
-                    Quiet -> {
-                      "Quiet"
-                    }
-                  }), 
-                  text("max number of member: " <> int.to_string(room_info.max_number_of_member)),
-                  button([on_click(ToRoom(room_info.room_id))], [text("入室")])
-              ])
-            })
-        ),
-        button([on_click(ToCreateRoom)], [text("create room")]),
-        button([on_click(ToLogout)], [text("logout")]),
-        button([on_click(ToMyPage)], [text("mypage")])
+        room_list_view(model.rooms, ToRoom),
+
+        btn.create_room_btn_component(ToCreateRoom),
+        btn.logout_btn_component(ToLogout),
+        btn.mypage_btn_component(ToMyPage),
       ])
     }
   }

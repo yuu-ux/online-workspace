@@ -1,13 +1,13 @@
 import components/btn
 import lustre/event.{on_click, on_input}
-import lustre/attribute
+import lustre/attribute.{class, placeholder, type_, value}
 import lustre/element
 import lustre/effect
 import gleam/io
 import gleam/list
-import lustre/element/html.{button, div, text, input}
+import lustre/element/html.{button, div, text, input, h2, p, label}
 
-import types/session.{type Session} as session_t
+import types/session.{type Session, Guest, Authenticated} as session_t
 import wrap/session.{login_proc, DummyError}
 
 pub type InputType {
@@ -98,49 +98,78 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   }
 }
 
-pub fn view (model: Model) -> element.Element(Msg) {
-  case model.session {
-    session_t.Guest -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("Login"),
-        div([], [
-          input([
-            on_input(InputUpdated(Email, _)),
-            attribute.value(model.current_email_input)
-          ]),
-          input([
-            on_input(InputUpdated(Password, _)),
-            attribute.value(model.current_password_input)
-          ]),
+import components/authui
 
-          // ボタンが押されたら SubmitClicked イベントを発射
-          button([
-            on_click(SubmitClicked)
-          ], [text("login")])
-        ]),
-        button([on_click(ToRegister)], [text("register")]),
-        btn.to_home_btn_component(ToHome),
-        button([on_click(ToPrivacyPolicy)], [text("プライバシーポリシー")]),
-        button([on_click(ToTOS)], [text("利用規約")]),
-        div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
-      ])
+// ---------------------------------------------------------
+// login画面のView
+// ---------------------------------------------------------
+pub fn view(model: Model) -> element.Element(Msg) {
+  case model.session {
+    
+    // -------------------------------------
+    // 未ログイン（ゲスト）: ログインフォームを表示
+    // -------------------------------------
+    Guest -> {
+      authui.centered_card_layout(
+        // 第1引数: カードの中身（リスト）
+        [
+          authui.header_section("ログイン", "アカウント情報を入力してください"),
+          authui.error_messages(model.messages),
+          form_section(model),
+          authui.divider_with_text("または"),
+          btn.secondary_button("新規アカウントを作成", ToRegister)
+        ],
+        // 第2引数: フッター
+        footer_links()
+      )
     }
 
-    session_t.Authenticated(jwt, user_id) -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("Login"),
-        text("既にログインしています"),
-        btn.to_home_btn_component(ToHome),
-        button([on_click(ToPrivacyPolicy)], [text("プライバシーポリシー")]),
-        button([on_click(ToTOS)], [text("利用規約")]),
-      ])
+    // -------------------------------------
+    // ログイン済みの場合
+    // -------------------------------------
+    Authenticated(_jwt, _user_id) -> {
+      authui.centered_text_card_layout(
+        [
+          authui.header_section("ログイン済み", "既にログインしています"),
+          p([class("text-gray-600")], [text("ワークスペースへ移動して作業を始めましょう。")]),
+          btn.primary_button("ホームへ進む", ToHome)
+        ],
+        footer_links()
+      )
     }
   }
+}
+
+/// 入力フォーム本体のセクション
+fn form_section(model: Model) -> element.Element(Msg) {
+  div([class("space-y-5")], [
+    authui.text_input(
+      "メールアドレス",
+      "email",
+      "you@example.com",
+      model.current_email_input,
+      fn(val) { InputUpdated(Email, val) }
+    ),
+    authui.text_input(
+      "パスワード",
+      "password",
+      "••••••••",
+      model.current_password_input,
+      fn(val) { InputUpdated(Password, val) }
+    ),
+    btn.primary_button("ログイン", SubmitClicked)
+  ])
+}
+
+/// フッターリンク群
+fn footer_links() -> element.Element(Msg) {
+  div(
+    [class("mt-8 flex flex-wrap justify-center gap-6 text-sm text-gray-500")],
+    [
+      btn.to_home_btn_component(ToHome),
+      btn.to_privacypolicy_btn_component(ToPrivacyPolicy),
+      btn.to_tos_btn_component(ToTOS),
+    ]
+  )
 }
 

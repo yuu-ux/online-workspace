@@ -1,4 +1,5 @@
 // マイページ
+import components/input
 import components/btn
 import gleam/int
 import lustre/event.{on_click, on_input}
@@ -98,27 +99,19 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("MyPage"),
 
-        button([
-          on_click(ToHome)
-        ], [text("ホーム画面")]),
-        button([
-          on_click(ToFriend)
-        ], [text("フレンド管理")]),
-        button([
-          on_click(ToProfile)
-        ], [text("プロファイル編集")]),
-        button([
-          on_click(ToHistory)
-        ], [text("作業履歴")]),
-        input([
-          on_input(InputUpdated(UserName, _)),
-          attribute.value(model.current_user_name)
-        ]),
+        btn.to_home_btn_component(ToHome),
+        btn.to_friend_btn_component(ToFriend),
+        btn.to_profile_btn_component(ToProfile),
+        btn.to_history_btn_component(ToHistory),
+        // input([
+        //   on_input(InputUpdated(UserName, _)),
+        //   attribute.value(model.current_user_name)
+        // ]),
+        input.normal_input(InputUpdated(UserName, _), model.current_user_name),
+
         div([], [
           // ボタンが押されたら SubmitClicked イベントを発射
-          button([
-            on_click(SubmitClicked)
-          ], [text("検索")])
+          btn.search_btn_component(SubmitClicked),
         ]),
         div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
       ])

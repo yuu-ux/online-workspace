@@ -26,3 +26,15 @@ pub type VisibilityType {
 pub type RoomId {
   RoomId(Int)
 }
+
+pub type RoomInfo {
+  RoomInfo(
+    roomname: RoomNameType,
+    visibility: VisibilityType,
+    category: CategoryType,
+    work_style: WorkStyleType,
+    max_number_of_member: Int,
+    room_id: RoomId
+  )
+}
+

@@ -1,11 +1,11 @@
 import components/btn
 import lustre/event.{on_click, on_input}
-import lustre/attribute
+import lustre/attribute.{class}
 import lustre/element
 import lustre/effect
 import gleam/io
 import gleam/list
-import lustre/element/html.{button, div, text, input}
+import lustre/element/html.{button, div, text, input, p}
 
 import types/session.{type Session}
 
@@ -125,56 +125,102 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   }
 }
 
-pub fn view (model: Model) -> element.Element(Msg) {
-  case model.session {
-    session.Guest -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("Register"),
-        div([], [
-          input([
-            on_input(InputUpdated(UserName, _)),
-            attribute.value(model.current_username_input)
-          ]),
-          input([
-            on_input(InputUpdated(Email, _)),
-            attribute.value(model.current_email_input)
-          ]),
-          input([
-            on_input(InputUpdated(Password, _)),
-            attribute.value(model.current_password_input)
-          ]),
-          input([
-            on_input(InputUpdated(PasswordConfirm, _)),
-            attribute.value(model.current_password_confirm_input)
-          ]),
+import components/authui // ※後で components/ui 等に変更予定とのこと
 
-          // ボタンが押されたら SubmitClicked イベントを発射
-          button([
-            on_click(SubmitClicked)
-          ], [text("register")])
-        ]),
-        button([on_click(ToLogin)], [text("back to login")]),
-        btn.to_home_btn_component(ToHome),
-        button([on_click(ToPrivacyPolicy)], [text("プライバシーポリシー")]),
-        button([on_click(ToTOS)], [text("利用規約")]),
-        div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
-      ])
+// ---------------------------------------------------------
+// Register画面のView
+// ---------------------------------------------------------
+pub fn view(model: Model) -> element.Element(Msg) {
+  case model.session {
+    
+    // -------------------------------------
+    // 未ログイン（ゲスト）: 登録フォームを表示
+    // -------------------------------------
+    session.Guest -> {
+      authui.centered_card_layout(
+        [
+          authui.header_section("アカウント登録", "新しいワークスペースに参加しましょう"),
+          authui.error_messages(model.messages),
+          form_section(model),
+          authui.divider_with_text("または"),
+          btn.secondary_button("既存のアカウントでログイン", ToLogin)
+        ],
+        footer_links()
+      )
     }
-    session.Authenticated(jwt, user_id) -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("Register"),
-        text("既にログインしています"),
-        btn.to_home_btn_component(ToHome),
-        button([on_click(ToPrivacyPolicy)], [text("プライバシーポリシー")]),
-        button([on_click(ToTOS)], [text("利用規約")]),
-      ])
+
+    // -------------------------------------
+    // ログイン済みの場合
+    // -------------------------------------
+    session.Authenticated(_jwt, _user_id) -> {
+      authui.centered_text_card_layout(
+        [
+          authui.header_section("登録完了", "既にログインしています"),
+          p([class("text-gray-600")], [text("ワークスペースへ移動して作業を始めましょう。")]),
+          btn.primary_button("ホームへ進む", ToHome)
+        ],
+        footer_links()
+      )
     }
   }
+}
+
+/// 入力フォーム本体のセクション
+fn form_section(model: Model) -> element.Element(Msg) {
+  div([class("space-y-4")], [ // 入力項目が多いので少し隙間を詰める(space-y-4)
+
+    // ユーザー名
+    authui.text_input(
+      "ユーザー名",
+      "text",
+      "例: Gleam Taro",
+      model.current_username_input,
+      fn(val) { InputUpdated(UserName, val) }
+    ),
+
+    // メールアドレス
+    authui.text_input(
+      "メールアドレス",
+      "email",
+      "you@example.com",
+      model.current_email_input,
+      fn(val) { InputUpdated(Email, val) }
+    ),
+
+    // パスワード
+    authui.text_input(
+      "パスワード",
+      "password",
+      "8文字以上",
+      model.current_password_input,
+      fn(val) { InputUpdated(Password, val) }
+    ),
+
+    // パスワード（確認用）
+    authui.text_input(
+      "パスワード（確認用）",
+      "password",
+      "もう一度入力してください",
+      model.current_password_confirm_input,
+      fn(val) { InputUpdated(PasswordConfirm, val) }
+    ),
+
+    // 登録ボタン (要素間に少し余白をもたせるためのラッピング)
+    div([class("pt-2")], [
+      btn.primary_button("アカウントを作成する", SubmitClicked)
+    ])
+  ])
+}
+
+/// フッターリンク群
+fn footer_links() -> element.Element(Msg) {
+  div(
+    [class("mt-8 flex flex-wrap justify-center gap-6 text-sm text-gray-500")],
+    [
+      btn.to_home_btn_component(ToHome),
+      btn.to_privacypolicy_btn_component(ToPrivacyPolicy),
+      btn.to_tos_btn_component(ToTOS),
+    ]
+  )
 }
 
