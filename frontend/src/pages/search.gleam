@@ -1,4 +1,5 @@
 // ユーザー検索結果
+import components/btn
 import gleam/int
 import gleam/list
 import lustre/event.{on_click}
@@ -80,7 +81,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("ユーザー検索結果"),
         text("ログインしてください"),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome),
       ])
     }
 

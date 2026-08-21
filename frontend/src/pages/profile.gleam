@@ -1,4 +1,5 @@
 // プロフィール編集画面
+import components/btn
 import gleam/int
 import gleam/list
 import lustre/event.{on_click}
@@ -53,7 +54,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("プロフィール編集"),
         text("ログインしてください"),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome),
       ])
     }
 

@@ -1,4 +1,5 @@
 // マイページ
+import components/btn
 import gleam/int
 import lustre/event.{on_click, on_input}
 import lustre/attribute
@@ -86,7 +87,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("MyPage"),
         text("ログインしてください"),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome)
       ])
     }
 

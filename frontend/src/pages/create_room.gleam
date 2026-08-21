@@ -1,3 +1,4 @@
+import components/btn
 import gleam/int
 import lustre/event.{on_click, on_input}
 import lustre/attribute
@@ -206,7 +207,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("Create Room"),
         text("ログインしてください"),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome)
       ])
     }
 
@@ -276,7 +277,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
             on_click(SubmitClicked)
           ], [text("create room")])
         ]),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome),
         div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
       ])
 

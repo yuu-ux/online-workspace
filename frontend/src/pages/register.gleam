@@ -1,3 +1,4 @@
+import components/btn
 import lustre/event.{on_click, on_input}
 import lustre/attribute
 import lustre/element
@@ -156,7 +157,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
           ], [text("register")])
         ]),
         button([on_click(ToLogin)], [text("back to login")]),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome),
         button([on_click(ToPrivacyPolicy)], [text("プライバシーポリシー")]),
         button([on_click(ToTOS)], [text("利用規約")]),
         div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
@@ -169,7 +170,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("Register"),
         text("既にログインしています"),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome),
         button([on_click(ToPrivacyPolicy)], [text("プライバシーポリシー")]),
         button([on_click(ToTOS)], [text("利用規約")]),
       ])

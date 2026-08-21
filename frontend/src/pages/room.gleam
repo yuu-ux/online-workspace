@@ -1,3 +1,4 @@
+import components/btn
 import lustre/event.{on_click, on_input}
 import lustre/attribute
 import lustre/element
@@ -102,10 +103,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(model, effect.none())
     }
 
-    // ToLogin -> {
-    //   #(model, effect.none())
-    // }
-
     ToUserInfo(user_id) -> {
       #(model, effect.none())
     }
@@ -153,7 +150,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("Room"),
         text("ログインしてください"),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome)
       ])
     }
 
@@ -182,7 +179,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
             on_click(SubmitClicked)
           ], [text("send")])
         ]),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome),
         // エラー表示用
         div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
       ])

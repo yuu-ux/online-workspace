@@ -1,3 +1,4 @@
+import components/btn
 import lustre/event.{on_click}
 import lustre/attribute
 import lustre/element
@@ -36,7 +37,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
    ],
    [
      text("Privacy Policy"),
-     button([on_click(ToHome)], [text("home")]),
+     btn.to_home_btn_component(ToHome),
      // button([on_click(ToMyPage)], [text("mypage")])
    ])
 }

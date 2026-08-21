@@ -1,4 +1,5 @@
 // 作業履歴
+import components/btn
 import gleam/int
 import gleam/list
 import lustre/event.{on_click}
@@ -57,7 +58,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("作業履歴"),
         text("ログインしてください"),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome),
       ])
     }
 

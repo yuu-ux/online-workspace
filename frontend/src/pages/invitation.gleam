@@ -1,4 +1,5 @@
 // 招待管理画面
+import components/btn
 import lustre/event.{on_click, on_input}
 import lustre/attribute
 import lustre/element
@@ -30,7 +31,7 @@ pub type Msg {
   SearchClicked
 }
 
-/// 通報するユーザーを引数に設定する
+/// room_idこのルームへの招待
 pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
   #(
     Model(
@@ -83,7 +84,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       [
         text("招待管理"),
         text("ログインしてください"),
-        button([on_click(ToHome)], [text("home")]),
+        btn.to_home_btn_component(ToHome)
       ])
     }
 
