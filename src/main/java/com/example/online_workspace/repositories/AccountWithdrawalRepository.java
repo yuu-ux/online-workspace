@@ -21,14 +21,19 @@ public interface AccountWithdrawalRepository {
 	Optional<WithdrawalAccount> findWithdrawableByEmail(@Param("email") String email);
 
 	@Select("""
-		SELECT id, password_hash
+		SELECT users.id, users.password_hash
 		FROM users
-		WHERE email = #{email}
-		  AND deleted_at IS NULL
-		  AND account_status_id = 1
-		  AND (suspended_until IS NULL OR suspended_until <= CURRENT_TIMESTAMP)
+		INNER JOIN account_statuses
+			ON account_statuses.id = users.account_status_id
+		WHERE users.email = #{email}
+		  AND users.deleted_at IS NULL
+		  AND account_statuses.code = 'ACTIVE'
+		  AND (users.suspended_until IS NULL OR users.suspended_until <= CURRENT_TIMESTAMP)
 		""")
 	Optional<WithdrawalAccount> findActiveByEmail(@Param("email") String email);
+
+	@Select("SELECT CURRENT_TIMESTAMP")
+	OffsetDateTime currentTimestamp();
 
 	@Update("""
 		UPDATE users

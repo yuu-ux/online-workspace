@@ -3,7 +3,6 @@ package com.example.online_workspace.services;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 
 import com.example.online_workspace.models.WithdrawalAccount;
 import com.example.online_workspace.repositories.AccountWithdrawalRepository;
@@ -40,7 +39,7 @@ public class AccountWithdrawalService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "パスワードが正しくありません");
 		}
 
-		OffsetDateTime withdrawnAt = OffsetDateTime.now(ZoneOffset.UTC);
+		OffsetDateTime withdrawnAt = repository.currentTimestamp();
 		if (repository.markWithdrawn(account.id(), withdrawnAt) != 1) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "アカウントはすでに退会済みです");
 		}

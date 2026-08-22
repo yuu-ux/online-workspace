@@ -48,6 +48,12 @@ class AccountWithdrawalIntegrationTests {
 	void prepareDatabase() {
 		createTables();
 		clearTables();
+		jdbcTemplate.update("""
+			INSERT INTO account_statuses (id, code) VALUES
+				(1, 'ACTIVE'),
+				(2, 'SUSPENDED'),
+				(3, 'BANNED')
+			""");
 	}
 
 	@Test
@@ -77,6 +83,19 @@ class AccountWithdrawalIntegrationTests {
 		assertThat(count("SELECT COUNT(*) FROM room_members WHERE user_id = 1 AND left_at IS NOT NULL")).isOne();
 		assertThat(count("SELECT COUNT(*) FROM work_sessions WHERE user_id = 1 AND ended_at IS NOT NULL")).isOne();
 		assertThat(count("SELECT COUNT(*) FROM room_invites WHERE created_by = 1 AND invalidated_at IS NOT NULL")).isOne();
+		assertThat(count("""
+			SELECT COUNT(*)
+			FROM users
+			INNER JOIN room_members ON room_members.user_id = users.id
+			INNER JOIN work_sessions ON work_sessions.user_id = users.id
+			INNER JOIN room_invites ON room_invites.created_by = users.id
+			WHERE users.id = 1
+			  AND users.deleted_at = users.updated_at
+			  AND room_members.left_at = users.deleted_at
+			  AND work_sessions.ended_at = users.deleted_at
+			  AND work_sessions.updated_at = users.deleted_at
+			  AND room_invites.invalidated_at = users.deleted_at
+			""")).isOne();
 		assertThat(session.isInvalid()).isTrue();
 		assertThat(sessionRegistry.getSessionInformation("other-session").isExpired()).isTrue();
 	}
@@ -187,9 +206,16 @@ class AccountWithdrawalIntegrationTests {
 		jdbcTemplate.update("DELETE FROM work_sessions");
 		jdbcTemplate.update("DELETE FROM profiles");
 		jdbcTemplate.update("DELETE FROM users");
+		jdbcTemplate.update("DELETE FROM account_statuses");
 	}
 
 	private void createTables() {
+		jdbcTemplate.execute("""
+			CREATE TABLE IF NOT EXISTS account_statuses (
+				id SMALLINT PRIMARY KEY,
+				code VARCHAR(50) NOT NULL UNIQUE
+			)
+			""");
 		jdbcTemplate.execute("""
 			CREATE TABLE IF NOT EXISTS users (
 				id BIGINT PRIMARY KEY,
