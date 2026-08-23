@@ -13,6 +13,9 @@ import com.example.online_workspace.models.RoomMember;
 @Mapper
 public interface RoomMembershipRepository {
 
+	@Select("SELECT CURRENT_TIMESTAMP")
+	Instant currentTimestamp();
+
 	@Select("""
 		SELECT id FROM users
 		WHERE email = #{email} AND deleted_at IS NULL

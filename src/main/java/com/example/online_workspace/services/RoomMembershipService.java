@@ -24,7 +24,7 @@ public class RoomMembershipService {
 
 	@Transactional
 	public RoomMember join(long roomId, String userEmail) {
-		Instant joinedAt = Instant.now();
+		Instant joinedAt = repository.currentTimestamp();
 		long userId = requireUserId(userEmail);
 		JoinPolicy room = lockOpenRoom(roomId);
 
