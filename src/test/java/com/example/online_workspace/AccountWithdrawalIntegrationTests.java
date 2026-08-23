@@ -126,7 +126,7 @@ class AccountWithdrawalIntegrationTests {
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"password\":\"\"}"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isUnprocessableEntity());
 
 		assertThat(repository.findActiveByEmail(EMAIL)).isPresent();
 	}
