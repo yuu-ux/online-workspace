@@ -15,5 +15,3 @@ RUN npm install
 RUN if [ -f gleam.toml ]; then gleam deps download; fi
 
 COPY . .
-
-CMD ["gleam", "run", "-m", "lustre/dev", "start", "--host=0.0.0.0"]

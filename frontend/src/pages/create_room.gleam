@@ -1,12 +1,11 @@
 import components/btn
 import gleam/int
 import lustre/event.{on_click, on_input}
-import lustre/attribute
+import lustre/attribute.{class}
 import lustre/element
 import lustre/effect
-import gleam/io
-import gleam/list
-import lustre/element/html.{button, div, text, input, textarea, select, option}
+import lustre/element/html.{div, text, p}
+
 import types/room.{
   type CategoryType,
   type WorkStyleType,
@@ -198,90 +197,112 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   }
 }
 
-pub fn view (model: Model) -> element.Element(Msg) {
+import components/authui as ui
+
+// ---------------------------------------------------------
+// Create Room画面のView
+// ---------------------------------------------------------
+pub fn view(model: Model) -> element.Element(Msg) {
   case model.session {
+    
+    // -------------------------------------
+    // 未ログイン（ゲスト）: 作成できない旨を表示
+    // -------------------------------------
     session.Guest -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("Create Room"),
-        text("ログインしてください"),
+      ui.centered_text_card_layout(
+        [
+          ui.header_section("エラー", "ルームの作成にはログインが必要です"),
+          p([class("text-gray-600")], [text("アカウントにログインしてから再度お試しください。")]),
+          btn.primary_button("ログイン画面へ", ToLogin) // ※もしToLoginイベントがあれば
+        ],
         btn.to_home_btn_component(ToHome)
-      ])
+      )
     }
 
+    // -------------------------------------
+    // ログイン済みの場合: ルーム作成フォームを表示
+    // -------------------------------------
     session.Authenticated(jwt, user_id) -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("Create Room"),
-        div([], [
-          input([
-            on_input(InputUpdated(RoomName, _)),
-            attribute.value(model.current_roomname_input)
-          ]),
-
-          textarea(
-            [
-              on_input(InputUpdated(Description, _)),
-              attribute.value(model.current_description_input)
-            ],
-            model.current_description_input
-          ),
-
-          select(
-            [
-              on_input(InputUpdated(Category, _)),
-              attribute.value(model.current_category_input)
-            ], 
-            [
-              option([attribute.value("category 1")], "category 1"),
-              option([attribute.value("category 2")], "category 2"),
-              option([attribute.value("category 3")], "category 3"),
-            ]
-          ),
-
-          select(
-            [
-              on_input(InputUpdated(WorkStyle, _)),
-              attribute.value(model.current_workstyle_input)
-            ], 
-            [
-              option([attribute.value("Casual Chat")], "Casual Chat"),
-              option([attribute.value("Quiet")], "Quiet"),
-            ]
-          ),
-
-          select(
-            [
-              on_input(InputUpdated(Visibility, _)),
-              attribute.value(model.current_category_input)
-            ], 
-            [
-              option([attribute.value("Public")], "Public"),
-              option([attribute.value("Invitation Only")], "Invitation Only"),
-              option([attribute.value("Friend Only")], "Friend Only"),
-            ]
-          ),
-
-          input([
-            attribute.type_("number"),
-            on_input(InputUpdated(MaxNumOfMember, _)),
-            attribute.value(model.current_maxnumofmember_input)
-          ]),
-
-          // ボタンが押されたら SubmitClicked イベントを発射
-          button([
-            on_click(SubmitClicked)
-          ], [text("create room")])
-        ]),
-        btn.to_home_btn_component(ToHome),
-        div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
-      ])
-
+      ui.centered_card_layout(
+        [
+          ui.header_section("ルーム作成", "新しいワークスペースを立ち上げましょう"),
+          ui.error_messages(model.messages),
+          form_section(model)
+        ],
+        btn.to_home_btn_component(ToHome)
+      )
     }
   }
 }
 
+// ---------------------------------------------------------
+// フォームセクション
+// ---------------------------------------------------------
+fn form_section(model: Model) -> element.Element(Msg) {
+  div([class("space-y-5")], [
+    
+    // 1. ルーム名
+    ui.text_input(
+      "ルーム名",
+      "text",
+      "例: 開発チーム雑談部屋",
+      model.current_roomname_input,
+      fn(val) { InputUpdated(RoomName, val) }
+    ),
+
+    // 2. 説明文（テキストエリア）
+    ui.text_area(
+      "ルームの説明",
+      "このルームの目的やルールを書いてください...",
+      model.current_description_input,
+      fn(val) { InputUpdated(Description, val) }
+    ),
+
+    // 3. カテゴリ（セレクトボックス）
+    ui.select_box(
+      "カテゴリ",
+      model.current_category_input,
+      [
+        #("category 1", "カテゴリ 1"),
+        #("category 2", "カテゴリ 2"),
+        #("category 3", "カテゴリ 3")
+      ],
+      fn(val) { InputUpdated(Category, val) }
+    ),
+
+    // 4. ワークスタイル（セレクトボックス）
+    ui.select_box(
+      "作業スタイル",
+      model.current_workstyle_input,
+      [
+        #("Casual Chat", "🗣️ 雑談OK (Casual Chat)"),
+        #("Quiet", "🤫 もくもく (Quiet)")
+      ],
+      fn(val) { InputUpdated(WorkStyle, val) }
+    ),
+
+    // 5. 公開範囲（セレクトボックス）
+    ui.select_box(
+      "公開設定",
+      model.current_visibility_input, // 元コードでは category_input になっていましたが修正と推測
+      [
+        #("Public", "🌎 全体に公開 (Public)"),
+        #("Invitation Only", "✉️ 招待制 (Invitation Only)"),
+        #("Friend Only", "🤝 フレンドのみ (Friend Only)")
+      ],
+      fn(val) { InputUpdated(Visibility, val) }
+    ),
+
+    // 6. 最大人数（数値入力）
+    ui.number_input(
+      "最大参加人数",
+      model.current_maxnumofmember_input,
+      fn(val) { InputUpdated(MaxNumOfMember, val) }
+    ),
+
+    // 作成ボタン
+    div([class("pt-4")], [
+      btn.primary_button("ルームを作成する", SubmitClicked)
+    ])
+  ])
+}

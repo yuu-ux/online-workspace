@@ -1,10 +1,74 @@
 import gleam/list
 import lustre/attribute.{class, placeholder, type_, value}
 import lustre/element.{type Element, text}
-import lustre/element/html.{div, h2, input, label, p}
+import lustre/element/html.{div, h2, input, label, p, select, textarea, option}
 import lustre/event.{on_input}
 
 // --- セクション単位のコンポーネント ---
+
+/// テキストエリア（複数行入力）
+pub fn text_area(
+  label_text: String,
+  placeholder_text: String,
+  current_value: String,
+  on_change: fn(String) -> a,
+) -> Element(a) {
+  div([], [
+    label([class("block text-sm font-medium text-gray-700 mb-1")], [text(label_text)]),
+    textarea(
+      [
+        placeholder(placeholder_text),
+        value(current_value),
+        on_input(on_change),
+        // text_input と同じ美しい枠線とリング、高さを固定(rows-4相当)
+        class("w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none h-32")
+      ],
+      current_value
+    )
+  ])
+}
+
+/// セレクトボックス（ドロップダウン）
+pub fn select_box(
+  label_text: String,
+  current_value: String,
+  options_list: List(#(String, String)), // #(value, 表示名) のリスト
+  on_change: fn(String) -> a,
+) -> Element(a) {
+  div([], [
+    label([class("block text-sm font-medium text-gray-700 mb-1")], [text(label_text)]),
+    select(
+      [
+        value(current_value),
+        on_input(on_change),
+        // ブラウザデフォルトの矢印を使いつつ、枠線などを整える
+        class("w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors")
+      ],
+      // 選択肢のリストから option タグを生成
+      list.map(options_list, fn(opt) {
+        let #(opt_val, opt_label) = opt
+        option([value(opt_val)], opt_label)
+      })
+    )
+  ])
+}
+
+/// 数値入力欄
+pub fn number_input(
+  label_text: String,
+  current_value: String,
+  on_change: fn(String) -> a,
+) -> Element(a) {
+  div([], [
+    label([class("block text-sm font-medium text-gray-700 mb-1")], [text(label_text)]),
+    input([
+      type_("number"),
+      value(current_value),
+      on_input(on_change),
+      class("w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors")
+    ])
+  ])
+}
 
 /// 画面全体を覆い、中央に白いカードを配置する汎用レイアウト
 /// 

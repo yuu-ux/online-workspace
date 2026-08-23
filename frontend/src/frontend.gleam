@@ -172,8 +172,8 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     Home(home_model), HomeMsg(home.ToRoom(room_id)) -> {
       let #(update_home_model, _) = home.update(home_model, home.ToRoom(room_id))
-      let #(init_room_model, _) = room.init(update_home_model.session, room_id)
-      #(Model(..model, current_page: Room(init_room_model)), effect.none())
+      let #(init_room_model, update_effect) = room.init(update_home_model.session, room_id)
+      #(Model(..model, current_page: Room(init_room_model)), update_effect |> effect.map(RoomMsg))
     }
 
     // -- login --
