@@ -23,7 +23,13 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import io.micrometer.core.instrument.MeterRegistry;
 
-@SpringBootTest(properties = "app.management.api-key=test-management-key")
+@SpringBootTest(properties = {
+	"app.management.api-key=test-management-key",
+	"management.endpoints.web.base-path=/",
+	"management.endpoints.web.exposure.include=health,prometheus",
+	"management.endpoints.web.path-mapping.prometheus=metrics",
+	"management.endpoint.health.show-components=always"
+})
 @AutoConfigureMockMvc
 class OperationsEndpointsIntegrationTests {
 
