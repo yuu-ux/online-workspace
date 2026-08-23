@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.online_workspace.models.WorkSession;
-import com.example.online_workspace.repositories.UserRepository;
+import com.example.online_workspace.repositories.users.UserRepository;
 import com.example.online_workspace.repositories.WorkSessionRepository;
 
 @ExtendWith(MockitoExtension.class)

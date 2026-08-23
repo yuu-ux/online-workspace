@@ -14,7 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.online_workspace.models.RoomMember;
 import com.example.online_workspace.repositories.RoomMembershipRepository;
-import com.example.online_workspace.repositories.UserRepository;
+import com.example.online_workspace.repositories.users.UserRepository;
 import com.example.online_workspace.repositories.WorkSessionRepository;
 
 @MybatisTest

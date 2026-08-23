@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.example.online_workspace.models.WorkSession;
+import com.example.online_workspace.repositories.users.UserRepository;
 
 @MybatisTest
 @Sql(scripts = "/work-session-repository-test.sql")

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.online_workspace.models.WorkSession;
-import com.example.online_workspace.repositories.UserRepository;
+import com.example.online_workspace.repositories.users.UserRepository;
 import com.example.online_workspace.repositories.WorkSessionRepository;
 
 @Service
