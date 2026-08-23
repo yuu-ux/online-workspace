@@ -25,5 +25,46 @@ services:
     depends_on:
       - elasticsearch
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    secrets:
+      - management_api_key
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    secrets:
+      - grafana_admin_password
+    depends_on:
+      - prometheus
+
+secrets:
+  management_api_key:
+    environment: MANAGEMENT_API_KEY
+  grafana_admin_password:
+    environment: GRAFANA_ADMIN_PASSWORD
+
 volumes:
   elasticsearch_data:
+  prometheus_data:
+  grafana_data:
