@@ -32,4 +32,20 @@ public interface UserRepository {
 		VALUES (#{name}, #{email}, #{passwordHash})
 		""")
 	int insert(UserAccount user);
+	/**
+	 * 指定したユーザー行をロックし、存在を確認する。
+	 *
+	 * @param userId ロックするユーザーID
+	 * @return ユーザーが存在する場合はtrue
+	 */
+	@Select("""
+		SELECT EXISTS (
+			SELECT 1
+			FROM users
+			WHERE id = #{userId}
+			FOR UPDATE
+		)
+		""")
+	boolean lockById(@Param("userId") long userId);
+
 }
