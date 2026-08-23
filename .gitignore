@@ -46,3 +46,5 @@ frontend/vite.config.d.ts
 
 ### Codex worktrees ###
 .codex/worktrees/
+
+.env
