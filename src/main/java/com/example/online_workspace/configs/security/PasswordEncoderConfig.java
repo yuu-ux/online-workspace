@@ -1,8 +1,12 @@
 package com.example.online_workspace.configs.security;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
@@ -12,12 +16,36 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class PasswordEncoderConfig {
 
 	/**
-	 * BCryptを使うパスワードエンコーダーを生成する。
+	 * BCryptを使い、入力をUTF-8で72バイト以内に制限するパスワードエンコーダーを生成する。
 	 *
 	 * @return BCryptを使うパスワードエンコーダー
 	 */
 	@Bean
 	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
+		DelegatingPasswordEncoder delegate = (DelegatingPasswordEncoder) PasswordEncoderFactories.createDelegatingPasswordEncoder();
+		delegate.setDefaultPasswordEncoderForMatches(new BCryptPasswordEncoder());
+		return new PasswordEncoder() {
+			@Override
+			public String encode(CharSequence rawPassword) {
+				if (!isWithinBcryptLimit(rawPassword)) {
+					throw new IllegalArgumentException("password cannot exceed 72 UTF-8 bytes");
+				}
+				return delegate.encode(rawPassword);
+			}
+
+			@Override
+			public boolean matches(CharSequence rawPassword, String encodedPassword) {
+				return isWithinBcryptLimit(rawPassword) && delegate.matches(rawPassword, encodedPassword);
+			}
+
+			@Override
+			public boolean upgradeEncoding(String encodedPassword) {
+				return delegate.upgradeEncoding(encodedPassword);
+			}
+
+			private boolean isWithinBcryptLimit(CharSequence password) {
+				return password != null && password.toString().getBytes(UTF_8).length <= 72;
+			}
+		};
 	}
 }
