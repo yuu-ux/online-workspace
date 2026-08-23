@@ -13,6 +13,9 @@ import com.example.online_workspace.models.WorkHistory.WorkSessionPage;
 import com.example.online_workspace.models.WorkHistory.WorkSessionSummary;
 import com.example.online_workspace.services.WorkHistoryService;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+
 @RestController
 @RequestMapping("/api/v1/work-sessions")
 public class WorkHistoryController {
@@ -29,8 +32,8 @@ public class WorkHistoryController {
 		@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
 		@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
 		@RequestParam(required = false) Long categoryId,
-		@RequestParam(defaultValue = "0") int page,
-		@RequestParam(defaultValue = "20") int size
+		@RequestParam(defaultValue = "0") @Min(0) int page,
+		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
 	) {
 		return workHistoryService.findSessions(principal.getName(), from, to, categoryId, page, size);
 	}

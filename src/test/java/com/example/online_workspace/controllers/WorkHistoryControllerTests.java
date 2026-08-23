@@ -80,4 +80,22 @@ class WorkHistoryControllerTests {
 				.param("to", "2026-08-01"))
 			.andExpect(status().isBadRequest());
 	}
+
+	@Test
+	void rejectsPaginationValuesOutsideAllowedRanges() throws Exception {
+		mockMvc.perform(get("/api/v1/work-sessions")
+				.with(user("me@example.com"))
+				.param("page", "-1"))
+			.andExpect(status().isBadRequest());
+
+		mockMvc.perform(get("/api/v1/work-sessions")
+				.with(user("me@example.com"))
+				.param("size", "0"))
+			.andExpect(status().isBadRequest());
+
+		mockMvc.perform(get("/api/v1/work-sessions")
+				.with(user("me@example.com"))
+				.param("size", "101"))
+			.andExpect(status().isBadRequest());
+	}
 }
