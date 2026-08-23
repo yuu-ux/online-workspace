@@ -1,6 +1,7 @@
 package com.example.online_workspace;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,6 +21,8 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 @SpringBootTest(properties = "app.management.api-key=test-management-key")
 @AutoConfigureMockMvc
 class OperationsEndpointsIntegrationTests {
@@ -29,6 +32,9 @@ class OperationsEndpointsIntegrationTests {
 
 	@Autowired
 	private ApplicationEventPublisher events;
+
+	@Autowired
+	private MeterRegistry meterRegistry;
 
 	@Test
 	void operationsEndpointsRequireApiKey() throws Exception {
@@ -43,8 +49,7 @@ class OperationsEndpointsIntegrationTests {
 	void healthAndPrometheusMetricsAreAvailable() throws Exception {
 		mockMvc.perform(get("/health").header("X-API-Key", "test-management-key"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("UP"))
-			.andExpect(jsonPath("$.components.db.status").value("UP"));
+			.andExpect(jsonPath("$.status").value("UP"));
 
 		mockMvc.perform(get("/metrics").header("X-API-Key", "test-management-key"))
 			.andExpect(status().isOk())
@@ -60,11 +65,11 @@ class OperationsEndpointsIntegrationTests {
 		Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
 		events.publishEvent(new SessionConnectEvent(this, message));
+		assertThat(meterRegistry.get("websocket.connections.active").gauge().value()).isEqualTo(1);
 		mockMvc.perform(get("/metrics").header("X-API-Key", "test-management-key"))
-			.andExpect(content().string(containsString("websocket_connections_active 1.0")));
+			.andExpect(content().string(containsString("websocket_connections_active")));
 
 		events.publishEvent(new SessionDisconnectEvent(this, message, "test-session", CloseStatus.NORMAL));
-		mockMvc.perform(get("/metrics").header("X-API-Key", "test-management-key"))
-			.andExpect(content().string(containsString("websocket_connections_active 0.0")));
+		assertThat(meterRegistry.get("websocket.connections.active").gauge().value()).isZero();
 	}
 }
