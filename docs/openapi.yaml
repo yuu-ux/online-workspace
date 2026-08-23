@@ -1209,6 +1209,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
 
+  /metrics:
+    get:
+      tags: [Operations]
+      summary: Prometheus向けメトリクスを取得する
+      operationId: getMetrics
+      servers:
+        - url: /
+          description: API prefix 外の監視 endpoint
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Prometheus text exposition format のメトリクス
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
   securitySchemes:
     sessionAuth:
@@ -2188,21 +2208,21 @@ components:
 
     HealthStatus:
       type: object
-      required: [status, checks, checkedAt]
+      required: [status]
       properties:
         status:
           type: string
-          enum: [UP, DEGRADED, DOWN]
-        checks:
+          enum: [UP, DOWN, OUT_OF_SERVICE, UNKNOWN]
+        components:
           type: object
           additionalProperties:
-            type: string
-            enum: [UP, DOWN]
+            type: object
+            properties:
+              status:
+                type: string
           example:
-            database: UP
-        checkedAt:
-          type: string
-          format: date-time
+            db:
+              status: UP
 
     ApiError:
       type: object
