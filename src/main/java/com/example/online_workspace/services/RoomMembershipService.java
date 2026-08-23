@@ -42,7 +42,7 @@ public class RoomMembershipService {
 
 	@Transactional
 	public JoinResult joinByInvite(String token, String userEmail) {
-		Instant joinedAt = Instant.now();
+		Instant joinedAt = repository.currentTimestamp();
 		long userId = requireUserId(userEmail);
 		Long roomId = repository.findInvitedRoomId(token);
 		if (roomId == null) {
