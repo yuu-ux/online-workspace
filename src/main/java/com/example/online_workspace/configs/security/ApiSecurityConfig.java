@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
@@ -29,8 +28,7 @@ public class ApiSecurityConfig {
 	@Order(1)
 	public SecurityFilterChain apiSecurityFilterChain(
 		HttpSecurity http,
-		ApiErrorWriter apiErrorWriter,
-		SessionRegistry sessionRegistry
+		ApiErrorWriter apiErrorWriter
 	) throws Exception {
 		CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 		csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
@@ -66,10 +64,6 @@ public class ApiSecurityConfig {
 					"FORBIDDEN",
 					"この操作を行う権限がありません。"
 				))
-			)
-			.sessionManagement(session -> session
-				.maximumSessions(-1)
-				.sessionRegistry(sessionRegistry)
 			);
 
 		return http.build();
