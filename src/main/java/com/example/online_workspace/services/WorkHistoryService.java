@@ -113,7 +113,7 @@ public class WorkHistoryService {
 			row.creatorName(),
 			row.creatorIconUrl()
 		);
-		String joinRestriction = joinRestriction(userId, row);
+		String joinRestriction = joinRestriction(row);
 		RoomSummary room = new RoomSummary(
 			row.roomId(),
 			row.roomName(),
@@ -149,7 +149,7 @@ public class WorkHistoryService {
 		);
 	}
 
-	private String joinRestriction(long userId, SessionRow row) {
+	private String joinRestriction(SessionRow row) {
 		if (!"OPEN".equals(row.roomStatus())) {
 			return "CLOSED";
 		}
@@ -161,8 +161,6 @@ public class WorkHistoryService {
 		}
 		return switch (row.visibility()) {
 			case "INVITE_ONLY" -> "INVITE_REQUIRED";
-			case "FRIENDS_ONLY" ->
-				userId == row.creatorId() || row.creatorFriend() ? null : "FRIEND_REQUIRED";
 			default -> null;
 		};
 	}

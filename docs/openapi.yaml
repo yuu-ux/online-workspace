@@ -1363,7 +1363,7 @@ components:
 
     RoomVisibility:
       type: string
-      enum: [PUBLIC, INVITE_ONLY, FRIENDS_ONLY]
+      enum: [PUBLIC, INVITE_ONLY]
 
     RoomStatus:
       type: string
@@ -1688,7 +1688,7 @@ components:
           type: boolean
         joinRestriction:
           type: string
-          enum: [FULL, CLOSED, FRIEND_REQUIRED, INVITE_REQUIRED, BLOCKED]
+          enum: [FULL, CLOSED, INVITE_REQUIRED, BLOCKED]
           nullable: true
         createdAt:
           type: string

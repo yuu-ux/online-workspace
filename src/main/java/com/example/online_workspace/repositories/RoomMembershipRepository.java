@@ -24,7 +24,7 @@ public interface RoomMembershipRepository {
 	Long findActiveUserIdByEmailForUpdate(@Param("email") String email);
 
 	@Select("""
-		SELECT r.id, r.created_by, r.max_members,
+		SELECT r.id, r.max_members,
 		       v.code AS visibility, rs.code AS status
 		FROM rooms r
 		JOIN visibilities v ON v.id = r.visibility_id
@@ -66,17 +66,6 @@ public interface RoomMembershipRepository {
 		WHERE room_id = #{roomId} AND left_at IS NULL
 		""")
 	int countActiveMembers(@Param("roomId") long roomId);
-
-	@Select("""
-		SELECT EXISTS (
-			SELECT 1 FROM friends f
-			JOIN friend_statuses fs ON fs.id = f.status_id
-			WHERE f.user_id = #{creatorId}
-			  AND f.friend_user_id = #{userId}
-			  AND fs.code = 'ACTIVE'
-		)
-		""")
-	boolean isCreatorFriend(@Param("creatorId") long creatorId, @Param("userId") long userId);
 
 	@Select("""
 		SELECT EXISTS (
@@ -126,6 +115,6 @@ public interface RoomMembershipRepository {
 		""")
 	int leave(@Param("membershipId") long membershipId, @Param("leftAt") Instant leftAt);
 
-	record JoinPolicy(long id, long createdBy, int maxMembers, String visibility, String status) {
+	record JoinPolicy(long id, int maxMembers, String visibility, String status) {
 	}
 }

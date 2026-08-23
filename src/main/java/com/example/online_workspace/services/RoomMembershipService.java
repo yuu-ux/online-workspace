@@ -31,11 +31,6 @@ public class RoomMembershipService {
 		if ("INVITE_ONLY".equals(room.visibility())) {
 			throw forbidden("An invitation is required");
 		}
-		if ("FRIENDS_ONLY".equals(room.visibility())
-			&& userId != room.createdBy()
-			&& !repository.isCreatorFriend(room.createdBy(), userId)) {
-			throw forbidden("The room is limited to the creator's friends");
-		}
 
 		return joinLockedRoom(room, userId, joinedAt);
 	}

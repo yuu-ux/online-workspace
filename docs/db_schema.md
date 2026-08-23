@@ -32,7 +32,6 @@
 | work_styles | 2 | `CHAT_OK` | 雑談OK |
 | visibilities | 1 | `PUBLIC` | 公開 |
 | visibilities | 2 | `INVITE_ONLY` | 招待のみ |
-| visibilities | 3 | `FRIENDS_ONLY` | フレンドのみ |
 | room_statuses | 1 | `OPEN` | 受付中 |
 | room_statuses | 2 | `CLOSED` | 終了 |
 | room_category_statuses | 1 | `ACTIVE` | 利用中 |

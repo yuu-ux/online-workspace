@@ -49,7 +49,7 @@ class WorkHistoryServiceTests {
 			"FOCUS",
 			8,
 			2,
-			"FRIENDS_ONLY",
+			"PUBLIC",
 			"OPEN",
 			30L,
 			"Alice",
@@ -58,8 +58,7 @@ class WorkHistoryServiceTests {
 			startedAt,
 			endedAt,
 			5400L,
-			false,
-			true
+			false
 		);
 
 		when(repository.findActiveUserIdByEmail("me@example.com")).thenReturn(1L);

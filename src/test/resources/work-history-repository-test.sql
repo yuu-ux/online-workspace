@@ -1,8 +1,6 @@
 DROP TABLE IF EXISTS work_sessions;
 DROP TABLE IF EXISTS room_members;
 DROP TABLE IF EXISTS blocks;
-DROP TABLE IF EXISTS friends;
-DROP TABLE IF EXISTS friend_statuses;
 DROP TABLE IF EXISTS profiles;
 DROP TABLE IF EXISTS rooms;
 DROP TABLE IF EXISTS room_categories;
@@ -80,22 +78,12 @@ CREATE TABLE work_sessions (
     started_at TIMESTAMP WITH TIME ZONE NOT NULL,
     ended_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
-CREATE TABLE friend_statuses (
-    id SMALLINT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL
-);
-CREATE TABLE friends (
-    user_id BIGINT NOT NULL,
-    friend_user_id BIGINT NOT NULL,
-    status_id SMALLINT NOT NULL
-);
 CREATE TABLE blocks (
     blocker_user_id BIGINT NOT NULL,
     blocked_user_id BIGINT NOT NULL
 );
 
 INSERT INTO account_statuses (id, code) VALUES (1, 'ACTIVE'), (2, 'SUSPENDED'), (3, 'BANNED');
-INSERT INTO friend_statuses (id, code) VALUES (1, 'ACTIVE');
 INSERT INTO users (id, name, email, account_status_id, suspended_until) VALUES
     (10, '自分', 'me@example.com', 1, NULL),
     (11, '共同作業者', 'peer@example.com', 1, NULL),
@@ -122,7 +110,6 @@ INSERT INTO room_members (id, room_id, user_id, joined_at, left_at) VALUES
     (41, 20, 11, TIMESTAMP WITH TIME ZONE '2026-08-03 01:30:00+00', TIMESTAMP WITH TIME ZONE '2026-08-03 02:00:00+00'),
     (42, 20, 13, TIMESTAMP WITH TIME ZONE '2026-08-03 00:00:00+00', TIMESTAMP WITH TIME ZONE '2026-08-03 01:00:00+00'),
     (43, 20, 14, TIMESTAMP WITH TIME ZONE '2026-08-03 02:30:00+00', NULL);
-INSERT INTO friends (user_id, friend_user_id, status_id) VALUES (12, 10, 1);
 INSERT INTO blocks (blocker_user_id, blocked_user_id) VALUES (10, 14);
 INSERT INTO work_sessions (id, user_id, room_id, category_id, started_at, ended_at) VALUES
     (50, 10, 20, 30, TIMESTAMP WITH TIME ZONE '2026-08-03 01:00:00+00', TIMESTAMP WITH TIME ZONE '2026-08-03 02:30:00+00');

@@ -58,15 +58,6 @@ class RoomMembershipServiceTests {
 	}
 
 	@Test
-	void onlyCreatorFriendCanJoinFriendsOnlyRoom() {
-		assertThat(service.join(11L, "member@example.com").userId()).isEqualTo(2L);
-
-		assertThatThrownBy(() -> service.join(11L, "other@example.com"))
-			.isInstanceOfSatisfying(ResponseStatusException.class,
-				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
-	}
-
-	@Test
 	void validInviteJoinsInviteOnlyRoomAndExpiredInviteDoesNot() {
 		RoomMembershipService.JoinResult result = service.joinByInvite(
 			"valid-invite-token-0000000000000000",

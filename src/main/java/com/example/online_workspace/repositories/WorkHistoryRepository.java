@@ -78,15 +78,7 @@ public interface WorkHistoryRepository {
 		      OR (b.blocked_user_id = #{userId} AND b.blocker_user_id = active_member.user_id)
 		    WHERE active_member.room_id = r.id
 		      AND active_member.left_at IS NULL
-		  ) AS blocked,
-		  EXISTS (
-		    SELECT 1
-		    FROM friends f
-		    JOIN friend_statuses fs ON fs.id = f.status_id
-		    WHERE f.user_id = r.created_by
-		      AND f.friend_user_id = #{userId}
-		      AND fs.code = 'ACTIVE'
-		  ) AS creator_friend
+		  ) AS blocked
 		FROM work_sessions ws
 		JOIN rooms r ON r.id = ws.room_id
 		JOIN room_categories rc ON rc.id = ws.category_id
@@ -204,8 +196,7 @@ public interface WorkHistoryRepository {
 		Instant startedAt,
 		Instant endedAt,
 		long durationSeconds,
-		boolean blocked,
-		boolean creatorFriend
+		boolean blocked
 	) {
 	}
 

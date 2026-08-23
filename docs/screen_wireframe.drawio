@@ -153,7 +153,7 @@
         <mxCell id="1jtk9u08_0WX48GW1xIK-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="参加" vertex="1">
           <mxGeometry height="28" width="90" x="180" y="306" as="geometry" />
         </mxCell>
-        <mxCell id="1jtk9u08_0WX48GW1xIK-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームB&#xa;カテゴリ: 仕事 / 作業スタイル: 雑談OK&#xa;フレンド限定 / 2人 / 説明あり" vertex="1">
+        <mxCell id="1jtk9u08_0WX48GW1xIK-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームB&#xa;カテゴリ: 仕事 / 作業スタイル: 雑談OK&#xa;公開 / 2人 / 説明あり" vertex="1">
           <mxGeometry height="96" width="360" x="-70" y="372" as="geometry" />
         </mxCell>
         <mxCell id="1jtk9u08_0WX48GW1xIK-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="参加" vertex="1">
@@ -204,7 +204,7 @@
         <mxCell id="home-room-join-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="参加" vertex="1">
           <mxGeometry height="28" width="90" x="1710" y="338" as="geometry" />
         </mxCell>
-        <mxCell id="home-room-card-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームB&#xa;カテゴリ: 仕事 / 作業スタイル: 雑談OK&#xa;フレンド限定 / 2人 / 説明あり" vertex="1">
+        <mxCell id="home-room-card-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームB&#xa;カテゴリ: 仕事 / 作業スタイル: 雑談OK&#xa;公開 / 2人 / 説明あり" vertex="1">
           <mxGeometry height="96" width="360" x="1460" y="404" as="geometry" />
         </mxCell>
         <mxCell id="home-room-join-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="参加" vertex="1">
@@ -234,7 +234,7 @@
         <mxCell id="create-style" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="作業スタイル 選択: 黙って集中 / 雑談OK" vertex="1">
           <mxGeometry height="36" width="380" x="910" y="600" as="geometry" />
         </mxCell>
-        <mxCell id="create-visibility" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="公開範囲 選択: 公開 / 招待のみ / フレンドのみ" vertex="1">
+        <mxCell id="create-visibility" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="公開範囲 選択: 公開 / 招待のみ" vertex="1">
           <mxGeometry height="36" width="380" x="910" y="652" as="geometry" />
         </mxCell>
         <mxCell id="create-capacity" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="人数上限 選択: 2〜12" vertex="1">
