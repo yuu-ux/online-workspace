@@ -21,9 +21,12 @@ class WorkSessionRepositoryTests {
 	@Autowired
 	private WorkSessionRepository repository;
 
+	@Autowired
+	private UserRepository userRepository;
+
 	@Test
 	void insertsCategorySnapshotFromRoom() {
-		assertThat(repository.lockUserById(10L)).isEqualTo(10L);
+		assertThat(userRepository.lockById(10L)).isTrue();
 		assertThat(repository.insertFromRoom(10L, 20L, STARTED_AT)).isOne();
 
 		WorkSession active = repository.findActiveByUserIdForUpdate(10L);

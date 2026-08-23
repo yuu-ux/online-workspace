@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.online_workspace.models.WorkSession;
+import com.example.online_workspace.repositories.UserRepository;
 import com.example.online_workspace.repositories.WorkSessionRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,12 +31,15 @@ class WorkSessionServiceTests {
 	@Mock
 	private WorkSessionRepository repository;
 
+	@Mock
+	private UserRepository userRepository;
+
 	private WorkSessionService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new WorkSessionService(repository);
-		when(repository.lockUserById(USER_ID)).thenReturn(USER_ID);
+		service = new WorkSessionService(repository, userRepository);
+		when(userRepository.lockById(USER_ID)).thenReturn(true);
 	}
 
 	@Test
@@ -122,7 +126,7 @@ class WorkSessionServiceTests {
 
 	@Test
 	void rejectsMissingUser() {
-		when(repository.lockUserById(USER_ID)).thenReturn(null);
+		when(userRepository.lockById(USER_ID)).thenReturn(false);
 
 		assertThatThrownBy(() -> service.start(USER_ID, ROOM_ID, STARTED_AT))
 			.isInstanceOf(NoSuchElementException.class)

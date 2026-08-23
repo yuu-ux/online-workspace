@@ -7,15 +7,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.online_workspace.models.WorkSession;
+import com.example.online_workspace.repositories.UserRepository;
 import com.example.online_workspace.repositories.WorkSessionRepository;
 
 @Service
 public class WorkSessionService {
 
 	private final WorkSessionRepository workSessionRepository;
+	private final UserRepository userRepository;
 
-	public WorkSessionService(WorkSessionRepository workSessionRepository) {
+	public WorkSessionService(WorkSessionRepository workSessionRepository, UserRepository userRepository) {
 		this.workSessionRepository = workSessionRepository;
+		this.userRepository = userRepository;
 	}
 
 	@Transactional
@@ -76,7 +79,7 @@ public class WorkSessionService {
 	}
 
 	private void lockUser(long userId) {
-		if (workSessionRepository.lockUserById(userId) == null) {
+		if (!userRepository.lockById(userId)) {
 			throw new NoSuchElementException("User not found: " + userId);
 		}
 	}

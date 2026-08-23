@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.online_workspace.models.RoomMember;
 import com.example.online_workspace.repositories.RoomMembershipRepository;
+import com.example.online_workspace.repositories.UserRepository;
 import com.example.online_workspace.repositories.WorkSessionRepository;
 
 @MybatisTest
@@ -27,6 +28,9 @@ class RoomMembershipServiceTests {
 	private WorkSessionRepository workSessionRepository;
 
 	@Autowired
+	private UserRepository userRepository;
+
+	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
 	private RoomMembershipService service;
@@ -35,7 +39,7 @@ class RoomMembershipServiceTests {
 	void setUp() {
 		service = new RoomMembershipService(
 			membershipRepository,
-			new WorkSessionService(workSessionRepository)
+			new WorkSessionService(workSessionRepository, userRepository)
 		);
 	}
 
