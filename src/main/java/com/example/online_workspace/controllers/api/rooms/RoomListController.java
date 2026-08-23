@@ -41,8 +41,8 @@ public class RoomListController {
 			page,
 			size
 		);
-		int totalPages = (int) (result.totalElements() / size
-			+ (result.totalElements() % size == 0 ? 0 : 1));
+		long totalPages = result.totalElements() / size
+			+ (result.totalElements() % size == 0 ? 0 : 1);
 		return new RoomPageResponse(
 			result.items().stream().map(RoomSummaryResponse::from).toList(),
 			new PageMetaResponse(
@@ -68,7 +68,7 @@ public class RoomListController {
 		int page,
 		int size,
 		long totalElements,
-		int totalPages,
+		long totalPages,
 		boolean first,
 		boolean last
 	) {
