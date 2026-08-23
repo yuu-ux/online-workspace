@@ -5,8 +5,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
-import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
@@ -22,8 +20,7 @@ public class PasswordEncoderConfig {
 	 */
 	@Bean
 	public PasswordEncoder passwordEncoder() {
-		DelegatingPasswordEncoder delegate = (DelegatingPasswordEncoder) PasswordEncoderFactories.createDelegatingPasswordEncoder();
-		delegate.setDefaultPasswordEncoderForMatches(new BCryptPasswordEncoder());
+		BCryptPasswordEncoder delegate = new BCryptPasswordEncoder();
 		return new PasswordEncoder() {
 			@Override
 			public String encode(CharSequence rawPassword) {
