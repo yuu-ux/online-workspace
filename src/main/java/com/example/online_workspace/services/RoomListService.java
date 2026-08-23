@@ -28,7 +28,8 @@ public class RoomListService {
 
 		long totalElements = repository.countPublicRooms(categoryId, workStyle);
 		long offset = (long) page * size;
-		List<RoomListItem> items = offset >= totalElements
+		boolean requestedPageIsOutOfRange = offset >= totalElements;
+		List<RoomListItem> items = requestedPageIsOutOfRange
 			? List.of()
 			: repository.findPublicRooms(userId, categoryId, workStyle, size, offset);
 		return new Result(items, totalElements);
