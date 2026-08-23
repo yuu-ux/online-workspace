@@ -27,13 +27,14 @@ public interface RoomListRepository {
 		FROM rooms r
 		JOIN visibilities v ON v.id = r.visibility_id AND v.code = 'PUBLIC'
 		JOIN room_statuses rs ON rs.id = r.status_id AND rs.code = 'OPEN'
-		WHERE 1 = 1
-		<if test="categoryId != null">
-			AND r.category_id = #{categoryId}
-		</if>
-		<if test="workStyle != null">
-			AND r.work_style_id = (SELECT id FROM work_styles WHERE code = #{workStyle})
-		</if>
+		<where>
+			<if test="categoryId != null">
+				AND r.category_id = #{categoryId}
+			</if>
+			<if test="workStyle != null">
+				AND r.work_style_id = (SELECT id FROM work_styles WHERE code = #{workStyle})
+			</if>
+		</where>
 		</script>
 		""")
 	long countPublicRooms(
@@ -48,13 +49,14 @@ public interface RoomListRepository {
 			FROM rooms r
 			JOIN visibilities v ON v.id = r.visibility_id AND v.code = 'PUBLIC'
 			JOIN room_statuses rs ON rs.id = r.status_id AND rs.code = 'OPEN'
-			WHERE 1 = 1
-			<if test="categoryId != null">
-				AND r.category_id = #{categoryId}
-			</if>
-			<if test="workStyle != null">
-				AND r.work_style_id = (SELECT id FROM work_styles WHERE code = #{workStyle})
-			</if>
+			<where>
+				<if test="categoryId != null">
+					AND r.category_id = #{categoryId}
+				</if>
+				<if test="workStyle != null">
+					AND r.work_style_id = (SELECT id FROM work_styles WHERE code = #{workStyle})
+				</if>
+			</where>
 			ORDER BY r.created_at DESC, r.id DESC
 			LIMIT #{size} OFFSET #{offset}
 		)
