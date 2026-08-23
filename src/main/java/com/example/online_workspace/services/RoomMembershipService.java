@@ -59,7 +59,7 @@ public class RoomMembershipService {
 
 	@Transactional
 	public void leave(long roomId, String userEmail) {
-		Instant leftAt = Instant.now();
+		Instant leftAt = repository.currentTimestamp();
 		long userId = requireUserId(userEmail);
 		Long membershipId = repository.findActiveMembershipIdForUpdate(roomId, userId);
 		if (membershipId == null) {
