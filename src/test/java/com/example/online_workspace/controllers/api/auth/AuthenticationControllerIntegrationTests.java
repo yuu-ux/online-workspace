@@ -179,7 +179,7 @@ class AuthenticationControllerIntegrationTests {
 		performLogout(session)
 			.andExpect(status().isNoContent())
 			.andExpect(content().string(""))
-			.andExpect(cookie().maxAge("SESSION", 0));
+			.andExpect(cookie().maxAge("JSESSIONID", 0));
 
 		assertTrue(session.isInvalid());
 	}

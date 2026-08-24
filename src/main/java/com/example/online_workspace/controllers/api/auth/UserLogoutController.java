@@ -22,7 +22,7 @@ public class UserLogoutController {
 
 	private final LogoutHandler logoutHandler = new CompositeLogoutHandler(
 		new SecurityContextLogoutHandler(),
-		new CookieClearingLogoutHandler("SESSION")
+		new CookieClearingLogoutHandler("JSESSIONID")
 	);
 
 	/**
