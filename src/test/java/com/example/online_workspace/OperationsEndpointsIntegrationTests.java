@@ -25,9 +25,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 
 @SpringBootTest(properties = {
 	"app.management.api-key=test-management-key",
-	"management.endpoints.web.base-path=/",
 	"management.endpoints.web.exposure.include=health,prometheus",
-	"management.endpoints.web.path-mapping.prometheus=metrics",
 	"management.endpoint.health.show-components=always"
 })
 @AutoConfigureMockMvc
@@ -44,20 +42,20 @@ class OperationsEndpointsIntegrationTests {
 
 	@Test
 	void operationsEndpointsRequireApiKey() throws Exception {
-		mockMvc.perform(get("/health"))
+		mockMvc.perform(get("/actuator/health"))
 			.andExpect(status().isUnauthorized());
 
-		mockMvc.perform(get("/metrics"))
+		mockMvc.perform(get("/actuator/prometheus"))
 			.andExpect(status().isUnauthorized());
 	}
 
 	@Test
 	void healthAndPrometheusMetricsAreAvailable() throws Exception {
-		mockMvc.perform(get("/health").header("X-API-Key", "test-management-key"))
+		mockMvc.perform(get("/actuator/health").header("X-API-Key", "test-management-key"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("UP"));
 
-		mockMvc.perform(get("/metrics").header("X-API-Key", "test-management-key"))
+		mockMvc.perform(get("/actuator/prometheus").header("X-API-Key", "test-management-key"))
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("http_server_requests_seconds")))
 			.andExpect(content().string(containsString("jvm_memory_used_bytes")))
@@ -72,7 +70,7 @@ class OperationsEndpointsIntegrationTests {
 
 		events.publishEvent(new SessionConnectEvent(this, message));
 		assertThat(meterRegistry.get("websocket.connections.active").gauge().value()).isEqualTo(1);
-		mockMvc.perform(get("/metrics").header("X-API-Key", "test-management-key"))
+		mockMvc.perform(get("/actuator/prometheus").header("X-API-Key", "test-management-key"))
 			.andExpect(content().string(containsString("websocket_connections_active")));
 
 		events.publishEvent(new SessionDisconnectEvent(this, message, "test-session", CloseStatus.NORMAL));

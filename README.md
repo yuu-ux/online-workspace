@@ -72,15 +72,15 @@ HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up
 `MANAGEMENT_API_KEY` を設定すると、次の監視エンドポイントを
 `X-API-Key` ヘッダー付きで利用できます。未設定時はアクセスを拒否します。
 
-- `GET /health`: アプリケーションとDBの稼働状態
-- `GET /metrics`: Prometheus text exposition format
+- `GET /actuator/health`: アプリケーションとDBの稼働状態
+- `GET /actuator/prometheus`: Prometheus text exposition format
 
 ```bash
-curl -H "X-API-Key: $MANAGEMENT_API_KEY" http://localhost:8080/health
-curl -H "X-API-Key: $MANAGEMENT_API_KEY" http://localhost:8080/metrics
+curl -H "X-API-Key: $MANAGEMENT_API_KEY" http://localhost:8080/actuator/health
+curl -H "X-API-Key: $MANAGEMENT_API_KEY" http://localhost:8080/actuator/prometheus
 ```
 
-`/metrics` では `http.server.requests`（応答時間・status別件数）、JVM/process の
+`/actuator/prometheus` では `http.server.requests`（応答時間・status別件数）、JVM/process の
 CPU・メモリ、`hikaricp.connections`（DB接続）、`tomcat.connections.current`
 （同時接続）、`websocket.connections.active`（WebSocket接続）を確認できます。
 Prometheus形式では各メトリクス名のドットがアンダースコアへ変換されます。
