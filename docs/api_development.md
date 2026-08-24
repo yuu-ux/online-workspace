@@ -48,7 +48,7 @@ npx --yes openapi-typescript@7.13.0
 3. リロード時やアプリ起動時は `GET /api/v1/auth/session` を呼び出す。未ログイン時も `200` で `authenticated: false` が返る。
 4. ログアウト時は再度CSRF tokenを取得し、`POST /api/v1/auth/logout` に `JSESSIONID` cookieと `X-CSRF-TOKEN` headerを付けて送信する。成功時は `204` で、サーバーセッションと `JSESSIONID` cookieが無効化される。
 
-ログイン失敗時は `401`、入力形式エラーは `422`、レート制限中は `429` となる。`429` では `Retry-After: 900` を再試行待機時間として使用する。
+ログイン失敗時は `401`、CSRFトークンがない・不正な場合は `403`、入力形式エラーは `422`、レート制限中は `429` となる。`429` では `Retry-After: 900` を再試行待機時間として使用する。
 - API keyの採点対象は `GET /rooms`、`POST /rooms`、`GET /rooms/{roomId}`、`PUT /rooms/{roomId}`、`DELETE /rooms/{roomId}` の5 operationとする。
 - 採点対象5 operationはsession認証またはAPI key認証を受け付ける。API keyはユーザーまたはservice principalへ紐付け、同じ認可ルールを適用する。
 - 採点対象5 operationにはkey単位のrate limitを適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。
