@@ -1181,7 +1181,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
-  /health:
+  /actuator/health:
     get:
       tags: [Operations]
       summary: システムの稼働状態を取得する
@@ -1209,7 +1209,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
 
-  /metrics:
+  /actuator/prometheus:
     get:
       tags: [Operations]
       summary: Prometheus向けメトリクスを取得する

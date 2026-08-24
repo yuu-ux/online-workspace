@@ -30,7 +30,7 @@ public class OperationsSecurityConfig {
 		};
 
 		http
-			.securityMatcher("/health", "/metrics")
+			.securityMatcher("/actuator/health", "/actuator/prometheus")
 			.csrf(csrf -> csrf.disable())
 			.requestCache(cache -> cache.disable())
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
