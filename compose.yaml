@@ -36,6 +36,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/postgres
       DB_USERNAME: postgres
       DB_PASSWORD: password
+      MANAGEMENT_API_KEY: ${MANAGEMENT_API_KEY:-}
       LOGGING_FILE_NAME: /var/log/app/application.log
     volumes:
       - ./build.gradle:/app/build.gradle:ro

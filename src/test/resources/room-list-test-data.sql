@@ -67,7 +67,7 @@ CREATE TABLE blocks (
 );
 
 INSERT INTO work_styles VALUES (1, 'FOCUS'), (2, 'CHAT_OK');
-INSERT INTO visibilities VALUES (1, 'PUBLIC'), (2, 'INVITE_ONLY');
+INSERT INTO visibilities VALUES (1, 'PUBLIC');
 INSERT INTO room_statuses VALUES (1, 'OPEN'), (2, 'CLOSED');
 INSERT INTO account_statuses VALUES (1, 'ACTIVE'), (2, 'SUSPENDED'), (3, 'BANNED');
 INSERT INTO users VALUES
@@ -83,7 +83,6 @@ INSERT INTO room_categories VALUES
 INSERT INTO profiles VALUES (2, 'https://example.com/icon.png');
 INSERT INTO rooms VALUES
     (10, '参加可能', 2, 1, 1, 3, 1, 1, TIMESTAMP WITH TIME ZONE '2026-08-10 10:00:00+09:00'),
-    (11, '招待限定', 2, 1, 1, 3, 2, 1, TIMESTAMP WITH TIME ZONE '2026-08-11 10:00:00+09:00'),
     (12, '終了済み', 2, 1, 1, 3, 1, 2, TIMESTAMP WITH TIME ZONE '2026-08-12 10:00:00+09:00'),
     (13, 'ブロック中', 2, 1, 2, 3, 1, 1, TIMESTAMP WITH TIME ZONE '2026-08-13 10:00:00+09:00'),
     (14, '満室', 2, 1, 1, 2, 1, 1, TIMESTAMP WITH TIME ZONE '2026-08-14 10:00:00+09:00'),

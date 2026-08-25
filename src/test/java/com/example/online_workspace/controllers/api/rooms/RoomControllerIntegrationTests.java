@@ -75,23 +75,6 @@ class RoomControllerIntegrationTests {
 
 	@Test
 	@WithMockUser(username = "creator@example.com")
-	void acceptsEverySupportedVisibility() throws Exception {
-		for (String visibility : new String[] {"PUBLIC", "INVITE_ONLY"}) {
-			mockMvc.perform(post("/api/v1/rooms")
-					.with(csrf())
-					.contentType(MediaType.APPLICATION_JSON)
-					.content(requestBody(2, visibility)))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.visibility").value(visibility))
-				.andExpect(jsonPath("$.member").value(true));
-		}
-
-		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rooms", Integer.class)).isEqualTo(2);
-		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM room_members", Integer.class)).isEqualTo(2);
-	}
-
-	@Test
-	@WithMockUser(username = "creator@example.com")
 	void rejectsFriendsOnlyVisibility() throws Exception {
 		mockMvc.perform(post("/api/v1/rooms")
 				.with(csrf())

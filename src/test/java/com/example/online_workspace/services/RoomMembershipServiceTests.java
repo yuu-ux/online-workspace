@@ -58,23 +58,6 @@ class RoomMembershipServiceTests {
 	}
 
 	@Test
-	void validInviteJoinsInviteOnlyRoomAndExpiredInviteDoesNot() {
-		RoomMembershipService.JoinResult result = service.joinByInvite(
-			"valid-invite-token-0000000000000000",
-			"member@example.com"
-		);
-
-		assertThat(result.roomId()).isEqualTo(12L);
-		assertThat(result.membership().userId()).isEqualTo(2L);
-
-		assertThatThrownBy(() -> service.joinByInvite(
-			"expired-invite-token-000000000000",
-			"other@example.com"
-		)).isInstanceOfSatisfying(ResponseStatusException.class,
-			exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND));
-	}
-
-	@Test
 	void rejectsJoinWhenRoomIsFull() {
 		assertThatThrownBy(() -> service.join(13L, "member@example.com"))
 			.isInstanceOfSatisfying(ResponseStatusException.class,
@@ -139,10 +122,4 @@ class RoomMembershipServiceTests {
 		)).isOne();
 	}
 
-	@Test
-	void directJoinRequiresInviteForInviteOnlyRoom() {
-		assertThatThrownBy(() -> service.join(12L, "member@example.com"))
-			.isInstanceOfSatisfying(ResponseStatusException.class,
-				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
-	}
 }

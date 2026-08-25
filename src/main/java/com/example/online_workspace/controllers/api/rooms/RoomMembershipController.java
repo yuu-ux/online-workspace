@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.online_workspace.models.RoomMember;
 import com.example.online_workspace.services.RoomMembershipService;
-import com.example.online_workspace.services.RoomMembershipService.JoinResult;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -29,13 +28,6 @@ public class RoomMembershipController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public RoomMemberResponse join(@PathVariable long roomId, Authentication authentication) {
 		return RoomMemberResponse.from(service.join(roomId, authentication.getName()));
-	}
-
-	@PostMapping("/invites/{token}/join")
-	@ResponseStatus(HttpStatus.CREATED)
-	public JoinRoomResponse joinByInvite(@PathVariable String token, Authentication authentication) {
-		JoinResult result = service.joinByInvite(token, authentication.getName());
-		return new JoinRoomResponse(result.roomId(), RoomMemberResponse.from(result.membership()));
 	}
 
 	@DeleteMapping("/rooms/{roomId}/members/me")
@@ -58,6 +50,4 @@ public class RoomMembershipController {
 	public record UserSummary(long id, String name, String iconUrl) {
 	}
 
-	public record JoinRoomResponse(long roomId, RoomMemberResponse membership) {
-	}
 }

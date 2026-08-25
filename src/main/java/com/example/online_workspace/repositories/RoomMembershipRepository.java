@@ -24,33 +24,13 @@ public interface RoomMembershipRepository {
 	Long findActiveUserIdByEmailForUpdate(@Param("email") String email);
 
 	@Select("""
-		SELECT r.id, r.max_members,
-		       v.code AS visibility, rs.code AS status
+		SELECT r.id, r.max_members, rs.code AS status
 		FROM rooms r
-		JOIN visibilities v ON v.id = r.visibility_id
 		JOIN room_statuses rs ON rs.id = r.status_id
 		WHERE r.id = #{roomId}
 		FOR UPDATE OF r
 		""")
 	JoinPolicy lockRoomById(@Param("roomId") long roomId);
-
-	@Select("SELECT room_id FROM room_invites WHERE token = #{token}")
-	Long findInvitedRoomId(@Param("token") String token);
-
-	@Select("""
-		SELECT EXISTS (
-			SELECT 1 FROM room_invites
-			WHERE token = #{token}
-			  AND room_id = #{roomId}
-			  AND invalidated_at IS NULL
-			  AND expires_at > #{joinedAt}
-		)
-		""")
-	boolean isInviteValid(
-		@Param("token") String token,
-		@Param("roomId") long roomId,
-		@Param("joinedAt") Instant joinedAt
-	);
 
 	@Select("""
 		SELECT EXISTS (
@@ -115,6 +95,6 @@ public interface RoomMembershipRepository {
 		""")
 	int leave(@Param("membershipId") long membershipId, @Param("leftAt") Instant leftAt);
 
-	record JoinPolicy(long id, int maxMembers, String visibility, String status) {
+	record JoinPolicy(long id, int maxMembers, String status) {
 	}
 }

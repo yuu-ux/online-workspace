@@ -25,8 +25,6 @@ tags:
     description: ルームカテゴリ
   - name: Rooms
     description: ルームと参加者
-  - name: Invites
-    description: 招待リンク
   - name: Messages
     description: ルーム内チャット履歴と送信
   - name: Friends
@@ -452,7 +450,7 @@ paths:
     delete:
       tags: [Rooms]
       summary: ルームを閉じる
-      description: ルーム作成者だけが実行できる。関連する有効な招待も無効化する。
+      description: ルーム作成者だけが実行できる。
       operationId: closeRoom
       security:
         - sessionAuth: []
@@ -541,101 +539,6 @@ paths:
           description: 退出完了。作業 session も終了する
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /rooms/{roomId}/invites:
-    get:
-      tags: [Invites]
-      summary: ルームの招待リンクを取得する
-      description: ルーム作成者だけが実行できる。
-      operationId: listRoomInvites
-      parameters:
-        - $ref: '#/components/parameters/RoomId'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 招待リンク一覧
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RoomInvite'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      tags: [Invites]
-      summary: 招待リンクを発行する
-      description: ルーム作成者だけが実行できる。
-      operationId: createRoomInvite
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      parameters:
-        - $ref: '#/components/parameters/RoomId'
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateInviteRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '201':
-          description: 発行した招待リンク
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RoomInvite'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /invites/{token}/join:
-    post:
-      tags: [Invites]
-      summary: 招待リンクを使ってルームへ参加する
-      operationId: joinRoomByInvite
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      parameters:
-        - name: token
-          in: path
-          required: true
-          schema:
-            type: string
-            minLength: 32
-            maxLength: 255
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '201':
-          description: 参加したルームと参加情報
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JoinRoomResult'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -1181,7 +1084,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
-  /health:
+  /actuator/health:
     get:
       tags: [Operations]
       summary: システムの稼働状態を取得する
@@ -1208,6 +1111,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
+
+  /actuator/prometheus:
+    get:
+      tags: [Operations]
+      summary: Prometheus向けメトリクスを取得する
+      operationId: getMetrics
+      servers:
+        - url: /
+          description: API prefix 外の監視 endpoint
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Prometheus text exposition format のメトリクス
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
 components:
   securitySchemes:
@@ -1363,7 +1286,7 @@ components:
 
     RoomVisibility:
       type: string
-      enum: [PUBLIC, INVITE_ONLY]
+      enum: [PUBLIC]
 
     RoomStatus:
       type: string
@@ -1688,7 +1611,7 @@ components:
           type: boolean
         joinRestriction:
           type: string
-          enum: [FULL, CLOSED, INVITE_REQUIRED, BLOCKED]
+          enum: [FULL, CLOSED, BLOCKED]
           nullable: true
         createdAt:
           type: string
@@ -1777,50 +1700,6 @@ components:
         joinedAt:
           type: string
           format: date-time
-
-    CreateInviteRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        expiresAt:
-          type: string
-          format: date-time
-          description: 省略時は発行から1時間後
-
-    RoomInvite:
-      type: object
-      required: [id, roomId, token, url, createdBy, expiresAt, createdAt, valid]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        roomId:
-          $ref: '#/components/schemas/Id'
-        token:
-          type: string
-          minLength: 32
-          maxLength: 255
-        url:
-          type: string
-          format: uri
-        createdBy:
-          $ref: '#/components/schemas/UserSummary'
-        expiresAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        valid:
-          type: boolean
-
-    JoinRoomResult:
-      type: object
-      required: [roomId, membership]
-      properties:
-        roomId:
-          $ref: '#/components/schemas/Id'
-        membership:
-          $ref: '#/components/schemas/RoomMember'
 
     CreateMessageRequest:
       type: object
@@ -2188,21 +2067,21 @@ components:
 
     HealthStatus:
       type: object
-      required: [status, checks, checkedAt]
+      required: [status]
       properties:
         status:
           type: string
-          enum: [UP, DEGRADED, DOWN]
-        checks:
+          enum: [UP, DOWN, OUT_OF_SERVICE, UNKNOWN]
+        components:
           type: object
           additionalProperties:
-            type: string
-            enum: [UP, DOWN]
+            type: object
+            properties:
+              status:
+                type: string
           example:
-            database: UP
-        checkedAt:
-          type: string
-          format: date-time
+            db:
+              status: UP
 
     ApiError:
       type: object

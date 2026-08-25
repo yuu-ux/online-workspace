@@ -66,8 +66,7 @@ public class RoomController {
 	}
 
 	public enum RoomVisibility {
-		PUBLIC,
-		INVITE_ONLY
+		PUBLIC
 	}
 
 	public record RoomDetailResponse(
