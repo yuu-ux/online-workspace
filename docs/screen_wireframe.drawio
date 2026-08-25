@@ -590,7 +590,7 @@
         <mxCell id="monitor-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontStyle=1;" value="システム監視画面（Grafana）" vertex="1">
           <mxGeometry height="40" width="440" x="710" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="monitor-panels" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="API応答時間 / 5xx率 / CPU・メモリ / DB接続数 / WebSocket接続数&#xa;/health 監視 / 500エラー時 Discord通知" vertex="1">
+        <mxCell id="monitor-panels" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="API応答時間 / 5xx率 / CPU・メモリ / DB接続数 / WebSocket接続数&#xa;/actuator/health 監視 / 500エラー時 Discord通知" vertex="1">
           <mxGeometry height="160" width="440" x="710" y="186" as="geometry" />
         </mxCell>
         <mxCell id="monitor-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="管理画面へ戻る" vertex="1">
