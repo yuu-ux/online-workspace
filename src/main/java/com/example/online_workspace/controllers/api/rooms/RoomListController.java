@@ -81,7 +81,6 @@ public class RoomListController {
 		String workStyle,
 		int maxMembers,
 		int currentMembers,
-		String visibility,
 		String status,
 		UserSummaryResponse createdBy,
 		boolean joinable,
@@ -89,9 +88,7 @@ public class RoomListController {
 		Instant createdAt
 	) {
 		private static RoomSummaryResponse from(RoomListItem item) {
-			String restriction = item.blocked()
-				? "BLOCKED"
-				: item.currentMembers() >= item.maxMembers() ? "FULL" : null;
+			String restriction = item.currentMembers() >= item.maxMembers() ? "FULL" : null;
 			return new RoomSummaryResponse(
 				item.id(),
 				item.name(),
@@ -104,7 +101,6 @@ public class RoomListController {
 				item.workStyle(),
 				item.maxMembers(),
 				item.currentMembers(),
-				item.visibility(),
 				item.status(),
 				new UserSummaryResponse(item.creatorId(), item.creatorName(), item.creatorIconUrl()),
 				restriction == null,

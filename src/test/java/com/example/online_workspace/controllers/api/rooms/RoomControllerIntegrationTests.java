@@ -36,7 +36,7 @@ class RoomControllerIntegrationTests {
 		mockMvc.perform(post("/api/v1/rooms")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(requestBody(12, "PUBLIC")))
+				.content(requestBody(12)))
 			.andExpect(status().isCreated())
 			.andExpect(content().contentType(MediaType.APPLICATION_JSON))
 			.andExpect(jsonPath("$.name").value("集中ルーム"))
@@ -46,7 +46,6 @@ class RoomControllerIntegrationTests {
 			.andExpect(jsonPath("$.workStyle").value("FOCUS"))
 			.andExpect(jsonPath("$.maxMembers").value(12))
 			.andExpect(jsonPath("$.currentMembers").value(1))
-			.andExpect(jsonPath("$.visibility").value("PUBLIC"))
 			.andExpect(jsonPath("$.status").value("OPEN"))
 			.andExpect(jsonPath("$.createdBy.id").value(1))
 			.andExpect(jsonPath("$.member").value(true));
@@ -65,7 +64,7 @@ class RoomControllerIntegrationTests {
 		mockMvc.perform(post("/api/v1/rooms")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(requestBody(maxMembers, "PUBLIC")))
+				.content(requestBody(maxMembers)))
 			.andExpect(status().isUnprocessableContent())
 			.andExpect(jsonPath("$.fieldErrors[0].field").value("maxMembers"))
 			.andExpect(jsonPath("$.fieldErrors[0].code").value("RANGE"));
@@ -75,54 +74,26 @@ class RoomControllerIntegrationTests {
 
 	@Test
 	@WithMockUser(username = "creator@example.com")
-	void acceptsSupportedVisibilities() throws Exception {
-		for (String visibility : new String[] {"PUBLIC", "FRIENDS_ONLY"}) {
-			mockMvc.perform(post("/api/v1/rooms")
-					.with(csrf())
-					.contentType(MediaType.APPLICATION_JSON)
-					.content(requestBody(2, visibility)))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.visibility").value(visibility))
-				.andExpect(jsonPath("$.member").value(true));
-		}
-
-		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rooms", Integer.class)).isEqualTo(2);
-		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM room_members", Integer.class)).isEqualTo(2);
-	}
-
-	@Test
-	@WithMockUser(username = "creator@example.com")
-	void rejectsInviteOnlyVisibility() throws Exception {
-		mockMvc.perform(post("/api/v1/rooms")
-				.with(csrf())
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(requestBody(2, "INVITE_ONLY")))
-			.andExpect(status().isBadRequest());
-	}
-
-	@Test
-	@WithMockUser(username = "creator@example.com")
 	void rejectsInactiveCategoryWithoutCreatingRoom() throws Exception {
 		mockMvc.perform(post("/api/v1/rooms")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(requestBody(2, "PUBLIC").replace("\"categoryId\": 1", "\"categoryId\": 2")))
+				.content(requestBody(2).replace("\"categoryId\": 1", "\"categoryId\": 2")))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.code").value("INVALID_CATEGORY"));
 
 		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rooms", Integer.class)).isZero();
 	}
 
-	private String requestBody(int maxMembers, String visibility) {
+	private String requestBody(int maxMembers) {
 		return """
 			{
 			  "name": "集中ルーム",
 			  "description": "一緒に作業します",
 			  "categoryId": 1,
 			  "workStyle": "FOCUS",
-			  "maxMembers": %d,
-			  "visibility": "%s"
+			  "maxMembers": %d
 			}
-			""".formatted(maxMembers, visibility);
+			""".formatted(maxMembers);
 	}
 }

@@ -29,13 +29,12 @@ public interface RoomRepository {
 	@Insert("""
 		INSERT INTO rooms (
 			name, description, created_by, category_id,
-			work_style_id, max_members, visibility_id
+			work_style_id, max_members
 		)
 		VALUES (
 			#{name}, #{description}, #{createdBy}, #{categoryId},
 			(SELECT id FROM work_styles WHERE code = #{workStyle}),
-			#{maxMembers},
-			(SELECT id FROM visibilities WHERE code = #{visibility})
+			#{maxMembers}
 		)
 		""")
 	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
@@ -49,13 +48,12 @@ public interface RoomRepository {
 		       rc.id AS category_id, rc.name AS category_name,
 		       rc.description AS category_description, rc.sort_order AS category_sort_order,
 		       ws.code AS work_style, r.max_members,
-		       v.code AS visibility, rs.code AS status,
+		       rs.code AS status,
 		       u.id AS creator_id, u.name AS creator_name, p.icon_url AS creator_icon_url,
 		       r.created_at, r.updated_at
 		FROM rooms r
 		JOIN room_categories rc ON rc.id = r.category_id
 		JOIN work_styles ws ON ws.id = r.work_style_id
-		JOIN visibilities v ON v.id = r.visibility_id
 		JOIN room_statuses rs ON rs.id = r.status_id
 		JOIN users u ON u.id = r.created_by
 		LEFT JOIN profiles p ON p.user_id = u.id
@@ -73,7 +71,6 @@ public interface RoomRepository {
 		int categorySortOrder,
 		String workStyle,
 		short maxMembers,
-		String visibility,
 		String status,
 		long creatorId,
 		String creatorName,

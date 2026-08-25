@@ -49,7 +49,6 @@ class WorkHistoryServiceTests {
 			"FOCUS",
 			8,
 			2,
-			"FRIENDS_ONLY",
 			"OPEN",
 			30L,
 			"Alice",
@@ -57,9 +56,7 @@ class WorkHistoryServiceTests {
 			Instant.parse("2026-08-01T00:00:00Z"),
 			startedAt,
 			endedAt,
-			5400L,
-			false,
-			true
+			5400L
 		);
 
 		when(repository.findActiveUserIdByEmail("me@example.com")).thenReturn(1L);

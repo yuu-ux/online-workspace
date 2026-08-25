@@ -28,12 +28,6 @@ public class RoomMembershipService {
 		long userId = requireUserId(userEmail);
 		JoinPolicy room = lockOpenRoom(roomId);
 
-		if ("FRIENDS_ONLY".equals(room.visibility())
-			&& userId != room.createdBy()
-			&& !repository.isCreatorFriend(room.createdBy(), userId)) {
-			throw forbidden("The room is limited to the creator's friends");
-		}
-
 		return joinLockedRoom(room, userId, joinedAt);
 	}
 
@@ -54,9 +48,6 @@ public class RoomMembershipService {
 	private RoomMember joinLockedRoom(JoinPolicy room, long userId, Instant joinedAt) {
 		if (repository.hasActiveMembership(userId)) {
 			throw conflict("The user is already in a room");
-		}
-		if (repository.hasBlockConflict(room.id(), userId)) {
-			throw forbidden("A block relationship prevents joining this room");
 		}
 		if (repository.countActiveMembers(room.id()) >= room.maxMembers()) {
 			throw conflict("The room is full");
@@ -96,10 +87,6 @@ public class RoomMembershipService {
 			throw conflict("The room is closed");
 		}
 		return room;
-	}
-
-	private ResponseStatusException forbidden(String reason) {
-		return new ResponseStatusException(HttpStatus.FORBIDDEN, reason);
 	}
 
 	private ResponseStatusException notFound(String reason) {

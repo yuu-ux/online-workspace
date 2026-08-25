@@ -35,8 +35,6 @@ class WorkHistoryRepositoryTests {
 		assertThat(sessions.getFirst().roomName()).isEqualTo("朝活ルーム");
 		assertThat(sessions.getFirst().categoryName()).isEqualTo("開発");
 		assertThat(sessions.getFirst().durationSeconds()).isEqualTo(5400L);
-		assertThat(sessions.getFirst().blocked()).isTrue();
-		assertThat(sessions.getFirst().creatorFriend()).isTrue();
 		assertThat(repository.findParticipants(20L, STARTED_AT, ENDED_AT))
 			.extracting("name")
 			.containsExactly("共同作業者", "自分");

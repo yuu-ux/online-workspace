@@ -29,14 +29,10 @@ tags:
     description: ルーム内チャット履歴と送信
   - name: Friends
     description: フレンドとお気に入り
-  - name: Blocks
-    description: ブロック
   - name: Work sessions
     description: 作業履歴と集計
   - name: Reports
     description: 通報
-  - name: Administration
-    description: 管理者向け通報対応
   - name: Operations
     description: システム監視
 
@@ -169,7 +165,7 @@ paths:
     get:
       tags: [Users]
       summary: ユーザーを検索する
-      description: 名前の部分一致で検索する。ブロック関係のユーザーは結果から除外する。
+      description: 名前の部分一致で検索する。
       operationId: searchUsers
       parameters:
         - name: query
@@ -337,7 +333,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
         '200':
-          description: 公開範囲とブロック関係を反映したルーム一覧
+          description: 参加可能なルーム一覧
           content:
             application/json:
               schema:
@@ -715,78 +711,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /blocks:
-    get:
-      tags: [Blocks]
-      summary: ブロック一覧を取得する
-      operationId: listBlocks
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: ブロック一覧
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    post:
-      tags: [Blocks]
-      summary: ユーザーをブロックする
-      operationId: createBlock
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateBlockRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '201':
-          description: 作成したブロック。既存のフレンド関係は解除する
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockedUser'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /blocks/{blockedUserId}:
-    delete:
-      tags: [Blocks]
-      summary: ブロックを解除する
-      operationId: deleteBlock
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      parameters:
-        - $ref: '#/components/parameters/BlockedUserId'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '204':
-          description: ブロック解除完了
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   /work-sessions:
     get:
       tags: [Work sessions]
@@ -904,186 +828,6 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
-  /admin/reports:
-    get:
-      tags: [Administration]
-      summary: 通報一覧を取得する
-      description: ADMIN role が必要。
-      operationId: listAdminReports
-      parameters:
-        - name: reason
-          in: query
-          schema:
-            $ref: '#/components/schemas/ReportReasonCode'
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/ReportStatus'
-        - name: targetUserId
-          in: query
-          schema:
-            $ref: '#/components/schemas/Id'
-        - name: from
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: sort
-          in: query
-          schema:
-            type: string
-            enum: [createdAt, updatedAt]
-            default: createdAt
-        - name: direction
-          in: query
-          schema:
-            type: string
-            enum: [asc, desc]
-            default: desc
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 通報一覧
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminReportPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /admin/reports/{reportId}:
-    parameters:
-      - $ref: '#/components/parameters/ReportId'
-    get:
-      tags: [Administration]
-      summary: 通報詳細を取得する
-      description: ADMIN role が必要。
-      operationId: getAdminReport
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 通報詳細
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminReport'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags: [Administration]
-      summary: 通報状態を更新する
-      description: ADMIN role が必要。
-      operationId: updateAdminReport
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateReportRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 更新後の通報
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminReport'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-  /admin/actions:
-    get:
-      tags: [Administration]
-      summary: 管理者対応履歴を取得する
-      description: ADMIN role が必要。
-      operationId: listAdminActions
-      parameters:
-        - name: targetUserId
-          in: query
-          schema:
-            $ref: '#/components/schemas/Id'
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 管理者対応履歴
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminActionPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-    post:
-      tags: [Administration]
-      summary: 警告またはアカウント停止を実行する
-      description: ADMIN role が必要。作成後に対象ユーザーへメールを送信する。
-      operationId: createAdminAction
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateAdminActionRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '201':
-          description: 作成した管理者対応
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminAction'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
   /actuator/health:
     get:
       tags: [Operations]
@@ -1183,20 +927,8 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/Id'
-    BlockedUserId:
-      name: blockedUserId
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/Id'
     RoomId:
       name: roomId
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/Id'
-    ReportId:
-      name: reportId
       in: path
       required: true
       schema:
@@ -1272,10 +1004,6 @@ components:
       minimum: 1
       example: 42
 
-    Role:
-      type: string
-      enum: [USER, ADMIN]
-
     AccountStatus:
       type: string
       enum: [ACTIVE, SUSPENDED, BANNED]
@@ -1283,10 +1011,6 @@ components:
     WorkStyle:
       type: string
       enum: [FOCUS, CHAT_OK]
-
-    RoomVisibility:
-      type: string
-      enum: [PUBLIC, FRIENDS_ONLY]
 
     RoomStatus:
       type: string
@@ -1301,14 +1025,6 @@ components:
         - FRAUD_OR_IMPERSONATION
         - INAPPROPRIATE_CONTENT
         - OTHER
-
-    ReportStatus:
-      type: string
-      enum: [PENDING, REVIEWING, RESOLVED, DISMISSED]
-
-    AdminActionType:
-      type: string
-      enum: [WARNING, TEMPORARY_SUSPENSION, PERMANENT_SUSPENSION]
 
     PageMeta:
       type: object
@@ -1373,7 +1089,7 @@ components:
 
     AuthenticatedUser:
       type: object
-      required: [id, name, email, role, accountStatus]
+      required: [id, name, email, accountStatus]
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -1382,8 +1098,6 @@ components:
         email:
           type: string
           format: email
-        role:
-          $ref: '#/components/schemas/Role'
         accountStatus:
           $ref: '#/components/schemas/AccountStatus'
         suspendedUntil:
@@ -1428,7 +1142,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/UserSummary'
         - type: object
-          required: [isPublic, bio, workCategory, friendship, blocked]
+          required: [isPublic, bio, workCategory, friendship]
           properties:
             isPublic:
               type: boolean
@@ -1444,8 +1158,6 @@ components:
             friendship:
               type: string
               enum: [NONE, FRIEND]
-            blocked:
-              type: boolean
 
     HiddenUserProfile:
       type: object
@@ -1473,9 +1185,7 @@ components:
             - bio
             - workCategory
             - friendship
-            - blocked
             - email
-            - role
             - accountStatus
             - createdAt
           properties:
@@ -1492,13 +1202,9 @@ components:
             friendship:
               type: string
               enum: [NONE, FRIEND]
-            blocked:
-              type: boolean
             email:
               type: string
               format: email
-            role:
-              $ref: '#/components/schemas/Role'
             accountStatus:
               $ref: '#/components/schemas/AccountStatus'
             createdAt:
@@ -1578,7 +1284,6 @@ components:
         - workStyle
         - maxMembers
         - currentMembers
-        - visibility
         - status
         - createdBy
         - joinable
@@ -1601,8 +1306,6 @@ components:
           type: integer
           minimum: 0
           maximum: 12
-        visibility:
-          $ref: '#/components/schemas/RoomVisibility'
         status:
           $ref: '#/components/schemas/RoomStatus'
         createdBy:
@@ -1611,7 +1314,7 @@ components:
           type: boolean
         joinRestriction:
           type: string
-          enum: [FULL, CLOSED, FRIEND_REQUIRED, BLOCKED]
+          enum: [FULL, CLOSED]
           nullable: true
         createdAt:
           type: string
@@ -1635,7 +1338,7 @@ components:
     CreateRoomRequest:
       type: object
       additionalProperties: false
-      required: [name, description, categoryId, workStyle, maxMembers, visibility]
+      required: [name, description, categoryId, workStyle, maxMembers]
       properties:
         name:
           type: string
@@ -1652,13 +1355,11 @@ components:
           type: integer
           minimum: 2
           maximum: 12
-        visibility:
-          $ref: '#/components/schemas/RoomVisibility'
 
     UpdateRoomRequest:
       type: object
       additionalProperties: false
-      required: [name, description, categoryId, workStyle, maxMembers, visibility]
+      required: [name, description, categoryId, workStyle, maxMembers]
       properties:
         name:
           type: string
@@ -1675,8 +1376,6 @@ components:
           type: integer
           minimum: 2
           maximum: 12
-        visibility:
-          $ref: '#/components/schemas/RoomVisibility'
 
     RoomPage:
       type: object
@@ -1776,35 +1475,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Friend'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    CreateBlockRequest:
-      type: object
-      additionalProperties: false
-      required: [userId]
-      properties:
-        userId:
-          $ref: '#/components/schemas/Id'
-
-    BlockedUser:
-      type: object
-      required: [user, blockedAt]
-      properties:
-        user:
-          $ref: '#/components/schemas/UserSummary'
-        blockedAt:
-          type: string
-          format: date-time
-
-    BlockPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/BlockedUser'
         page:
           $ref: '#/components/schemas/PageMeta'
 
@@ -1921,7 +1591,7 @@ components:
 
     ReportReceipt:
       type: object
-      required: [id, targetUserId, reason, status, createdAt]
+      required: [id, targetUserId, reason, createdAt]
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -1934,136 +1604,9 @@ components:
           nullable: true
         reason:
           $ref: '#/components/schemas/ReportReasonCode'
-        status:
-          $ref: '#/components/schemas/ReportStatus'
         createdAt:
           type: string
           format: date-time
-
-    AdminReport:
-      type: object
-      required:
-        - id
-        - reporter
-        - target
-        - reason
-        - status
-        - details
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        reporter:
-          $ref: '#/components/schemas/UserSummary'
-        target:
-          $ref: '#/components/schemas/UserSummary'
-        room:
-          type: object
-          allOf:
-            - $ref: '#/components/schemas/RoomSummary'
-          nullable: true
-        reason:
-          $ref: '#/components/schemas/ReportReason'
-        status:
-          $ref: '#/components/schemas/ReportStatus'
-        details:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    AdminReportPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminReport'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    UpdateReportRequest:
-      type: object
-      additionalProperties: false
-      required: [status]
-      properties:
-        status:
-          $ref: '#/components/schemas/ReportStatus'
-
-    CreateAdminActionRequest:
-      type: object
-      additionalProperties: false
-      required: [targetUserId, actionType, reason]
-      properties:
-        reportId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        targetUserId:
-          $ref: '#/components/schemas/Id'
-        actionType:
-          $ref: '#/components/schemas/AdminActionType'
-        reason:
-          type: string
-          minLength: 1
-          maxLength: 2000
-        startsAt:
-          type: string
-          format: date-time
-          description: 省略時は現在日時
-        endsAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: TEMPORARY_SUSPENSION の場合だけ必須
-
-    AdminAction:
-      type: object
-      required: [id, admin, target, actionType, reason, startsAt, createdAt]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        reportId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        admin:
-          $ref: '#/components/schemas/UserSummary'
-        target:
-          $ref: '#/components/schemas/UserSummary'
-        actionType:
-          $ref: '#/components/schemas/AdminActionType'
-        reason:
-          type: string
-        startsAt:
-          type: string
-          format: date-time
-        endsAt:
-          type: string
-          format: date-time
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-
-    AdminActionPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminAction'
-        page:
-          $ref: '#/components/schemas/PageMeta'
 
     HealthStatus:
       type: object

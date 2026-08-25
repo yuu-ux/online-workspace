@@ -9,7 +9,6 @@ public class RoomDraft {
 	private final long categoryId;
 	private final String workStyle;
 	private final int maxMembers;
-	private final String visibility;
 
 	public RoomDraft(
 		String name,
@@ -17,8 +16,7 @@ public class RoomDraft {
 		long createdBy,
 		long categoryId,
 		String workStyle,
-		int maxMembers,
-		String visibility
+		int maxMembers
 	) {
 		this.name = name;
 		this.description = description;
@@ -26,7 +24,6 @@ public class RoomDraft {
 		this.categoryId = categoryId;
 		this.workStyle = workStyle;
 		this.maxMembers = maxMembers;
-		this.visibility = visibility;
 	}
 
 	public Long getId() {
@@ -61,7 +58,4 @@ public class RoomDraft {
 		return maxMembers;
 	}
 
-	public String getVisibility() {
-		return visibility;
-	}
 }

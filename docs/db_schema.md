@@ -4,13 +4,13 @@
 
 - 日時はタイムゾーン付きで保存する。
 - 外部キー制約を使用し、参照整合性をデータベースでも保証する。
-- 権限や公開範囲などの固定選択肢はマスターテーブルで管理し、業務テーブルからIDで参照する。
+- 固定選択肢はマスターテーブルで管理し、業務テーブルからIDで参照する。
 - `updated_at` はアプリケーション、またはデータベースのトリガーで更新する。
 - `DEFAULT NULL` は、値が設定されるまで未確定であることを明示するために記載する。
 
 ## 固定選択肢のマスターテーブル
 
-権限、状態、公開範囲などを文字列の `CHECK` 制約だけで管理せず、表示名や説明も含めて管理する。各マスターテーブルは次の共通カラムを持つ。
+状態などを文字列の `CHECK` 制約だけで管理せず、表示名や説明も含めて管理する。各マスターテーブルは次の共通カラムを持つ。
 
 | カラム名 | 型 | オプション | 説明 |
 |:--|:--|:--|:--|
@@ -23,15 +23,11 @@
 
 | テーブル名 | ID | code | name |
 |:--|--:|:--|:--|
-| roles | 1 | `USER` | 一般ユーザー |
-| roles | 2 | `ADMIN` | 管理者 |
 | account_statuses | 1 | `ACTIVE` | 利用中 |
 | account_statuses | 2 | `SUSPENDED` | 一時停止 |
 | account_statuses | 3 | `BANNED` | 永久停止 |
 | work_styles | 1 | `FOCUS` | 黙って集中 |
 | work_styles | 2 | `CHAT_OK` | 雑談OK |
-| visibilities | 1 | `PUBLIC` | 公開 |
-| visibilities | 3 | `FRIENDS_ONLY` | フレンドのみ |
 | room_statuses | 1 | `OPEN` | 受付中 |
 | room_statuses | 2 | `CLOSED` | 終了 |
 | room_category_statuses | 1 | `ACTIVE` | 利用中 |
@@ -44,17 +40,10 @@
 | report_reasons | 4 | `FRAUD_OR_IMPERSONATION` | 詐欺・なりすまし |
 | report_reasons | 5 | `INAPPROPRIATE_CONTENT` | 不適切コンテンツ |
 | report_reasons | 6 | `OTHER` | その他 |
-| report_statuses | 1 | `PENDING` | 未確認 |
-| report_statuses | 2 | `REVIEWING` | 確認中 |
-| report_statuses | 3 | `RESOLVED` | 対応済み |
-| report_statuses | 4 | `DISMISSED` | 対応不要 |
-| admin_action_types | 1 | `WARNING` | 警告 |
-| admin_action_types | 2 | `TEMPORARY_SUSPENSION` | 一時停止 |
-| admin_action_types | 3 | `PERMANENT_SUSPENSION` | 永久停止 |
 
 ## users テーブル
 
-ログイン情報、権限、およびアカウントの利用状態を管理する。
+ログイン情報とアカウントの利用状態を管理する。
 
 | カラム名 | 型 | オプション | 説明 |
 |:--|:--|:--|:--|
@@ -62,7 +51,6 @@
 | name | VARCHAR(100) | NOT NULL | 表示名 |
 | email | VARCHAR(255) | NOT NULL, UNIQUE | ログインに使用するメールアドレス |
 | password_hash | VARCHAR(255) | NOT NULL | bcrypt でハッシュ化したパスワード |
-| role_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES roles(id) | ユーザー権限。既定値は `USER` |
 | account_status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES account_statuses(id) | アカウントの利用状態。既定値は `ACTIVE` |
 | suspended_until | TIMESTAMPTZ | DEFAULT NULL | 一時停止の終了日時。曜日ではなく日時を保存し、無期限停止または停止中でない場合は `NULL` |
 | deleted_at | TIMESTAMPTZ | DEFAULT NULL | 退会日時。未退会の場合は `NULL` |
@@ -71,7 +59,7 @@
 
 ### アカウント利用可否の判定
 
-認証時のアクセス許可は、`deleted_at IS NULL`、`account_status_id = ACTIVE`、かつ `suspended_until IS NULL OR suspended_until <= CURRENT_TIMESTAMP` のすべてを満たす場合に限る。`ACTIVE` であっても `suspended_until` が未来の場合や、`deleted_at` が設定されている場合はアクセスを拒否する。`role_id` は利用可能なアカウントに対する認可にのみ使用し、アカウント自体の利用可否には影響させない。
+認証時のアクセス許可は、`deleted_at IS NULL`、`account_status_id = ACTIVE`、かつ `suspended_until IS NULL OR suspended_until <= CURRENT_TIMESTAMP` のすべてを満たす場合に限る。`ACTIVE` であっても `suspended_until` が未来の場合や、`deleted_at` が設定されている場合はアクセスを拒否する。
 
 通常時に整合する状態の組み合わせは、利用中が `ACTIVE` と `suspended_until IS NULL`、一時停止中が `SUSPENDED` と未来の `suspended_until`、永久停止が `BANNED` と `suspended_until IS NULL` とする。一時停止の期限に到達したレコードは移行状態として扱い、アプリケーションが認証処理または定期処理で `account_status_id` を `ACTIVE`、`suspended_until` を `NULL` へ同一トランザクション内で更新する。更新が完了するまではアクセスを許可しない。`deleted_at` はこれらの状態と独立しており、値がある場合は常に退会済みとして扱う。
 
@@ -103,7 +91,6 @@
 | category_id | BIGINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES room_categories(id) | 作業カテゴリID。既定値は `未分類` |
 | work_style_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES work_styles(id) | 作業スタイル。自由入力ではなくマスターから選択し、既定値は `FOCUS` |
 | max_members | SMALLINT | NOT NULL, DEFAULT 12, CHECK (max_members BETWEEN 2 AND 12) | 参加人数の上限 |
-| visibility_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES visibilities(id) | 公開範囲。既定値は `PUBLIC` |
 | status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES room_statuses(id) | ルームが参加受付中か、閉じられているか。既定値は `OPEN` |
 | closed_at | TIMESTAMPTZ | DEFAULT NULL | ルームを閉じた日時。受付中の場合は `NULL` |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
@@ -188,23 +175,6 @@
 - `CHECK (user_id <> friend_user_id)`
   - 自分自身のフレンド登録を防ぐ。
 
-## blocks テーブル
-
-ブロックしたユーザーとブロックされたユーザーの関係を管理する。ブロック成立時にはフレンド状態を `REMOVED` に更新する。ブロックはフレンド解除後も接触制限の判定に必要なため、フレンド状態へ統合せず独立した一方向の関係として扱う。
-
-| カラム名 | 型 | オプション | 説明 |
-|:--|:--|:--|:--|
-| blocker_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | ブロックしたユーザーID |
-| blocked_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | ブロックされたユーザーID |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
-
-### インデックス・制約
-
-- `PRIMARY KEY (blocker_user_id, blocked_user_id)`
-  - 同じ相手の重複ブロックを防ぎ、ブロックした相手の一覧検索にも利用する。
-- `CHECK (blocker_user_id <> blocked_user_id)`
-  - 自分自身のブロックを防ぐ。
-
 ## reports テーブル
 
 ユーザーに対する通報と、その確認状況を管理する。現要件では通報対象はメッセージ単位ではなくユーザー単位とする。
@@ -217,7 +187,6 @@
 | room_id | BIGINT | DEFAULT NULL, FOREIGN KEY REFERENCES rooms(id) | 問題が起きたルームID |
 | reason_id | SMALLINT | NOT NULL, FOREIGN KEY REFERENCES report_reasons(id) | 選択式の通報理由。自由入力ではなくマスターから選択する |
 | details | TEXT | DEFAULT NULL | 通報者が任意入力する詳細説明 |
-| status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES report_statuses(id) | 通報の確認状況。既定値は `PENDING` |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 通報日時 |
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
@@ -225,32 +194,6 @@
 
 - `CHECK (reporter_user_id <> target_user_id)`
   - 自分自身への通報を防ぐ。
-
-## admin_actions テーブル
-
-管理者がユーザーへ行った警告・一時停止・永久停止の履歴を管理する。
-
-| カラム名 | 型 | オプション | 説明 |
-|:--|:--|:--|:--|
-| id | BIGSERIAL | PRIMARY KEY | 管理者対応ID |
-| report_id | BIGINT | DEFAULT NULL, FOREIGN KEY REFERENCES reports(id) | 対応の契機となった通報ID。通報を伴わない対応の場合は `NULL` |
-| admin_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 対応した管理者のユーザーID |
-| target_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 対応を受けたユーザーID |
-| action_type_id | SMALLINT | NOT NULL, FOREIGN KEY REFERENCES admin_action_types(id) | 対応種別。自由入力ではなくマスターから選択する |
-| reason | TEXT | NOT NULL | 対応理由 |
-| starts_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 対応の適用開始日時 |
-| ends_at | TIMESTAMPTZ | DEFAULT NULL | 対応の適用終了日時。警告・永久停止では `NULL` |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 履歴の作成日時 |
-
-`users.account_status_id` と `users.suspended_until` は現在の利用可否を高速に判定するために使い、`admin_actions.starts_at` と `admin_actions.ends_at` は過去を含む対応履歴として保持する。メールの送信状態は管理者対応そのものではないため、このテーブルでは管理せず通知機能側の配信履歴で管理する。
-
-### 制約
-
-- `CHECK (ends_at IS NULL OR ends_at > starts_at)`
-  - 終了日時が設定される場合に、開始日時より後でない日時になることを防ぐ。
-- `BEFORE INSERT OR UPDATE OF action_type_id, starts_at, ends_at` トリガー
-  - `admin_action_types.code = TEMPORARY_SUSPENSION` の場合は `ends_at` を必須とし、`starts_at` より後の日時であることを検証する。
-  - `admin_action_types.code` が `WARNING` または `PERMANENT_SUSPENSION` の場合は `ends_at IS NULL` であることを検証する。
 
 ## work_sessions テーブル
 

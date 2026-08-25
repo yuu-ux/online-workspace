@@ -61,7 +61,6 @@ public interface WorkHistoryRepository {
 		     FROM room_members active_members
 		    WHERE active_members.room_id = r.id
 		      AND active_members.left_at IS NULL) AS current_members,
-		  visibility.code AS visibility,
 		  room_status.code AS room_status,
 		  creator.id AS creator_id,
 		  creator.name AS creator_name,
@@ -69,29 +68,11 @@ public interface WorkHistoryRepository {
 		  r.created_at AS room_created_at,
 		  ws.started_at,
 		  ws.ended_at,
-		  CAST(GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at))) AS BIGINT) AS duration_seconds,
-		  EXISTS (
-		    SELECT 1
-		    FROM room_members active_member
-		    JOIN blocks b
-		      ON (b.blocker_user_id = #{userId} AND b.blocked_user_id = active_member.user_id)
-		      OR (b.blocked_user_id = #{userId} AND b.blocker_user_id = active_member.user_id)
-		    WHERE active_member.room_id = r.id
-		      AND active_member.left_at IS NULL
-		  ) AS blocked,
-		  EXISTS (
-		    SELECT 1
-		    FROM friends f
-		    JOIN friend_statuses fs ON fs.id = f.status_id
-		    WHERE f.user_id = r.created_by
-		      AND f.friend_user_id = #{userId}
-		      AND fs.code = 'ACTIVE'
-		  ) AS creator_friend
+		  CAST(GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at))) AS BIGINT) AS duration_seconds
 		FROM work_sessions ws
 		JOIN rooms r ON r.id = ws.room_id
 		JOIN room_categories rc ON rc.id = ws.category_id
 		JOIN work_styles work_style ON work_style.id = r.work_style_id
-		JOIN visibilities visibility ON visibility.id = r.visibility_id
 		JOIN room_statuses room_status ON room_status.id = r.status_id
 		JOIN users creator ON creator.id = r.created_by
 		LEFT JOIN profiles creator_profile ON creator_profile.user_id = creator.id
@@ -195,7 +176,6 @@ public interface WorkHistoryRepository {
 		String workStyle,
 		int maxMembers,
 		int currentMembers,
-		String visibility,
 		String roomStatus,
 		long creatorId,
 		String creatorName,
@@ -203,9 +183,7 @@ public interface WorkHistoryRepository {
 		Instant roomCreatedAt,
 		Instant startedAt,
 		Instant endedAt,
-		long durationSeconds,
-		boolean blocked,
-		boolean creatorFriend
+		long durationSeconds
 	) {
 	}
 
