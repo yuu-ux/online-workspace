@@ -33,8 +33,6 @@ tags:
     description: 作業履歴と集計
   - name: Reports
     description: 通報
-  - name: Administration
-    description: 管理者向け通報対応
   - name: Operations
     description: システム監視
 
@@ -830,186 +828,6 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
-  /admin/reports:
-    get:
-      tags: [Administration]
-      summary: 通報一覧を取得する
-      description: ADMIN role が必要。
-      operationId: listAdminReports
-      parameters:
-        - name: reason
-          in: query
-          schema:
-            $ref: '#/components/schemas/ReportReasonCode'
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/ReportStatus'
-        - name: targetUserId
-          in: query
-          schema:
-            $ref: '#/components/schemas/Id'
-        - name: from
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: sort
-          in: query
-          schema:
-            type: string
-            enum: [createdAt, updatedAt]
-            default: createdAt
-        - name: direction
-          in: query
-          schema:
-            type: string
-            enum: [asc, desc]
-            default: desc
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 通報一覧
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminReportPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /admin/reports/{reportId}:
-    parameters:
-      - $ref: '#/components/parameters/ReportId'
-    get:
-      tags: [Administration]
-      summary: 通報詳細を取得する
-      description: ADMIN role が必要。
-      operationId: getAdminReport
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 通報詳細
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminReport'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags: [Administration]
-      summary: 通報状態を更新する
-      description: ADMIN role が必要。
-      operationId: updateAdminReport
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateReportRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 更新後の通報
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminReport'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-  /admin/actions:
-    get:
-      tags: [Administration]
-      summary: 管理者対応履歴を取得する
-      description: ADMIN role が必要。
-      operationId: listAdminActions
-      parameters:
-        - name: targetUserId
-          in: query
-          schema:
-            $ref: '#/components/schemas/Id'
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 管理者対応履歴
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminActionPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-    post:
-      tags: [Administration]
-      summary: 警告またはアカウント停止を実行する
-      description: ADMIN role が必要。作成後に対象ユーザーへメールを送信する。
-      operationId: createAdminAction
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateAdminActionRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '201':
-          description: 作成した管理者対応
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminAction'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
   /actuator/health:
     get:
       tags: [Operations]
@@ -1115,12 +933,6 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/Id'
-    ReportId:
-      name: reportId
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/Id'
 
   responses:
     BadRequest:
@@ -1192,10 +1004,6 @@ components:
       minimum: 1
       example: 42
 
-    Role:
-      type: string
-      enum: [USER, ADMIN]
-
     AccountStatus:
       type: string
       enum: [ACTIVE, SUSPENDED, BANNED]
@@ -1217,14 +1025,6 @@ components:
         - FRAUD_OR_IMPERSONATION
         - INAPPROPRIATE_CONTENT
         - OTHER
-
-    ReportStatus:
-      type: string
-      enum: [PENDING, REVIEWING, RESOLVED, DISMISSED]
-
-    AdminActionType:
-      type: string
-      enum: [WARNING, TEMPORARY_SUSPENSION, PERMANENT_SUSPENSION]
 
     PageMeta:
       type: object
@@ -1289,7 +1089,7 @@ components:
 
     AuthenticatedUser:
       type: object
-      required: [id, name, email, role, accountStatus]
+      required: [id, name, email, accountStatus]
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -1298,8 +1098,6 @@ components:
         email:
           type: string
           format: email
-        role:
-          $ref: '#/components/schemas/Role'
         accountStatus:
           $ref: '#/components/schemas/AccountStatus'
         suspendedUntil:
@@ -1388,7 +1186,6 @@ components:
             - workCategory
             - friendship
             - email
-            - role
             - accountStatus
             - createdAt
           properties:
@@ -1408,8 +1205,6 @@ components:
             email:
               type: string
               format: email
-            role:
-              $ref: '#/components/schemas/Role'
             accountStatus:
               $ref: '#/components/schemas/AccountStatus'
             createdAt:
@@ -1796,7 +1591,7 @@ components:
 
     ReportReceipt:
       type: object
-      required: [id, targetUserId, reason, status, createdAt]
+      required: [id, targetUserId, reason, createdAt]
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -1809,136 +1604,9 @@ components:
           nullable: true
         reason:
           $ref: '#/components/schemas/ReportReasonCode'
-        status:
-          $ref: '#/components/schemas/ReportStatus'
         createdAt:
           type: string
           format: date-time
-
-    AdminReport:
-      type: object
-      required:
-        - id
-        - reporter
-        - target
-        - reason
-        - status
-        - details
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        reporter:
-          $ref: '#/components/schemas/UserSummary'
-        target:
-          $ref: '#/components/schemas/UserSummary'
-        room:
-          type: object
-          allOf:
-            - $ref: '#/components/schemas/RoomSummary'
-          nullable: true
-        reason:
-          $ref: '#/components/schemas/ReportReason'
-        status:
-          $ref: '#/components/schemas/ReportStatus'
-        details:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    AdminReportPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminReport'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    UpdateReportRequest:
-      type: object
-      additionalProperties: false
-      required: [status]
-      properties:
-        status:
-          $ref: '#/components/schemas/ReportStatus'
-
-    CreateAdminActionRequest:
-      type: object
-      additionalProperties: false
-      required: [targetUserId, actionType, reason]
-      properties:
-        reportId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        targetUserId:
-          $ref: '#/components/schemas/Id'
-        actionType:
-          $ref: '#/components/schemas/AdminActionType'
-        reason:
-          type: string
-          minLength: 1
-          maxLength: 2000
-        startsAt:
-          type: string
-          format: date-time
-          description: 省略時は現在日時
-        endsAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: TEMPORARY_SUSPENSION の場合だけ必須
-
-    AdminAction:
-      type: object
-      required: [id, admin, target, actionType, reason, startsAt, createdAt]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        reportId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        admin:
-          $ref: '#/components/schemas/UserSummary'
-        target:
-          $ref: '#/components/schemas/UserSummary'
-        actionType:
-          $ref: '#/components/schemas/AdminActionType'
-        reason:
-          type: string
-        startsAt:
-          type: string
-          format: date-time
-        endsAt:
-          type: string
-          format: date-time
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-
-    AdminActionPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminAction'
-        page:
-          $ref: '#/components/schemas/PageMeta'
 
     HealthStatus:
       type: object

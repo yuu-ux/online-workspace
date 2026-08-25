@@ -534,47 +534,11 @@
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="wire-admin" name="管理者">
+  <diagram id="wire-monitoring" name="監視">
     <mxGraphModel dx="1649" dy="727" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1400" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="admin-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【運営管理画面】" vertex="1">
-          <mxGeometry height="20" width="180" x="40" y="50" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" value="" vertex="1">
-          <mxGeometry height="620" width="580" x="40" y="90" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontStyle=1;" value="運営管理画面（管理者専用）" vertex="1">
-          <mxGeometry height="40" width="520" x="70" y="120" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-filter" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="フィルタ: 理由 / 対象ユーザー / 日付" vertex="1">
-          <mxGeometry height="36" width="250" x="70" y="186" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-sort" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ソート: 新着順 / 重要度順" vertex="1">
-          <mxGeometry height="36" width="250" x="340" y="186" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-list" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="通報一覧&#xa;対象ユーザー / 理由 / 発生ルーム / 発生時刻" vertex="1">
-          <mxGeometry height="250" width="250" x="70" y="250" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="通報詳細&#xa;理由 / 詳細説明 / 対応履歴 / 対象ユーザー情報" vertex="1">
-          <mxGeometry height="250" width="250" x="340" y="250" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-warning" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="警告" vertex="1">
-          <mxGeometry height="36" width="100" x="70" y="536" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-suspend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="一時停止" vertex="1">
-          <mxGeometry height="36" width="100" x="180" y="536" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-ban" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" value="永久停止" vertex="1">
-          <mxGeometry height="36" width="100" x="290" y="536" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-mail" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="メール通知プレビュー" vertex="1">
-          <mxGeometry height="36" width="190" x="400" y="536" as="geometry" />
-        </mxCell>
-        <mxCell id="admin-monitor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="監視画面へ" vertex="1">
-          <mxGeometry height="36" width="160" x="430" y="624" as="geometry" />
-        </mxCell>
         <mxCell id="monitor-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【システム監視画面】" vertex="1">
           <mxGeometry height="20" width="180" x="680" y="50" as="geometry" />
         </mxCell>
@@ -586,27 +550,6 @@
         </mxCell>
         <mxCell id="monitor-panels" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="API応答時間 / 5xx率 / CPU・メモリ / DB接続数 / WebSocket接続数&#xa;/actuator/health 監視 / 500エラー時 Discord通知" vertex="1">
           <mxGeometry height="160" width="440" x="710" y="186" as="geometry" />
-        </mxCell>
-        <mxCell id="monitor-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="管理画面へ戻る" vertex="1">
-          <mxGeometry height="34" width="170" x="980" y="410" as="geometry" />
-        </mxCell>
-        <mxCell id="mail-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【メール通知プレビュー】" vertex="1">
-          <mxGeometry height="20" width="210" x="1240" y="50" as="geometry" />
-        </mxCell>
-        <mxCell id="mail-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;" value="" vertex="1">
-          <mxGeometry height="300" width="360" x="1240" y="90" as="geometry" />
-        </mxCell>
-        <mxCell id="mail-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;fontStyle=1;" value="対象ユーザー向けメール内容確認" vertex="1">
-          <mxGeometry height="40" width="300" x="1270" y="120" as="geometry" />
-        </mxCell>
-        <mxCell id="mail-body" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="理由 / 実施日時 / 適用期間 / 本文確認" vertex="1">
-          <mxGeometry height="110" width="300" x="1270" y="186" as="geometry" />
-        </mxCell>
-        <mxCell id="mail-send" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="送信" vertex="1">
-          <mxGeometry height="34" width="100" x="1330" y="330" as="geometry" />
-        </mxCell>
-        <mxCell id="mail-close" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="管理画面へ戻る" vertex="1">
-          <mxGeometry height="34" width="130" x="1440" y="330" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

@@ -1,17 +1,11 @@
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS account_statuses;
-DROP TABLE IF EXISTS roles;
-
-CREATE TABLE roles (
-    id SMALLINT PRIMARY KEY
-);
 
 CREATE TABLE account_statuses (
     id SMALLINT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE
 );
 
-INSERT INTO roles (id) VALUES (1), (2);
 INSERT INTO account_statuses (id, code) VALUES
     (1, 'ACTIVE'),
     (2, 'SUSPENDED'),
@@ -22,7 +16,6 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role_id SMALLINT NOT NULL DEFAULT 1 REFERENCES roles(id),
     account_status_id SMALLINT NOT NULL DEFAULT 1 REFERENCES account_statuses(id),
     suspended_until TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,

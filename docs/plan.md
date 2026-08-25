@@ -28,7 +28,6 @@ MVPで実装済みの主な機能は以下。
 - タイマー
 - 作業履歴
 - 通報
-- 運営管理
 - システム監視
 - マイページ / プロフィール編集 / 退会
 
@@ -70,7 +69,6 @@ MVPで実装済みの主な機能は以下。
 - room_categories
 - friends
 - reports
-- admin_actions
 - work_sessions
 - room_settings
 
@@ -124,7 +122,6 @@ DBは後から大きく変えると影響範囲が広いため、最初に要件
 - room_categories
 - friends
 - reports
-- admin_actions
 - work_sessions
 - messages
 
@@ -145,7 +142,6 @@ Swagger UIを導入し、ローカル開発中にAPI仕様とrequest/response sc
 - フレンド
 - 通報
 - 作業履歴
-- 管理者
 
 ### 3. 画面とデータの対応
 
@@ -160,7 +156,7 @@ Swagger UIを導入し、ローカル開発中にAPI仕様とrequest/response sc
 issueの粒度は以下を基準にする。
 
 - DB変更、API、フロントエンド画面、テストを含めて1つの機能が動く
-- 大きすぎる機能は、基盤、API、画面、権限制御に分ける
+- 大きすぎる機能は、基盤、API、画面に分ける
 - 音声通話や監視など重い機能は、最小完了条件を明確にする
 - 余力対応は必達issueと分ける
 
@@ -222,8 +218,6 @@ issueの粒度は以下を基準にする。
 
 ### 7/6 - 7/7
 
-- 管理画面
-- 管理者対応履歴
 - メール通知
 - 監視の最小構成
 
