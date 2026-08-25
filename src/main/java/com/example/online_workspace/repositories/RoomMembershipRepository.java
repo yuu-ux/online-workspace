@@ -47,17 +47,6 @@ public interface RoomMembershipRepository {
 		""")
 	int countActiveMembers(@Param("roomId") long roomId);
 
-	@Select("""
-		SELECT EXISTS (
-			SELECT 1 FROM room_members rm
-			JOIN blocks b
-			  ON (b.blocker_user_id = #{userId} AND b.blocked_user_id = rm.user_id)
-			  OR (b.blocked_user_id = #{userId} AND b.blocker_user_id = rm.user_id)
-			WHERE rm.room_id = #{roomId} AND rm.left_at IS NULL
-		)
-		""")
-	boolean hasBlockConflict(@Param("roomId") long roomId, @Param("userId") long userId);
-
 	@Insert("""
 		INSERT INTO room_members (room_id, user_id, joined_at)
 		VALUES (#{roomId}, #{userId}, #{joinedAt})

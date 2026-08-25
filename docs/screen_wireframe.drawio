@@ -147,13 +147,13 @@
         <mxCell id="1jtk9u08_0WX48GW1xIK-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="ログアウト" vertex="1">
           <mxGeometry height="34" width="110" x="170" y="170" as="geometry" />
         </mxCell>
-        <mxCell id="1jtk9u08_0WX48GW1xIK-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームA&#xa;カテゴリ: 勉強 / 作業スタイル: 黙って集中&#xa;公開 / 4人 / 説明あり" vertex="1">
+        <mxCell id="1jtk9u08_0WX48GW1xIK-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームA&#xa;カテゴリ: 勉強 / 作業スタイル: 黙って集中&#xa;4人 / 説明あり" vertex="1">
           <mxGeometry height="96" width="360" x="-70" y="250" as="geometry" />
         </mxCell>
         <mxCell id="1jtk9u08_0WX48GW1xIK-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="参加" vertex="1">
           <mxGeometry height="28" width="90" x="180" y="306" as="geometry" />
         </mxCell>
-        <mxCell id="1jtk9u08_0WX48GW1xIK-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームB&#xa;カテゴリ: 仕事 / 作業スタイル: 雑談OK&#xa;公開 / 2人 / 説明あり" vertex="1">
+        <mxCell id="1jtk9u08_0WX48GW1xIK-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームB&#xa;カテゴリ: 仕事 / 作業スタイル: 雑談OK&#xa;2人 / 説明あり" vertex="1">
           <mxGeometry height="96" width="360" x="-70" y="372" as="geometry" />
         </mxCell>
         <mxCell id="1jtk9u08_0WX48GW1xIK-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="参加" vertex="1">
@@ -198,13 +198,13 @@
         <mxCell id="home-btn-logout" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="ログアウト" vertex="1">
           <mxGeometry height="34" width="110" x="1700" y="202" as="geometry" />
         </mxCell>
-        <mxCell id="home-room-card-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームA&#xa;カテゴリ: 勉強 / 作業スタイル: 黙って集中&#xa;公開 / 4人 / 説明あり" vertex="1">
+        <mxCell id="home-room-card-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームA&#xa;カテゴリ: 勉強 / 作業スタイル: 黙って集中&#xa;4人 / 説明あり" vertex="1">
           <mxGeometry height="96" width="360" x="1460" y="282" as="geometry" />
         </mxCell>
         <mxCell id="home-room-join-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="参加" vertex="1">
           <mxGeometry height="28" width="90" x="1710" y="338" as="geometry" />
         </mxCell>
-        <mxCell id="home-room-card-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームB&#xa;カテゴリ: 仕事 / 作業スタイル: 雑談OK&#xa;公開 / 2人 / 説明あり" vertex="1">
+        <mxCell id="home-room-card-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="ルームB&#xa;カテゴリ: 仕事 / 作業スタイル: 雑談OK&#xa;2人 / 説明あり" vertex="1">
           <mxGeometry height="96" width="360" x="1460" y="404" as="geometry" />
         </mxCell>
         <mxCell id="home-room-join-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="参加" vertex="1">
@@ -461,9 +461,6 @@
         </mxCell>
         <mxCell id="other-add-friend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="フレンド追加" vertex="1">
           <mxGeometry height="36" width="120" x="1070" y="396" as="geometry" />
-        </mxCell>
-        <mxCell id="other-block" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="ブロック" vertex="1">
-          <mxGeometry height="36" width="100" x="1200" y="396" as="geometry" />
         </mxCell>
         <mxCell id="other-report" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="通報" vertex="1">
           <mxGeometry height="36" width="100" x="1310" y="396" as="geometry" />

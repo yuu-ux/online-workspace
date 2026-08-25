@@ -1,5 +1,4 @@
 DROP TABLE IF EXISTS work_sessions;
-DROP TABLE IF EXISTS blocks;
 DROP TABLE IF EXISTS room_members;
 DROP TABLE IF EXISTS profiles;
 DROP TABLE IF EXISTS rooms;
@@ -37,12 +36,6 @@ CREATE TABLE room_members (
     user_id BIGINT NOT NULL,
     joined_at TIMESTAMP WITH TIME ZONE NOT NULL,
     left_at TIMESTAMP WITH TIME ZONE
-);
-
-CREATE TABLE blocks (
-    blocker_user_id BIGINT NOT NULL,
-    blocked_user_id BIGINT NOT NULL,
-    PRIMARY KEY (blocker_user_id, blocked_user_id)
 );
 
 CREATE TABLE work_sessions (

@@ -185,23 +185,6 @@
 - `CHECK (user_id <> friend_user_id)`
   - 自分自身のフレンド登録を防ぐ。
 
-## blocks テーブル
-
-ブロックしたユーザーとブロックされたユーザーの関係を管理する。ブロック成立時にはフレンド状態を `REMOVED` に更新する。ブロックはフレンド解除後も接触制限の判定に必要なため、フレンド状態へ統合せず独立した一方向の関係として扱う。
-
-| カラム名 | 型 | オプション | 説明 |
-|:--|:--|:--|:--|
-| blocker_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | ブロックしたユーザーID |
-| blocked_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | ブロックされたユーザーID |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
-
-### インデックス・制約
-
-- `PRIMARY KEY (blocker_user_id, blocked_user_id)`
-  - 同じ相手の重複ブロックを防ぎ、ブロックした相手の一覧検索にも利用する。
-- `CHECK (blocker_user_id <> blocked_user_id)`
-  - 自分自身のブロックを防ぐ。
-
 ## reports テーブル
 
 ユーザーに対する通報と、その確認状況を管理する。現要件では通報対象はメッセージ単位ではなくユーザー単位とする。

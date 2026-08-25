@@ -16,7 +16,6 @@ public record RoomListItem(
 	long creatorId,
 	String creatorName,
 	String creatorIconUrl,
-	boolean blocked,
 	Instant createdAt
 ) {
 }

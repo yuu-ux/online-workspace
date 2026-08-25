@@ -6,3 +6,5 @@ CREATE INDEX idx_rooms_open_list
 ALTER TABLE rooms DROP COLUMN visibility_id;
 
 DROP TABLE visibilities;
+
+DROP TABLE blocks;

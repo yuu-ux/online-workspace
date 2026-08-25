@@ -88,9 +88,7 @@ public class RoomListController {
 		Instant createdAt
 	) {
 		private static RoomSummaryResponse from(RoomListItem item) {
-			String restriction = item.blocked()
-				? "BLOCKED"
-				: item.currentMembers() >= item.maxMembers() ? "FULL" : null;
+			String restriction = item.currentMembers() >= item.maxMembers() ? "FULL" : null;
 			return new RoomSummaryResponse(
 				item.id(),
 				item.name(),

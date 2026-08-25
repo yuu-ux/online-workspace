@@ -29,8 +29,6 @@ tags:
     description: ルーム内チャット履歴と送信
   - name: Friends
     description: フレンドとお気に入り
-  - name: Blocks
-    description: ブロック
   - name: Work sessions
     description: 作業履歴と集計
   - name: Reports
@@ -169,7 +167,7 @@ paths:
     get:
       tags: [Users]
       summary: ユーザーを検索する
-      description: 名前の部分一致で検索する。ブロック関係のユーザーは結果から除外する。
+      description: 名前の部分一致で検索する。
       operationId: searchUsers
       parameters:
         - name: query
@@ -337,7 +335,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
         '200':
-          description: ブロック関係を反映したルーム一覧
+          description: 参加可能なルーム一覧
           content:
             application/json:
               schema:
@@ -710,78 +708,6 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '204':
           description: フレンド解除完了
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /blocks:
-    get:
-      tags: [Blocks]
-      summary: ブロック一覧を取得する
-      operationId: listBlocks
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: ブロック一覧
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    post:
-      tags: [Blocks]
-      summary: ユーザーをブロックする
-      operationId: createBlock
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateBlockRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '201':
-          description: 作成したブロック。既存のフレンド関係は解除する
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockedUser'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /blocks/{blockedUserId}:
-    delete:
-      tags: [Blocks]
-      summary: ブロックを解除する
-      operationId: deleteBlock
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      parameters:
-        - $ref: '#/components/parameters/BlockedUserId'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '204':
-          description: ブロック解除完了
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -1183,12 +1109,6 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/Id'
-    BlockedUserId:
-      name: blockedUserId
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/Id'
     RoomId:
       name: roomId
       in: path
@@ -1424,7 +1344,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/UserSummary'
         - type: object
-          required: [isPublic, bio, workCategory, friendship, blocked]
+          required: [isPublic, bio, workCategory, friendship]
           properties:
             isPublic:
               type: boolean
@@ -1440,8 +1360,6 @@ components:
             friendship:
               type: string
               enum: [NONE, FRIEND]
-            blocked:
-              type: boolean
 
     HiddenUserProfile:
       type: object
@@ -1469,7 +1387,6 @@ components:
             - bio
             - workCategory
             - friendship
-            - blocked
             - email
             - role
             - accountStatus
@@ -1488,8 +1405,6 @@ components:
             friendship:
               type: string
               enum: [NONE, FRIEND]
-            blocked:
-              type: boolean
             email:
               type: string
               format: email
@@ -1604,7 +1519,7 @@ components:
           type: boolean
         joinRestriction:
           type: string
-          enum: [FULL, CLOSED, BLOCKED]
+          enum: [FULL, CLOSED]
           nullable: true
         createdAt:
           type: string
@@ -1765,35 +1680,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Friend'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    CreateBlockRequest:
-      type: object
-      additionalProperties: false
-      required: [userId]
-      properties:
-        userId:
-          $ref: '#/components/schemas/Id'
-
-    BlockedUser:
-      type: object
-      required: [user, blockedAt]
-      properties:
-        user:
-          $ref: '#/components/schemas/UserSummary'
-        blockedAt:
-          type: string
-          format: date-time
-
-    BlockPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/BlockedUser'
         page:
           $ref: '#/components/schemas/PageMeta'
 

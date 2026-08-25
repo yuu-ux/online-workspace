@@ -44,7 +44,7 @@ class RoomMembershipServiceTests {
 	}
 
 	@Test
-	void joinsPublicRoomAndStartsWorkSession() {
+	void joinsRoomAndStartsWorkSession() {
 		RoomMember member = service.join(10L, "member@example.com");
 
 		assertThat(member.userId()).isEqualTo(2L);
@@ -82,30 +82,6 @@ class RoomMembershipServiceTests {
 			Integer.class
 		)).isOne();
 		assertThat(workSessionRepository.findActiveByUserIdForUpdate(2L).roomId()).isEqualTo(10L);
-	}
-
-	@Test
-	void rejectsJoinWhenEitherUserHasBlockedTheOther() {
-		jdbcTemplate.update(
-			"INSERT INTO blocks (blocker_user_id, blocked_user_id) VALUES (?, ?)",
-			1L,
-			2L
-		);
-
-		assertThatThrownBy(() -> service.join(14L, "member@example.com"))
-			.isInstanceOfSatisfying(ResponseStatusException.class,
-				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
-
-		jdbcTemplate.update("DELETE FROM blocks");
-		jdbcTemplate.update(
-			"INSERT INTO blocks (blocker_user_id, blocked_user_id) VALUES (?, ?)",
-			2L,
-			1L
-		);
-
-		assertThatThrownBy(() -> service.join(14L, "member@example.com"))
-			.isInstanceOfSatisfying(ResponseStatusException.class,
-				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
 	}
 
 	@Test

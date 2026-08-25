@@ -66,14 +66,6 @@ public interface RoomListRepository {
 		        WHERE rm.room_id = r.id AND rm.left_at IS NULL) AS current_members,
 		       rs.code AS status,
 		       u.id AS creator_id, u.name AS creator_name, p.icon_url AS creator_icon_url,
-		       EXISTS (
-		           SELECT 1
-		           FROM room_members rm
-		           JOIN blocks b
-		             ON (b.blocker_user_id = #{userId} AND b.blocked_user_id = rm.user_id)
-		             OR (b.blocked_user_id = #{userId} AND b.blocker_user_id = rm.user_id)
-		           WHERE rm.room_id = r.id AND rm.left_at IS NULL
-		       ) AS blocked,
 		       r.created_at
 		FROM filtered_rooms r
 		JOIN room_categories c ON c.id = r.category_id
@@ -85,7 +77,6 @@ public interface RoomListRepository {
 		</script>
 		""")
 	List<RoomListItem> findOpenRooms(
-		@Param("userId") long userId,
 		@Param("categoryId") Long categoryId,
 		@Param("workStyle") String workStyle,
 		@Param("size") int size,

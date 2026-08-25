@@ -68,16 +68,7 @@ public interface WorkHistoryRepository {
 		  r.created_at AS room_created_at,
 		  ws.started_at,
 		  ws.ended_at,
-		  CAST(GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at))) AS BIGINT) AS duration_seconds,
-		  EXISTS (
-		    SELECT 1
-		    FROM room_members active_member
-		    JOIN blocks b
-		      ON (b.blocker_user_id = #{userId} AND b.blocked_user_id = active_member.user_id)
-		      OR (b.blocked_user_id = #{userId} AND b.blocker_user_id = active_member.user_id)
-		    WHERE active_member.room_id = r.id
-		      AND active_member.left_at IS NULL
-		  ) AS blocked
+		  CAST(GREATEST(0, EXTRACT(EPOCH FROM (COALESCE(ws.ended_at, CURRENT_TIMESTAMP) - ws.started_at))) AS BIGINT) AS duration_seconds
 		FROM work_sessions ws
 		JOIN rooms r ON r.id = ws.room_id
 		JOIN room_categories rc ON rc.id = ws.category_id
@@ -192,8 +183,7 @@ public interface WorkHistoryRepository {
 		Instant roomCreatedAt,
 		Instant startedAt,
 		Instant endedAt,
-		long durationSeconds,
-		boolean blocked
+		long durationSeconds
 	) {
 	}
 

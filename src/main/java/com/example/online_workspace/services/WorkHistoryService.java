@@ -152,9 +152,6 @@ public class WorkHistoryService {
 		if (!"OPEN".equals(row.roomStatus())) {
 			return "CLOSED";
 		}
-		if (row.blocked()) {
-			return "BLOCKED";
-		}
 		if (row.currentMembers() >= row.maxMembers()) {
 			return "FULL";
 		}
