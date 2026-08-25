@@ -34,24 +34,6 @@ public interface RoomMembershipRepository {
 		""")
 	JoinPolicy lockRoomById(@Param("roomId") long roomId);
 
-	@Select("SELECT room_id FROM room_invites WHERE token = #{token}")
-	Long findInvitedRoomId(@Param("token") String token);
-
-	@Select("""
-		SELECT EXISTS (
-			SELECT 1 FROM room_invites
-			WHERE token = #{token}
-			  AND room_id = #{roomId}
-			  AND invalidated_at IS NULL
-			  AND expires_at > #{joinedAt}
-		)
-		""")
-	boolean isInviteValid(
-		@Param("token") String token,
-		@Param("roomId") long roomId,
-		@Param("joinedAt") Instant joinedAt
-	);
-
 	@Select("""
 		SELECT EXISTS (
 			SELECT 1 FROM room_members

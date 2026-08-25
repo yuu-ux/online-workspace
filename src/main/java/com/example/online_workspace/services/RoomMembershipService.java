@@ -28,9 +28,6 @@ public class RoomMembershipService {
 		long userId = requireUserId(userEmail);
 		JoinPolicy room = lockOpenRoom(roomId);
 
-		if ("INVITE_ONLY".equals(room.visibility())) {
-			throw forbidden("An invitation is required");
-		}
 		if ("FRIENDS_ONLY".equals(room.visibility())
 			&& userId != room.createdBy()
 			&& !repository.isCreatorFriend(room.createdBy(), userId)) {
@@ -38,23 +35,6 @@ public class RoomMembershipService {
 		}
 
 		return joinLockedRoom(room, userId, joinedAt);
-	}
-
-	@Transactional
-	public JoinResult joinByInvite(String token, String userEmail) {
-		Instant joinedAt = repository.currentTimestamp();
-		long userId = requireUserId(userEmail);
-		Long roomId = repository.findInvitedRoomId(token);
-		if (roomId == null) {
-			throw notFound("Invitation not found");
-		}
-
-		JoinPolicy room = lockOpenRoom(roomId);
-		if (!repository.isInviteValid(token, roomId, joinedAt)) {
-			throw notFound("Invitation not found");
-		}
-
-		return new JoinResult(roomId, joinLockedRoom(room, userId, joinedAt));
 	}
 
 	@Transactional
@@ -130,6 +110,4 @@ public class RoomMembershipService {
 		return new ResponseStatusException(HttpStatus.CONFLICT, reason);
 	}
 
-	public record JoinResult(long roomId, RoomMember membership) {
-	}
 }

@@ -31,7 +31,6 @@
 | work_styles | 1 | `FOCUS` | 黙って集中 |
 | work_styles | 2 | `CHAT_OK` | 雑談OK |
 | visibilities | 1 | `PUBLIC` | 公開 |
-| visibilities | 2 | `INVITE_ONLY` | 招待のみ |
 | visibilities | 3 | `FRIENDS_ONLY` | フレンドのみ |
 | room_statuses | 1 | `OPEN` | 受付中 |
 | room_statuses | 2 | `CLOSED` | 終了 |
@@ -148,24 +147,6 @@
 ### 参加処理
 
 参加処理では、同一トランザクション内で対象の `rooms` 行を `SELECT ... FOR UPDATE` によりロックし、`status_id = OPEN` であることを確認する。続けて `room_members` の `room_id` が一致し `left_at IS NULL` であるレコードを数え、その件数が `rooms.max_members` 未満の場合に限り参加履歴を `INSERT` する。同じルームへの参加処理を行ロックで直列化することで、単にトランザクションを使用するだけでは防げない同時参加による上限超過を防ぐ。
-
-## room_invites テーブル
-
-招待制ルームに参加するための招待リンクを管理する。招待リンクを知っているログインユーザーは、期限内であれば対象ルームへ参加できる。
-
-| カラム名 | 型 | オプション | 説明 |
-|:--|:--|:--|:--|
-| id | BIGSERIAL | PRIMARY KEY | 招待リンクID |
-| room_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE | 招待先ルームID |
-| created_by | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 発行者のユーザーID |
-| token | VARCHAR(255) | NOT NULL, UNIQUE | 招待リンクに含める、推測困難なトークン |
-| expires_at | TIMESTAMPTZ | NOT NULL, DEFAULT (CURRENT_TIMESTAMP + INTERVAL '1 hour') | 有効期限。要件で既定値を1時間としている |
-| invalidated_at | TIMESTAMPTZ | DEFAULT NULL | 無効化日時。ルームが閉じられたときに設定し、有効な間は `NULL` |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
-
-同じルームに対して招待リンクは複数発行でき、発行ごとに新しいレコードを作成する。招待リンクの受け入れは、参加処理で対象の `rooms` 行をロックした後、`expires_at > CURRENT_TIMESTAMP`、`invalidated_at IS NULL`、かつ参照先の `rooms.status_id = OPEN` のすべてを満たす場合に限る。現要件では手動無効化を提供しない。
-
-ルームを閉じる処理では、同一トランザクション内で `rooms.status_id` を `CLOSED` に更新して `closed_at` を設定し、そのルームに属する `invalidated_at IS NULL` の招待リンクすべてに `invalidated_at` を設定する。参加処理と同じ `rooms` 行をロックしてから更新することで、ルームの閉鎖と招待リンクの受け入れ・無効化が競合しないようにする。
 
 ## messages テーブル
 

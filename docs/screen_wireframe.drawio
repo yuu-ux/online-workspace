@@ -234,7 +234,7 @@
         <mxCell id="create-style" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="作業スタイル 選択: 黙って集中 / 雑談OK" vertex="1">
           <mxGeometry height="36" width="380" x="910" y="600" as="geometry" />
         </mxCell>
-        <mxCell id="create-visibility" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="公開範囲 選択: 公開 / 招待のみ / フレンドのみ" vertex="1">
+        <mxCell id="create-visibility" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="公開範囲 選択: 公開 / フレンドのみ" vertex="1">
           <mxGeometry height="36" width="380" x="910" y="652" as="geometry" />
         </mxCell>
         <mxCell id="create-capacity" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="人数上限 選択: 2〜12" vertex="1">
@@ -264,9 +264,6 @@
         <mxCell id="room-voice" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" value="音声通話エリア&#xa;自動参加 / ミュート切替 / 最大12人" vertex="1">
           <mxGeometry height="100" width="350" x="2610" y="230" as="geometry" />
         </mxCell>
-        <mxCell id="room-invite" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="招待管理" vertex="1">
-          <mxGeometry height="34" width="110" x="2610" y="346" as="geometry" />
-        </mxCell>
         <mxCell id="room-report" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="通報" vertex="1">
           <mxGeometry height="34" width="90" x="2730" y="346" as="geometry" />
         </mxCell>
@@ -281,27 +278,6 @@
         </mxCell>
         <mxCell id="room-chat-send" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="送信" vertex="1">
           <mxGeometry height="36" width="100" x="2860" y="716" as="geometry" />
-        </mxCell>
-        <mxCell id="invite-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【招待管理画面】" vertex="1">
-          <mxGeometry height="20" width="170" x="3050" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="invite-screen" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;" value="" vertex="1">
-          <mxGeometry height="360" width="360" x="3050" y="130" as="geometry" />
-        </mxCell>
-        <mxCell id="invite-title" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;fontStyle=1;" value="招待管理" vertex="1">
-          <mxGeometry height="40" width="300" x="3080" y="160" as="geometry" />
-        </mxCell>
-        <mxCell id="invite-input" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="招待ユーザー 入力欄" vertex="1">
-          <mxGeometry height="36" width="300" x="3080" y="226" as="geometry" />
-        </mxCell>
-        <mxCell id="invite-generate" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="招待リンク発行（有効期限1時間）" vertex="1">
-          <mxGeometry height="34" width="300" x="3080" y="282" as="geometry" />
-        </mxCell>
-        <mxCell id="invite-url" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" value="招待URL 表示エリア" vertex="1">
-          <mxGeometry height="70" width="300" x="3080" y="332" as="geometry" />
-        </mxCell>
-        <mxCell id="invite-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="ルームへ戻る" vertex="1">
-          <mxGeometry height="34" width="140" x="3240" y="426" as="geometry" />
         </mxCell>
         <mxCell id="report-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=16;" value="【通報画面】" vertex="1">
           <mxGeometry height="20" width="120" x="3050" y="506" as="geometry" />
@@ -389,14 +365,6 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="room-edge-8" edge="1" parent="1" source="room-invite" style="endArrow=block;html=1;strokeColor=#6c8ebf;entryX=0.012;entryY=0.801;entryDx=0;entryDy=0;entryPerimeter=0;" target="invite-screen" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="2665" y="430" />
-              <mxPoint x="3000" y="420" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
         <mxCell id="room-edge-9" edge="1" parent="1" source="room-report" style="endArrow=block;html=1;strokeColor=#b85450;" target="report-screen" value="">
           <mxGeometry relative="1" x="-0.0021" as="geometry">
             <mxPoint as="offset" />
@@ -406,9 +374,6 @@
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="2460" y="365.9220779220782" as="sourcePoint" />
           </mxGeometry>
-        </mxCell>
-        <mxCell id="room-edge-11" edge="1" parent="1" source="invite-back" style="endArrow=block;html=1;strokeColor=#666666;entryX=1.005;entryY=0.415;entryDx=0;entryDy=0;entryPerimeter=0;" target="room-screen" value="">
-          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="room-edge-12" edge="1" parent="1" source="report-submit" style="endArrow=block;html=1;strokeColor=#b85450;entryX=0.993;entryY=0.928;entryDx=0;entryDy=0;entryPerimeter=0;" target="room-screen" value="">
           <mxGeometry relative="1" as="geometry">

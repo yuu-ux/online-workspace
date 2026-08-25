@@ -70,14 +70,4 @@ public interface AccountWithdrawalRepository {
 		@Param("withdrawnAt") OffsetDateTime withdrawnAt
 	);
 
-	@Update("""
-		UPDATE room_invites
-		SET invalidated_at = #{withdrawnAt}
-		WHERE created_by = #{userId}
-		  AND invalidated_at IS NULL
-		""")
-	int invalidateRoomInvites(
-		@Param("userId") long userId,
-		@Param("withdrawnAt") OffsetDateTime withdrawnAt
-	);
 }

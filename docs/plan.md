@@ -68,7 +68,6 @@ MVPで実装済みの主な機能は以下。
 
 - profiles
 - room_categories
-- room_invites
 - friends
 - blocks
 - reports
@@ -85,7 +84,6 @@ MVPで実装済みの主な機能は以下。
 - 人数上限
 - 公開範囲
 - フレンド限定
-- 招待リンク
 - ブロック関係
 - アカウント停止状態
 
@@ -128,7 +126,6 @@ DBは後から大きく変えると影響範囲が広いため、最初に要件
 - rooms
 - room_members
 - room_categories
-- room_invites
 - friends
 - blocks
 - reports
@@ -215,7 +212,6 @@ issueの粒度は以下を基準にする。
 - チャット
 - WebSocket
 - ルーム設定
-- 招待機能
 
 ### 6/30 - 7/2
 

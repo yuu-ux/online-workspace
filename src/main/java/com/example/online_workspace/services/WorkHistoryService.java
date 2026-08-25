@@ -160,7 +160,6 @@ public class WorkHistoryService {
 			return "FULL";
 		}
 		return switch (row.visibility()) {
-			case "INVITE_ONLY" -> "INVITE_REQUIRED";
 			case "FRIENDS_ONLY" ->
 				userId == row.creatorId() || row.creatorFriend() ? null : "FRIEND_REQUIRED";
 			default -> null;

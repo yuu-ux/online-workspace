@@ -74,7 +74,7 @@ CREATE TABLE room_members (
 INSERT INTO room_category_statuses (id, code) VALUES (1, 'ACTIVE'), (2, 'INACTIVE');
 INSERT INTO work_styles (id, code) VALUES (1, 'FOCUS'), (2, 'CHAT_OK');
 INSERT INTO visibilities (id, code) VALUES
-    (1, 'PUBLIC'), (2, 'INVITE_ONLY'), (3, 'FRIENDS_ONLY');
+    (1, 'PUBLIC'), (3, 'FRIENDS_ONLY');
 INSERT INTO room_statuses (id, code) VALUES (1, 'OPEN'), (2, 'CLOSED');
 INSERT INTO users (id, name, email) VALUES (1, '作成者', 'creator@example.com');
 INSERT INTO profiles (user_id, icon_url) VALUES (1, 'https://example.com/creator.png');

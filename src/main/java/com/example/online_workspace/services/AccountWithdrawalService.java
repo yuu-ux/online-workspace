@@ -46,6 +46,5 @@ public class AccountWithdrawalService {
 
 		repository.leaveActiveRooms(account.id(), withdrawnAt);
 		repository.finishActiveWorkSessions(account.id(), withdrawnAt);
-		repository.invalidateRoomInvites(account.id(), withdrawnAt);
 	}
 }
