@@ -5,14 +5,14 @@ on:
     paths:
       - docs/openapi.yaml
       - redocly.yaml
-      - .github/workflows/openapi-lint.yml
+      - .github/workflows/openapi-lint.yaml
   push:
     branches:
       - main
     paths:
       - docs/openapi.yaml
       - redocly.yaml
-      - .github/workflows/openapi-lint.yml
+      - .github/workflows/openapi-lint.yaml
 
 permissions:
   contents: read

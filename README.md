@@ -85,6 +85,24 @@ CPU・メモリ、`hikaricp.connections`（DB接続）、`tomcat.connections.cur
 （同時接続）、`websocket.connections.active`（WebSocket接続）を確認できます。
 Prometheus形式では各メトリクス名のドットがアンダースコアへ変換されます。
 
+### Prometheus / Grafana
+
+監視構成は API キーと Grafana 管理者パスワードを設定して起動します。
+
+```bash
+MANAGEMENT_API_KEY="change-me" GRAFANA_ADMIN_PASSWORD="change-me" \
+  docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
+```
+
+起動後のURL:
+
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000（ユーザー名は `admin`。`GRAFANA_ADMIN_USER` で変更可能）
+
+Grafana の匿名アクセスは無効です。Prometheus データソースと
+`Online Workspace Monitoring` ダッシュボードは起動時に自動設定されます。
+メトリクスの保持期間は15日です。
+
 ## フロントエンド開発方針
 
 本番環境では nginx がビルド済みの React 静的ファイルを配信します。React 用の常駐アプリケーションサーバーは立てません。
