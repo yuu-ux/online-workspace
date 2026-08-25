@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.api.auth;
+package com.example.online_workspace.controllers.auth;
 
 /**
  * Reactクライアントへ返す現在のブラウザセッション状態。

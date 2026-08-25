@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers;
+package com.example.online_workspace.controllers.workhistory;
 
 import java.security.Principal;
 import java.time.LocalDate;

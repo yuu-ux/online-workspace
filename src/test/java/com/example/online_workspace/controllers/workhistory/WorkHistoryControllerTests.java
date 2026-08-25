@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers;
+package com.example.online_workspace.controllers.workhistory;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;

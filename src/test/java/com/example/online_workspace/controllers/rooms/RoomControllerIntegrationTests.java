@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.api.rooms;
+package com.example.online_workspace.controllers.rooms;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;

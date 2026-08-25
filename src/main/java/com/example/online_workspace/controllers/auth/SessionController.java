@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.api.auth;
+package com.example.online_workspace.controllers.auth;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;

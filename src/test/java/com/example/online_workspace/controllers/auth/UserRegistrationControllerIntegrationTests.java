@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.api.auth;
+package com.example.online_workspace.controllers.auth;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;

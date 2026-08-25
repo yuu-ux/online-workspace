@@ -3,7 +3,7 @@
 オンラインで他のユーザーと一緒に作業できるWebアプリケーションです。
 
 最終版の要件に基づき、React + Spring Boot + MyBatis + PostgreSQLで開発しています。
-旧MVPのThymeleaf実装は削除し、Reactから利用するREST APIを中心に実装します。
+旧MVPのThymeleaf実装は削除し、画面を返すMVC Controllerは置かず、Reactから利用するREST APIを実装します。
 
 仕様は以下のドキュメントを参照してください。
 
@@ -18,6 +18,19 @@
 - Frontend: React / React Router / Tailwind CSS
 - Backend: Spring Boot / Spring Security / MyBatis / Bean Validation / WebSocket
 - Database: PostgreSQL / Flyway
+
+## バックエンド構成
+
+Controllerは機能単位のパッケージに配置します。
+
+```text
+controllers/
+├── auth/
+├── members/
+├── rooms/
+├── users/
+└── workhistory/
+```
 
 ## ローカル起動
 
