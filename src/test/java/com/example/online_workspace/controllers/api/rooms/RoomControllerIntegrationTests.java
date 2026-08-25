@@ -97,7 +97,7 @@ class RoomControllerIntegrationTests {
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(requestBody(2, "INVITE_ONLY")))
-			.andExpect(status().isUnprocessableContent());
+			.andExpect(status().isBadRequest());
 	}
 
 	@Test
