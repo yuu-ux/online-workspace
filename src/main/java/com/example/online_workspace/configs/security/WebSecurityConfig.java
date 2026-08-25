@@ -60,7 +60,7 @@ public class WebSecurityConfig {
 		return email -> repository.findActiveByEmail(email)
 			.map(account -> User.withUsername(email)
 				.password(account.passwordHash())
-				.authorities()
+				.authorities(new String[0])
 				.build())
 			.orElseThrow(() -> new UsernameNotFoundException("有効なアカウントがありません"));
 	}

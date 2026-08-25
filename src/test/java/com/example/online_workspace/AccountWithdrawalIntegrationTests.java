@@ -68,7 +68,7 @@ class AccountWithdrawalIntegrationTests {
 		MockHttpSession session = new MockHttpSession();
 		UserDetails principal = User.withUsername(EMAIL)
 			.password(PASSWORD)
-			.authorities()
+			.authorities(new String[0])
 			.build();
 		sessionRegistry.registerNewSession("other-session", principal);
 		mockMvc.perform(delete("/api/v1/users/me")
