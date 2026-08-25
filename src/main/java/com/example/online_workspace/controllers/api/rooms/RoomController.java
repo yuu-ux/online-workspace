@@ -45,8 +45,7 @@ public class RoomController {
 		@NotNull @Size(max = 500) String description,
 		@NotNull @Positive Long categoryId,
 		@NotNull WorkStyle workStyle,
-		@NotNull @Min(2) @Max(12) Integer maxMembers,
-		@NotNull RoomVisibility visibility
+		@NotNull @Min(2) @Max(12) Integer maxMembers
 	) {
 		CreateRoomCommand toCommand() {
 			return new CreateRoomCommand(
@@ -54,8 +53,7 @@ public class RoomController {
 				description,
 				categoryId,
 				workStyle.name(),
-				maxMembers,
-				visibility.name()
+				maxMembers
 			);
 		}
 	}
@@ -63,10 +61,6 @@ public class RoomController {
 	public enum WorkStyle {
 		FOCUS,
 		CHAT_OK
-	}
-
-	public enum RoomVisibility {
-		PUBLIC
 	}
 
 	public record RoomDetailResponse(
@@ -77,7 +71,6 @@ public class RoomController {
 		String workStyle,
 		int maxMembers,
 		int currentMembers,
-		String visibility,
 		String status,
 		UserSummaryResponse createdBy,
 		boolean joinable,
@@ -100,7 +93,6 @@ public class RoomController {
 				room.workStyle(),
 				room.maxMembers(),
 				1,
-				room.visibility(),
 				room.status(),
 				new UserSummaryResponse(room.creatorId(), room.creatorName(), room.creatorIconUrl()),
 				false,

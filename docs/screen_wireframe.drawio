@@ -234,14 +234,11 @@
         <mxCell id="create-style" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="作業スタイル 選択: 黙って集中 / 雑談OK" vertex="1">
           <mxGeometry height="36" width="380" x="910" y="600" as="geometry" />
         </mxCell>
-        <mxCell id="create-visibility" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="公開範囲: 公開" vertex="1">
+        <mxCell id="create-capacity" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="人数上限 選択: 2〜12" vertex="1">
           <mxGeometry height="36" width="380" x="910" y="652" as="geometry" />
         </mxCell>
-        <mxCell id="create-capacity" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=8;" value="人数上限 選択: 2〜12" vertex="1">
-          <mxGeometry height="36" width="380" x="910" y="704" as="geometry" />
-        </mxCell>
         <mxCell id="create-submit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="作成して入室" vertex="1">
-          <mxGeometry height="40" width="180" x="910" y="776" as="geometry" />
+          <mxGeometry height="40" width="180" x="910" y="724" as="geometry" />
         </mxCell>
         <mxCell id="create-back" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="ホームへ戻る" vertex="1">
           <mxGeometry height="40" width="180" x="1110" y="776" as="geometry" />

@@ -22,9 +22,9 @@ class RoomListControllerIntegrationTests {
 	@Autowired
 	private MockMvc mockMvc;
 
-	@DisplayName("公開中のルームだけを人数と参加可否付きで返す")
+	@DisplayName("受付中のルームだけを人数と参加可否付きで返す")
 	@Test
-	void listsOnlyOpenPublicRoomsWithJoinability() throws Exception {
+	void listsOnlyOpenRoomsWithJoinability() throws Exception {
 		mockMvc.perform(get("/api/v1/rooms").with(user("viewer@example.com")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.items", hasSize(4)))

@@ -49,7 +49,6 @@ class WorkHistoryServiceTests {
 			"FOCUS",
 			8,
 			2,
-			"PUBLIC",
 			"OPEN",
 			30L,
 			"Alice",

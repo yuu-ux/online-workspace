@@ -4,7 +4,6 @@ DROP TABLE IF EXISTS room_members;
 DROP TABLE IF EXISTS profiles;
 DROP TABLE IF EXISTS rooms;
 DROP TABLE IF EXISTS room_statuses;
-DROP TABLE IF EXISTS visibilities;
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
@@ -19,11 +18,6 @@ CREATE TABLE profiles (
     icon_url VARCHAR(500)
 );
 
-CREATE TABLE visibilities (
-    id SMALLINT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE
-);
-
 CREATE TABLE room_statuses (
     id SMALLINT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE
@@ -34,7 +28,6 @@ CREATE TABLE rooms (
     created_by BIGINT NOT NULL,
     category_id BIGINT NOT NULL,
     max_members SMALLINT NOT NULL,
-    visibility_id SMALLINT NOT NULL,
     status_id SMALLINT NOT NULL
 );
 
@@ -73,18 +66,16 @@ INSERT INTO profiles (user_id, icon_url) VALUES
     (2, 'https://example.com/member.png'),
     (3, NULL);
 
-INSERT INTO visibilities (id, code) VALUES (1, 'PUBLIC');
-
 INSERT INTO room_statuses (id, code) VALUES
     (1, 'OPEN'),
     (2, 'CLOSED');
 
-INSERT INTO rooms (id, created_by, category_id, max_members, visibility_id, status_id) VALUES
-    (10, 1, 100, 3, 1, 1),
-    (11, 1, 100, 3, 1, 1),
-    (13, 1, 100, 2, 1, 1),
-    (14, 1, 100, 3, 1, 1),
-    (15, 1, 100, 3, 1, 2);
+INSERT INTO rooms (id, created_by, category_id, max_members, status_id) VALUES
+    (10, 1, 100, 3, 1),
+    (11, 1, 100, 3, 1),
+    (13, 1, 100, 2, 1),
+    (14, 1, 100, 3, 1),
+    (15, 1, 100, 3, 2);
 
 INSERT INTO room_members (room_id, user_id, joined_at) VALUES
     (10, 1, '2026-08-15T00:00:00Z'),

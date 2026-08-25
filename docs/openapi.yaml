@@ -337,7 +337,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
         '200':
-          description: 公開範囲とブロック関係を反映したルーム一覧
+          description: ブロック関係を反映したルーム一覧
           content:
             application/json:
               schema:
@@ -1284,10 +1284,6 @@ components:
       type: string
       enum: [FOCUS, CHAT_OK]
 
-    RoomVisibility:
-      type: string
-      enum: [PUBLIC]
-
     RoomStatus:
       type: string
       enum: [OPEN, CLOSED]
@@ -1578,7 +1574,6 @@ components:
         - workStyle
         - maxMembers
         - currentMembers
-        - visibility
         - status
         - createdBy
         - joinable
@@ -1601,8 +1596,6 @@ components:
           type: integer
           minimum: 0
           maximum: 12
-        visibility:
-          $ref: '#/components/schemas/RoomVisibility'
         status:
           $ref: '#/components/schemas/RoomStatus'
         createdBy:
@@ -1635,7 +1628,7 @@ components:
     CreateRoomRequest:
       type: object
       additionalProperties: false
-      required: [name, description, categoryId, workStyle, maxMembers, visibility]
+      required: [name, description, categoryId, workStyle, maxMembers]
       properties:
         name:
           type: string
@@ -1652,13 +1645,11 @@ components:
           type: integer
           minimum: 2
           maximum: 12
-        visibility:
-          $ref: '#/components/schemas/RoomVisibility'
 
     UpdateRoomRequest:
       type: object
       additionalProperties: false
-      required: [name, description, categoryId, workStyle, maxMembers, visibility]
+      required: [name, description, categoryId, workStyle, maxMembers]
       properties:
         name:
           type: string
@@ -1675,8 +1666,6 @@ components:
           type: integer
           minimum: 2
           maximum: 12
-        visibility:
-          $ref: '#/components/schemas/RoomVisibility'
 
     RoomPage:
       type: object

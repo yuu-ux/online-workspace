@@ -61,7 +61,6 @@ public interface WorkHistoryRepository {
 		     FROM room_members active_members
 		    WHERE active_members.room_id = r.id
 		      AND active_members.left_at IS NULL) AS current_members,
-		  visibility.code AS visibility,
 		  room_status.code AS room_status,
 		  creator.id AS creator_id,
 		  creator.name AS creator_name,
@@ -83,7 +82,6 @@ public interface WorkHistoryRepository {
 		JOIN rooms r ON r.id = ws.room_id
 		JOIN room_categories rc ON rc.id = ws.category_id
 		JOIN work_styles work_style ON work_style.id = r.work_style_id
-		JOIN visibilities visibility ON visibility.id = r.visibility_id
 		JOIN room_statuses room_status ON room_status.id = r.status_id
 		JOIN users creator ON creator.id = r.created_by
 		LEFT JOIN profiles creator_profile ON creator_profile.user_id = creator.id
@@ -187,7 +185,6 @@ public interface WorkHistoryRepository {
 		String workStyle,
 		int maxMembers,
 		int currentMembers,
-		String visibility,
 		String roomStatus,
 		long creatorId,
 		String creatorName,

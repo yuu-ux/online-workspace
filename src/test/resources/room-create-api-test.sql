@@ -4,7 +4,6 @@ DROP TABLE IF EXISTS profiles;
 DROP TABLE IF EXISTS room_categories;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS room_statuses;
-DROP TABLE IF EXISTS visibilities;
 DROP TABLE IF EXISTS work_styles;
 DROP TABLE IF EXISTS room_category_statuses;
 
@@ -14,11 +13,6 @@ CREATE TABLE room_category_statuses (
 );
 
 CREATE TABLE work_styles (
-    id SMALLINT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE
-);
-
-CREATE TABLE visibilities (
     id SMALLINT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE
 );
@@ -57,7 +51,6 @@ CREATE TABLE rooms (
     category_id BIGINT NOT NULL REFERENCES room_categories(id),
     work_style_id SMALLINT NOT NULL REFERENCES work_styles(id),
     max_members SMALLINT NOT NULL CHECK (max_members BETWEEN 2 AND 12),
-    visibility_id SMALLINT NOT NULL REFERENCES visibilities(id),
     status_id SMALLINT NOT NULL DEFAULT 1 REFERENCES room_statuses(id),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -73,7 +66,6 @@ CREATE TABLE room_members (
 
 INSERT INTO room_category_statuses (id, code) VALUES (1, 'ACTIVE'), (2, 'INACTIVE');
 INSERT INTO work_styles (id, code) VALUES (1, 'FOCUS'), (2, 'CHAT_OK');
-INSERT INTO visibilities (id, code) VALUES (1, 'PUBLIC');
 INSERT INTO room_statuses (id, code) VALUES (1, 'OPEN'), (2, 'CLOSED');
 INSERT INTO users (id, name, email) VALUES (1, '作成者', 'creator@example.com');
 INSERT INTO profiles (user_id, icon_url) VALUES (1, 'https://example.com/creator.png');

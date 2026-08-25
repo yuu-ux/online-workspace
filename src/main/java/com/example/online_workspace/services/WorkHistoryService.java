@@ -121,7 +121,6 @@ public class WorkHistoryService {
 			row.workStyle(),
 			row.maxMembers(),
 			row.currentMembers(),
-			row.visibility(),
 			row.roomStatus(),
 			creator,
 			joinRestriction == null,

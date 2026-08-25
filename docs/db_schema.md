@@ -4,13 +4,13 @@
 
 - 日時はタイムゾーン付きで保存する。
 - 外部キー制約を使用し、参照整合性をデータベースでも保証する。
-- 権限や公開範囲などの固定選択肢はマスターテーブルで管理し、業務テーブルからIDで参照する。
+- 権限などの固定選択肢はマスターテーブルで管理し、業務テーブルからIDで参照する。
 - `updated_at` はアプリケーション、またはデータベースのトリガーで更新する。
 - `DEFAULT NULL` は、値が設定されるまで未確定であることを明示するために記載する。
 
 ## 固定選択肢のマスターテーブル
 
-権限、状態、公開範囲などを文字列の `CHECK` 制約だけで管理せず、表示名や説明も含めて管理する。各マスターテーブルは次の共通カラムを持つ。
+権限や状態などを文字列の `CHECK` 制約だけで管理せず、表示名や説明も含めて管理する。各マスターテーブルは次の共通カラムを持つ。
 
 | カラム名 | 型 | オプション | 説明 |
 |:--|:--|:--|:--|
@@ -30,7 +30,6 @@
 | account_statuses | 3 | `BANNED` | 永久停止 |
 | work_styles | 1 | `FOCUS` | 黙って集中 |
 | work_styles | 2 | `CHAT_OK` | 雑談OK |
-| visibilities | 1 | `PUBLIC` | 公開 |
 | room_statuses | 1 | `OPEN` | 受付中 |
 | room_statuses | 2 | `CLOSED` | 終了 |
 | room_category_statuses | 1 | `ACTIVE` | 利用中 |
@@ -102,7 +101,6 @@
 | category_id | BIGINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES room_categories(id) | 作業カテゴリID。既定値は `未分類` |
 | work_style_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES work_styles(id) | 作業スタイル。自由入力ではなくマスターから選択し、既定値は `FOCUS` |
 | max_members | SMALLINT | NOT NULL, DEFAULT 12, CHECK (max_members BETWEEN 2 AND 12) | 参加人数の上限 |
-| visibility_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES visibilities(id) | 公開範囲。既定値は `PUBLIC` |
 | status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES room_statuses(id) | ルームが参加受付中か、閉じられているか。既定値は `OPEN` |
 | closed_at | TIMESTAMPTZ | DEFAULT NULL | ルームを閉じた日時。受付中の場合は `NULL` |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |

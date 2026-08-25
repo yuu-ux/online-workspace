@@ -26,12 +26,12 @@ public class RoomListService {
 			throw new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "認証が必要です。");
 		}
 
-		long totalElements = repository.countPublicRooms(categoryId, workStyle);
+		long totalElements = repository.countOpenRooms(categoryId, workStyle);
 		long offset = (long) page * size;
 		boolean requestedPageIsOutOfRange = offset >= totalElements;
 		List<RoomListItem> items = requestedPageIsOutOfRange
 			? List.of()
-			: repository.findPublicRooms(userId, categoryId, workStyle, size, offset);
+			: repository.findOpenRooms(userId, categoryId, workStyle, size, offset);
 		return new Result(items, totalElements);
 	}
 

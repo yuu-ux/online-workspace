@@ -31,7 +31,6 @@ public final class WorkHistory {
 		String workStyle,
 		int maxMembers,
 		int currentMembers,
-		String visibility,
 		String status,
 		UserSummary createdBy,
 		boolean joinable,
