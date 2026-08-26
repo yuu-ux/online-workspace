@@ -43,3 +43,8 @@ frontend/.vite/
 frontend/*.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
+
+### Codex worktrees ###
+.codex/worktrees/
+
+.env

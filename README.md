@@ -9,7 +9,9 @@
 
 - [要件定義](docs/requirements.md)
 - [DBスキーマ](docs/db_schema.md)
+- [退会時のデータ保持方針](docs/account_withdrawal_data_policy.md)
 - [システム構成](docs/system_architecture.pdf)
+- [ブランチ命名規則](docs/branch_naming_convention.md)
 
 ## 技術スタック
 
@@ -64,6 +66,42 @@ HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up
 ```
 
 初回起動時に Flyway がマイグレーションを実行します。
+
+## ヘルスチェックとメトリクス
+
+`MANAGEMENT_API_KEY` を設定すると、次の監視エンドポイントを
+`X-API-Key` ヘッダー付きで利用できます。未設定時はアクセスを拒否します。
+
+- `GET /actuator/health`: アプリケーションとDBの稼働状態
+- `GET /actuator/prometheus`: Prometheus text exposition format
+
+```bash
+curl -H "X-API-Key: $MANAGEMENT_API_KEY" http://localhost:8080/actuator/health
+curl -H "X-API-Key: $MANAGEMENT_API_KEY" http://localhost:8080/actuator/prometheus
+```
+
+`/actuator/prometheus` では `http.server.requests`（応答時間・status別件数）、JVM/process の
+CPU・メモリ、`hikaricp.connections`（DB接続）、`tomcat.connections.current`
+（同時接続）、`websocket.connections.active`（WebSocket接続）を確認できます。
+Prometheus形式では各メトリクス名のドットがアンダースコアへ変換されます。
+
+### Prometheus / Grafana
+
+監視構成は API キーと Grafana 管理者パスワードを設定して起動します。
+
+```bash
+MANAGEMENT_API_KEY="change-me" GRAFANA_ADMIN_PASSWORD="change-me" \
+  docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
+```
+
+起動後のURL:
+
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000（ユーザー名は `admin`。`GRAFANA_ADMIN_USER` で変更可能）
+
+Grafana の匿名アクセスは無効です。Prometheus データソースと
+`Online Workspace Monitoring` ダッシュボードは起動時に自動設定されます。
+メトリクスの保持期間は15日です。
 
 ## フロントエンド開発方針
 

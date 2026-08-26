@@ -7,7 +7,7 @@ info:
     日時は RFC 3339、ID は 64 bit integer、JSON の property 名は lowerCamelCase とする。
 
     ブラウザ向け API は `SESSION` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
-    CSRF token を取得し、状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
+    `XSRF-TOKEN` cookieを発行し、その値を状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
 
     API key 認証と rate limit の採点対象は、ルーム一覧、作成、詳細、更新、削除の5 operation とする。
     API key は発行先のユーザーまたはservice principalへ紐付き、各operationの認可判定にもその主体を使用する。
@@ -25,20 +25,10 @@ tags:
     description: ルームカテゴリ
   - name: Rooms
     description: ルームと参加者
-  - name: Invites
-    description: 招待リンク
   - name: Messages
     description: ルーム内チャット履歴と送信
   - name: Friends
-    description: フレンドとお気に入り
-  - name: Blocks
-    description: ブロック
-  - name: Work sessions
-    description: 作業履歴と集計
-  - name: Reports
-    description: 通報
-  - name: Administration
-    description: 管理者向け通報対応
+    description: フレンド
   - name: Operations
     description: システム監視
 
@@ -60,20 +50,18 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
-          description: 登録したユーザー
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthenticatedUser'
+          description: ユーザー登録完了。ログインセッションは作成しない
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
 
   /auth/login:
     post:
@@ -89,6 +77,8 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: ログインしたユーザー。`SESSION` cookie を設定する
           headers:
@@ -116,6 +106,8 @@ paths:
         - sessionAuth: []
           csrfToken: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: ログアウト完了
         '401':
@@ -131,6 +123,8 @@ paths:
       operationId: getSession
       security: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 現在の認証状態
           content:
@@ -143,24 +137,23 @@ paths:
   /auth/csrf:
     get:
       tags: [Authentication]
-      summary: CSRF tokenを取得する
+      summary: CSRF token用Cookieを初期化する
       description: |
-        セッションの有無にかかわらず呼び出せる。返却された `token` を、以降の状態変更リクエストで
-        `X-CSRF-TOKEN` headerへ設定する。同じtokenを持つ `XSRF-TOKEN` cookieも発行する。
+        セッションの有無にかかわらず呼び出せる。CSRF tokenを遅延生成して `XSRF-TOKEN` cookieを発行する。
+        レスポンス本文は返さず、クライアントはcookieの値を以降の状態変更リクエストの
+        `X-CSRF-TOKEN` headerへ設定する。
       operationId: getCsrfToken
       security: []
       responses:
-        '200':
-          description: 現在のsessionに対応するCSRF token
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '204':
+          description: XSRF-TOKEN cookieを発行した。レスポンス本文は空。
           headers:
             Set-Cookie:
               description: "XSRF-TOKEN cookie。Reactから読み取れるようHttpOnlyは付与しない"
               schema:
                 type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CsrfToken'
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
@@ -168,7 +161,7 @@ paths:
     get:
       tags: [Users]
       summary: ユーザーを検索する
-      description: 名前の部分一致で検索する。ブロック関係のユーザーは結果から除外する。
+      description: 名前の部分一致で検索する。
       operationId: searchUsers
       parameters:
         - name: query
@@ -181,6 +174,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: ユーザー検索結果
           content:
@@ -202,6 +197,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/UserId'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 公開範囲を反映したプロフィール
           content:
@@ -221,6 +218,8 @@ paths:
       summary: 自分のプロフィールを取得する
       operationId: getMyProfile
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 自分のプロフィール
           content:
@@ -243,6 +242,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateProfileRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 更新後のプロフィール
           content:
@@ -273,6 +274,8 @@ paths:
             schema:
               $ref: '#/components/schemas/WithdrawRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: 退会完了。現在の session も無効化する
         '400':
@@ -290,6 +293,8 @@ paths:
       summary: 利用可能なルームカテゴリを取得する
       operationId: listRoomCategories
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 表示順に並んだカテゴリ
           content:
@@ -321,8 +326,10 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
-          description: 公開範囲とブロック関係を反映したルーム一覧
+          description: 参加可能なルーム一覧
           content:
             application/json:
               schema:
@@ -348,6 +355,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateRoomRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 作成したルーム。作成者は参加済みになる
           content:
@@ -376,6 +385,8 @@ paths:
         - sessionAuth: []
         - apiKeyAuth: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: ルーム詳細
           content:
@@ -406,6 +417,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateRoomRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 更新後のルーム
           content:
@@ -429,13 +442,15 @@ paths:
     delete:
       tags: [Rooms]
       summary: ルームを閉じる
-      description: ルーム作成者だけが実行できる。関連する有効な招待も無効化する。
+      description: ルーム作成者だけが実行できる。
       operationId: closeRoom
       security:
         - sessionAuth: []
           csrfToken: []
         - apiKeyAuth: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: ルームを閉じた
         '401':
@@ -457,6 +472,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/RoomId'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 参加中のメンバー
           content:
@@ -484,6 +501,8 @@ paths:
         - sessionAuth: []
           csrfToken: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 参加情報。作業 session も開始する
           content:
@@ -506,99 +525,12 @@ paths:
         - sessionAuth: []
           csrfToken: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: 退出完了。作業 session も終了する
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /rooms/{roomId}/invites:
-    get:
-      tags: [Invites]
-      summary: ルームの招待リンクを取得する
-      description: ルーム作成者だけが実行できる。
-      operationId: listRoomInvites
-      parameters:
-        - $ref: '#/components/parameters/RoomId'
-      responses:
-        '200':
-          description: 招待リンク一覧
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RoomInvite'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      tags: [Invites]
-      summary: 招待リンクを発行する
-      description: ルーム作成者だけが実行できる。
-      operationId: createRoomInvite
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      parameters:
-        - $ref: '#/components/parameters/RoomId'
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateInviteRequest'
-      responses:
-        '201':
-          description: 発行した招待リンク
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RoomInvite'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /invites/{token}/join:
-    post:
-      tags: [Invites]
-      summary: 招待リンクを使ってルームへ参加する
-      operationId: joinRoomByInvite
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      parameters:
-        - name: token
-          in: path
-          required: true
-          schema:
-            type: string
-            minLength: 32
-            maxLength: 255
-      responses:
-        '201':
-          description: 参加したルームと参加情報
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JoinRoomResult'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -615,6 +547,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 新しい順のメッセージ
           content:
@@ -646,6 +580,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateMessageRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 送信したメッセージ
           content:
@@ -669,13 +605,11 @@ paths:
       summary: フレンド一覧を取得する
       operationId: listFriends
       parameters:
-        - name: favorite
-          in: query
-          schema:
-            type: boolean
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: フレンド一覧
           content:
@@ -700,6 +634,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateFriendRequest'
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '201':
           description: 追加したフレンド
           content:
@@ -720,34 +656,6 @@ paths:
   /friends/{friendUserId}:
     parameters:
       - $ref: '#/components/parameters/FriendUserId'
-    put:
-      tags: [Friends]
-      summary: フレンドのお気に入り状態を更新する
-      operationId: updateFriend
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateFriendRequest'
-      responses:
-        '200':
-          description: 更新後のフレンド
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Friend'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
     delete:
       tags: [Friends]
       summary: フレンドを解除する
@@ -756,6 +664,8 @@ paths:
         - sessionAuth: []
           csrfToken: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '204':
           description: フレンド解除完了
         '401':
@@ -763,352 +673,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /blocks:
-    get:
-      tags: [Blocks]
-      summary: ブロック一覧を取得する
-      operationId: listBlocks
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: ブロック一覧
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    post:
-      tags: [Blocks]
-      summary: ユーザーをブロックする
-      operationId: createBlock
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateBlockRequest'
-      responses:
-        '201':
-          description: 作成したブロック。既存のフレンド関係は解除する
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockedUser'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /blocks/{blockedUserId}:
-    delete:
-      tags: [Blocks]
-      summary: ブロックを解除する
-      operationId: deleteBlock
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      parameters:
-        - $ref: '#/components/parameters/BlockedUserId'
-      responses:
-        '204':
-          description: ブロック解除完了
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /work-sessions:
-    get:
-      tags: [Work sessions]
-      summary: 自分の作業履歴を取得する
-      operationId: listWorkSessions
-      parameters:
-        - name: from
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: categoryId
-          in: query
-          schema:
-            $ref: '#/components/schemas/Id'
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: 作業履歴
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkSessionPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /work-sessions/summary:
-    get:
-      tags: [Work sessions]
-      summary: 自分の作業時間集計を取得する
-      operationId: getWorkSessionSummary
-      parameters:
-        - name: from
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          schema:
-            type: string
-            format: date
-      responses:
-        '200':
-          description: 累計、カテゴリ別、日別の作業時間
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkSessionSummary'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /report-reasons:
-    get:
-      tags: [Reports]
-      summary: 通報理由を取得する
-      operationId: listReportReasons
-      responses:
-        '200':
-          description: 通報理由一覧
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ReportReason'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /reports:
-    post:
-      tags: [Reports]
-      summary: ユーザーを通報する
-      operationId: createReport
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateReportRequest'
-      responses:
-        '201':
-          description: 作成した通報
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportReceipt'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-  /admin/reports:
-    get:
-      tags: [Administration]
-      summary: 通報一覧を取得する
-      description: ADMIN role が必要。
-      operationId: listAdminReports
-      parameters:
-        - name: reason
-          in: query
-          schema:
-            $ref: '#/components/schemas/ReportReasonCode'
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/ReportStatus'
-        - name: targetUserId
-          in: query
-          schema:
-            $ref: '#/components/schemas/Id'
-        - name: from
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: sort
-          in: query
-          schema:
-            type: string
-            enum: [createdAt, updatedAt]
-            default: createdAt
-        - name: direction
-          in: query
-          schema:
-            type: string
-            enum: [asc, desc]
-            default: desc
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: 通報一覧
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminReportPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /admin/reports/{reportId}:
-    parameters:
-      - $ref: '#/components/parameters/ReportId'
-    get:
-      tags: [Administration]
-      summary: 通報詳細を取得する
-      description: ADMIN role が必要。
-      operationId: getAdminReport
-      responses:
-        '200':
-          description: 通報詳細
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminReport'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags: [Administration]
-      summary: 通報状態を更新する
-      description: ADMIN role が必要。
-      operationId: updateAdminReport
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateReportRequest'
-      responses:
-        '200':
-          description: 更新後の通報
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminReport'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-  /admin/actions:
-    get:
-      tags: [Administration]
-      summary: 管理者対応履歴を取得する
-      description: ADMIN role が必要。
-      operationId: listAdminActions
-      parameters:
-        - name: targetUserId
-          in: query
-          schema:
-            $ref: '#/components/schemas/Id'
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: 管理者対応履歴
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminActionPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-    post:
-      tags: [Administration]
-      summary: 警告またはアカウント停止を実行する
-      description: ADMIN role が必要。作成後に対象ユーザーへメールを送信する。
-      operationId: createAdminAction
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateAdminActionRequest'
-      responses:
-        '201':
-          description: 作成した管理者対応
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminAction'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-
-  /health:
+  /actuator/health:
     get:
       tags: [Operations]
       summary: システムの稼働状態を取得する
@@ -1119,6 +684,8 @@ paths:
       security:
         - apiKeyAuth: []
       responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '200':
           description: 正常稼働中
           content:
@@ -1134,6 +701,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
 
+  /actuator/prometheus:
+    get:
+      tags: [Operations]
+      summary: Prometheus向けメトリクスを取得する
+      operationId: getMetrics
+      servers:
+        - url: /
+          description: API prefix 外の監視 endpoint
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Prometheus text exposition format のメトリクス
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
   securitySchemes:
     sessionAuth:
@@ -1146,7 +733,7 @@ components:
       in: header
       name: X-CSRF-TOKEN
       description: |
-        `GET /auth/csrf` で取得するCSRF token。session認証で状態を変更するoperationでは必須。
+        `GET /auth/csrf` で発行された `XSRF-TOKEN` cookieの値。session認証で状態を変更するoperationでは必須。
     apiKeyAuth:
       type: apiKey
       in: header
@@ -1185,20 +772,8 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/Id'
-    BlockedUserId:
-      name: blockedUserId
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/Id'
     RoomId:
       name: roomId
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/Id'
-    ReportId:
-      name: reportId
       in: path
       required: true
       schema:
@@ -1235,6 +810,19 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    InternalServerError:
+      description: 予期しないサーバーエラー
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            status: 500
+            code: INTERNAL_SERVER_ERROR
+            message: 予期しないエラーが発生しました。
+            path: /api/v1/rooms/42
+            timestamp: '2026-08-04T12:34:56Z'
+            traceId: 2f1c16cb-9c67-44a8-9e85-81efba46b85a
     ValidationError:
       description: 入力 validation に失敗した
       content:
@@ -1261,10 +849,6 @@ components:
       minimum: 1
       example: 42
 
-    Role:
-      type: string
-      enum: [USER, ADMIN]
-
     AccountStatus:
       type: string
       enum: [ACTIVE, SUSPENDED, BANNED]
@@ -1273,31 +857,9 @@ components:
       type: string
       enum: [FOCUS, CHAT_OK]
 
-    RoomVisibility:
-      type: string
-      enum: [PUBLIC, INVITE_ONLY, FRIENDS_ONLY]
-
     RoomStatus:
       type: string
       enum: [OPEN, CLOSED]
-
-    ReportReasonCode:
-      type: string
-      enum:
-        - HARASSMENT
-        - DEFAMATION
-        - SPAM
-        - FRAUD_OR_IMPERSONATION
-        - INAPPROPRIATE_CONTENT
-        - OTHER
-
-    ReportStatus:
-      type: string
-      enum: [PENDING, REVIEWING, RESOLVED, DISMISSED]
-
-    AdminActionType:
-      type: string
-      enum: [WARNING, TEMPORARY_SUSPENSION, PERMANENT_SUSPENSION]
 
     PageMeta:
       type: object
@@ -1339,6 +901,8 @@ components:
           format: password
           minLength: 8
           maxLength: 72
+          pattern: '^[\x21-\x7E]+$'
+          description: 半角の英字・数字・記号（空白を除く）で8〜72文字。UTF-8エンコード時も72バイト以内
           writeOnly: true
 
     LoginRequest:
@@ -1353,13 +917,14 @@ components:
         password:
           type: string
           format: password
+          description: UTF-8 エンコード時に72バイト以内
           minLength: 1
           maxLength: 72
           writeOnly: true
 
     AuthenticatedUser:
       type: object
-      required: [id, name, email, role, accountStatus]
+      required: [id, name, email, accountStatus]
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -1368,8 +933,6 @@ components:
         email:
           type: string
           format: email
-        role:
-          $ref: '#/components/schemas/Role'
         accountStatus:
           $ref: '#/components/schemas/AccountStatus'
         suspendedUntil:
@@ -1388,22 +951,6 @@ components:
           allOf:
             - $ref: '#/components/schemas/AuthenticatedUser'
           nullable: true
-
-    CsrfToken:
-      type: object
-      additionalProperties: false
-      required: [token, headerName, parameterName]
-      properties:
-        token:
-          type: string
-          minLength: 1
-          description: 状態変更リクエストに設定するtoken値
-        headerName:
-          type: string
-          enum: [X-CSRF-TOKEN]
-        parameterName:
-          type: string
-          enum: [_csrf]
 
     UserSummary:
       type: object
@@ -1430,7 +977,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/UserSummary'
         - type: object
-          required: [isPublic, bio, workCategory, friendship, blocked]
+          required: [isPublic, bio, workCategory, friendship]
           properties:
             isPublic:
               type: boolean
@@ -1446,8 +993,6 @@ components:
             friendship:
               type: string
               enum: [NONE, FRIEND]
-            blocked:
-              type: boolean
 
     HiddenUserProfile:
       type: object
@@ -1475,9 +1020,7 @@ components:
             - bio
             - workCategory
             - friendship
-            - blocked
             - email
-            - role
             - accountStatus
             - createdAt
           properties:
@@ -1494,13 +1037,9 @@ components:
             friendship:
               type: string
               enum: [NONE, FRIEND]
-            blocked:
-              type: boolean
             email:
               type: string
               format: email
-            role:
-              $ref: '#/components/schemas/Role'
             accountStatus:
               $ref: '#/components/schemas/AccountStatus'
             createdAt:
@@ -1540,6 +1079,7 @@ components:
         password:
           type: string
           format: password
+          description: UTF-8 エンコード時に72バイト以内
           minLength: 1
           maxLength: 72
           writeOnly: true
@@ -1579,7 +1119,6 @@ components:
         - workStyle
         - maxMembers
         - currentMembers
-        - visibility
         - status
         - createdBy
         - joinable
@@ -1602,8 +1141,6 @@ components:
           type: integer
           minimum: 0
           maximum: 12
-        visibility:
-          $ref: '#/components/schemas/RoomVisibility'
         status:
           $ref: '#/components/schemas/RoomStatus'
         createdBy:
@@ -1612,7 +1149,7 @@ components:
           type: boolean
         joinRestriction:
           type: string
-          enum: [FULL, CLOSED, FRIEND_REQUIRED, INVITE_REQUIRED, BLOCKED]
+          enum: [FULL, CLOSED]
           nullable: true
         createdAt:
           type: string
@@ -1636,7 +1173,7 @@ components:
     CreateRoomRequest:
       type: object
       additionalProperties: false
-      required: [name, description, categoryId, workStyle, maxMembers, visibility]
+      required: [name, description, categoryId, workStyle, maxMembers]
       properties:
         name:
           type: string
@@ -1653,13 +1190,11 @@ components:
           type: integer
           minimum: 2
           maximum: 12
-        visibility:
-          $ref: '#/components/schemas/RoomVisibility'
 
     UpdateRoomRequest:
       type: object
       additionalProperties: false
-      required: [name, description, categoryId, workStyle, maxMembers, visibility]
+      required: [name, description, categoryId, workStyle, maxMembers]
       properties:
         name:
           type: string
@@ -1676,8 +1211,6 @@ components:
           type: integer
           minimum: 2
           maximum: 12
-        visibility:
-          $ref: '#/components/schemas/RoomVisibility'
 
     RoomPage:
       type: object
@@ -1701,50 +1234,6 @@ components:
         joinedAt:
           type: string
           format: date-time
-
-    CreateInviteRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        expiresAt:
-          type: string
-          format: date-time
-          description: 省略時は発行から1時間後
-
-    RoomInvite:
-      type: object
-      required: [id, roomId, token, url, createdBy, expiresAt, createdAt, valid]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        roomId:
-          $ref: '#/components/schemas/Id'
-        token:
-          type: string
-          minLength: 32
-          maxLength: 255
-        url:
-          type: string
-          format: uri
-        createdBy:
-          $ref: '#/components/schemas/UserSummary'
-        expiresAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        valid:
-          type: boolean
-
-    JoinRoomResult:
-      type: object
-      required: [room, membership]
-      properties:
-        room:
-          $ref: '#/components/schemas/RoomDetail'
-        membership:
-          $ref: '#/components/schemas/RoomMember'
 
     CreateMessageRequest:
       type: object
@@ -1793,22 +1282,12 @@ components:
         userId:
           $ref: '#/components/schemas/Id'
 
-    UpdateFriendRequest:
-      type: object
-      additionalProperties: false
-      required: [favorite]
-      properties:
-        favorite:
-          type: boolean
-
     Friend:
       type: object
-      required: [user, favorite, createdAt]
+      required: [user, createdAt]
       properties:
         user:
           $ref: '#/components/schemas/UserSummary'
-        favorite:
-          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -1824,309 +1303,23 @@ components:
         page:
           $ref: '#/components/schemas/PageMeta'
 
-    CreateBlockRequest:
+    HealthStatus:
       type: object
-      additionalProperties: false
-      required: [userId]
-      properties:
-        userId:
-          $ref: '#/components/schemas/Id'
-
-    BlockedUser:
-      type: object
-      required: [user, blockedAt]
-      properties:
-        user:
-          $ref: '#/components/schemas/UserSummary'
-        blockedAt:
-          type: string
-          format: date-time
-
-    BlockPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/BlockedUser'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    WorkSession:
-      type: object
-      required: [id, room, category, participants, startedAt, durationSeconds]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        room:
-          $ref: '#/components/schemas/RoomSummary'
-        category:
-          $ref: '#/components/schemas/RoomCategory'
-        participants:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserSummary'
-        startedAt:
-          type: string
-          format: date-time
-        endedAt:
-          type: string
-          format: date-time
-          nullable: true
-        durationSeconds:
-          type: integer
-          format: int64
-          minimum: 0
-
-    WorkSessionPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkSession'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    CategoryWorkSummary:
-      type: object
-      required: [category, durationSeconds]
-      properties:
-        category:
-          $ref: '#/components/schemas/RoomCategory'
-        durationSeconds:
-          type: integer
-          format: int64
-          minimum: 0
-
-    DailyWorkSummary:
-      type: object
-      required: [date, durationSeconds]
-      properties:
-        date:
-          type: string
-          format: date
-        durationSeconds:
-          type: integer
-          format: int64
-          minimum: 0
-
-    WorkSessionSummary:
-      type: object
-      required: [totalDurationSeconds, byCategory, byDate]
-      properties:
-        totalDurationSeconds:
-          type: integer
-          format: int64
-          minimum: 0
-        byCategory:
-          type: array
-          items:
-            $ref: '#/components/schemas/CategoryWorkSummary'
-        byDate:
-          type: array
-          items:
-            $ref: '#/components/schemas/DailyWorkSummary'
-
-    ReportReason:
-      type: object
-      required: [id, code, name, description]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        code:
-          $ref: '#/components/schemas/ReportReasonCode'
-        name:
-          type: string
-          maxLength: 100
-        description:
-          type: string
-          maxLength: 500
-
-    CreateReportRequest:
-      type: object
-      additionalProperties: false
-      required: [targetUserId, reason]
-      properties:
-        targetUserId:
-          $ref: '#/components/schemas/Id'
-        roomId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        reason:
-          $ref: '#/components/schemas/ReportReasonCode'
-        details:
-          type: string
-          maxLength: 2000
-          nullable: true
-
-    ReportReceipt:
-      type: object
-      required: [id, targetUserId, reason, status, createdAt]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        targetUserId:
-          $ref: '#/components/schemas/Id'
-        roomId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        reason:
-          $ref: '#/components/schemas/ReportReasonCode'
-        status:
-          $ref: '#/components/schemas/ReportStatus'
-        createdAt:
-          type: string
-          format: date-time
-
-    AdminReport:
-      type: object
-      required:
-        - id
-        - reporter
-        - target
-        - reason
-        - status
-        - details
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        reporter:
-          $ref: '#/components/schemas/UserSummary'
-        target:
-          $ref: '#/components/schemas/UserSummary'
-        room:
-          type: object
-          allOf:
-            - $ref: '#/components/schemas/RoomSummary'
-          nullable: true
-        reason:
-          $ref: '#/components/schemas/ReportReason'
-        status:
-          $ref: '#/components/schemas/ReportStatus'
-        details:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    AdminReportPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminReport'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    UpdateReportRequest:
-      type: object
-      additionalProperties: false
       required: [status]
       properties:
         status:
-          $ref: '#/components/schemas/ReportStatus'
-
-    CreateAdminActionRequest:
-      type: object
-      additionalProperties: false
-      required: [targetUserId, actionType, reason]
-      properties:
-        reportId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        targetUserId:
-          $ref: '#/components/schemas/Id'
-        actionType:
-          $ref: '#/components/schemas/AdminActionType'
-        reason:
           type: string
-          minLength: 1
-          maxLength: 2000
-        startsAt:
-          type: string
-          format: date-time
-          description: 省略時は現在日時
-        endsAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: TEMPORARY_SUSPENSION の場合だけ必須
-
-    AdminAction:
-      type: object
-      required: [id, admin, target, actionType, reason, startsAt, createdAt]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        reportId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        admin:
-          $ref: '#/components/schemas/UserSummary'
-        target:
-          $ref: '#/components/schemas/UserSummary'
-        actionType:
-          $ref: '#/components/schemas/AdminActionType'
-        reason:
-          type: string
-        startsAt:
-          type: string
-          format: date-time
-        endsAt:
-          type: string
-          format: date-time
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-
-    AdminActionPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminAction'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    HealthStatus:
-      type: object
-      required: [status, checks, checkedAt]
-      properties:
-        status:
-          type: string
-          enum: [UP, DEGRADED, DOWN]
-        checks:
+          enum: [UP, DOWN, OUT_OF_SERVICE, UNKNOWN]
+        components:
           type: object
           additionalProperties:
-            type: string
-            enum: [UP, DOWN]
+            type: object
+            properties:
+              status:
+                type: string
           example:
-            database: UP
-        checkedAt:
-          type: string
-          format: date-time
+            db:
+              status: UP
 
     ApiError:
       type: object
