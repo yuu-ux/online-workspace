@@ -28,11 +28,9 @@ tags:
   - name: Messages
     description: ルーム内チャット履歴と送信
   - name: Friends
-    description: フレンドとお気に入り
+    description: フレンド
   - name: Work sessions
     description: 作業履歴と集計
-  - name: Reports
-    description: 通報
   - name: Operations
     description: システム監視
 
@@ -609,10 +607,6 @@ paths:
       summary: フレンド一覧を取得する
       operationId: listFriends
       parameters:
-        - name: favorite
-          in: query
-          schema:
-            type: boolean
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
@@ -664,36 +658,6 @@ paths:
   /friends/{friendUserId}:
     parameters:
       - $ref: '#/components/parameters/FriendUserId'
-    put:
-      tags: [Friends]
-      summary: フレンドのお気に入り状態を更新する
-      operationId: updateFriend
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateFriendRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 更新後のフレンド
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Friend'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
     delete:
       tags: [Friends]
       summary: フレンドを解除する
@@ -776,57 +740,6 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
-  /report-reasons:
-    get:
-      tags: [Reports]
-      summary: 通報理由を取得する
-      operationId: listReportReasons
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 通報理由一覧
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ReportReason'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /reports:
-    post:
-      tags: [Reports]
-      summary: ユーザーを通報する
-      operationId: createReport
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateReportRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '201':
-          description: 作成した通報
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportReceipt'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
 
   /actuator/health:
     get:
@@ -1015,16 +928,6 @@ components:
     RoomStatus:
       type: string
       enum: [OPEN, CLOSED]
-
-    ReportReasonCode:
-      type: string
-      enum:
-        - HARASSMENT
-        - DEFAMATION
-        - SPAM
-        - FRAUD_OR_IMPERSONATION
-        - INAPPROPRIATE_CONTENT
-        - OTHER
 
     PageMeta:
       type: object
@@ -1447,22 +1350,12 @@ components:
         userId:
           $ref: '#/components/schemas/Id'
 
-    UpdateFriendRequest:
-      type: object
-      additionalProperties: false
-      required: [favorite]
-      properties:
-        favorite:
-          type: boolean
-
     Friend:
       type: object
-      required: [user, favorite, createdAt]
+      required: [user, createdAt]
       properties:
         user:
           $ref: '#/components/schemas/UserSummary'
-        favorite:
-          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -1554,59 +1447,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DailyWorkSummary'
-
-    ReportReason:
-      type: object
-      required: [id, code, name, description]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        code:
-          $ref: '#/components/schemas/ReportReasonCode'
-        name:
-          type: string
-          maxLength: 100
-        description:
-          type: string
-          maxLength: 500
-
-    CreateReportRequest:
-      type: object
-      additionalProperties: false
-      required: [targetUserId, reason]
-      properties:
-        targetUserId:
-          $ref: '#/components/schemas/Id'
-        roomId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        reason:
-          $ref: '#/components/schemas/ReportReasonCode'
-        details:
-          type: string
-          maxLength: 2000
-          nullable: true
-
-    ReportReceipt:
-      type: object
-      required: [id, targetUserId, reason, createdAt]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        targetUserId:
-          $ref: '#/components/schemas/Id'
-        roomId:
-          type: integer
-          allOf:
-            - $ref: '#/components/schemas/Id'
-          nullable: true
-        reason:
-          $ref: '#/components/schemas/ReportReasonCode'
-        createdAt:
-          type: string
-          format: date-time
 
     HealthStatus:
       type: object
