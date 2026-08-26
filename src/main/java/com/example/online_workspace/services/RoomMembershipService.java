@@ -15,11 +15,9 @@ import com.example.online_workspace.repositories.RoomMembershipRepository.JoinPo
 public class RoomMembershipService {
 
 	private final RoomMembershipRepository repository;
-	private final WorkSessionService workSessionService;
 
-	public RoomMembershipService(RoomMembershipRepository repository, WorkSessionService workSessionService) {
+	public RoomMembershipService(RoomMembershipRepository repository) {
 		this.repository = repository;
-		this.workSessionService = workSessionService;
 	}
 
 	@Transactional
@@ -42,7 +40,6 @@ public class RoomMembershipService {
 		if (repository.leave(membershipId, leftAt) != 1) {
 			throw conflict("The room membership could not be ended");
 		}
-		workSessionService.end(userId, roomId, leftAt);
 	}
 
 	private RoomMember joinLockedRoom(JoinPolicy room, long userId, Instant joinedAt) {
@@ -56,7 +53,6 @@ public class RoomMembershipService {
 			throw conflict("The room membership could not be created");
 		}
 
-		workSessionService.start(userId, room.id(), joinedAt);
 		RoomMember member = repository.findActiveMember(room.id(), userId);
 		if (member == null) {
 			throw conflict("The room membership was not created");

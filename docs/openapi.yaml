@@ -29,8 +29,6 @@ tags:
     description: ルーム内チャット履歴と送信
   - name: Friends
     description: フレンド
-  - name: Work sessions
-    description: 作業履歴と集計
   - name: Operations
     description: システム監視
 
@@ -675,72 +673,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /work-sessions:
-    get:
-      tags: [Work sessions]
-      summary: 自分の作業履歴を取得する
-      operationId: listWorkSessions
-      parameters:
-        - name: from
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: categoryId
-          in: query
-          schema:
-            $ref: '#/components/schemas/Id'
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 作業履歴
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkSessionPage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /work-sessions/summary:
-    get:
-      tags: [Work sessions]
-      summary: 自分の作業時間集計を取得する
-      operationId: getWorkSessionSummary
-      parameters:
-        - name: from
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          schema:
-            type: string
-            format: date
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 累計、カテゴリ別、日別の作業時間
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkSessionSummary'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
   /actuator/health:
     get:
       tags: [Operations]
@@ -1370,83 +1302,6 @@ components:
             $ref: '#/components/schemas/Friend'
         page:
           $ref: '#/components/schemas/PageMeta'
-
-    WorkSession:
-      type: object
-      required: [id, room, category, participants, startedAt, durationSeconds]
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        room:
-          $ref: '#/components/schemas/RoomSummary'
-        category:
-          $ref: '#/components/schemas/RoomCategory'
-        participants:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserSummary'
-        startedAt:
-          type: string
-          format: date-time
-        endedAt:
-          type: string
-          format: date-time
-          nullable: true
-        durationSeconds:
-          type: integer
-          format: int64
-          minimum: 0
-
-    WorkSessionPage:
-      type: object
-      required: [items, page]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkSession'
-        page:
-          $ref: '#/components/schemas/PageMeta'
-
-    CategoryWorkSummary:
-      type: object
-      required: [category, durationSeconds]
-      properties:
-        category:
-          $ref: '#/components/schemas/RoomCategory'
-        durationSeconds:
-          type: integer
-          format: int64
-          minimum: 0
-
-    DailyWorkSummary:
-      type: object
-      required: [date, durationSeconds]
-      properties:
-        date:
-          type: string
-          format: date
-        durationSeconds:
-          type: integer
-          format: int64
-          minimum: 0
-
-    WorkSessionSummary:
-      type: object
-      required: [totalDurationSeconds, byCategory, byDate]
-      properties:
-        totalDurationSeconds:
-          type: integer
-          format: int64
-          minimum: 0
-        byCategory:
-          type: array
-          items:
-            $ref: '#/components/schemas/CategoryWorkSummary'
-        byDate:
-          type: array
-          items:
-            $ref: '#/components/schemas/DailyWorkSummary'
 
     HealthStatus:
       type: object
