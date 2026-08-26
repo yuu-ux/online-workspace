@@ -7,12 +7,7 @@ import lustre/effect
 import lustre/element/html.{div, text, p}
 
 import types/room.{
-  type CategoryType,
-  type WorkStyleType,
-  type VisibilityType,
   type RoomId,
-  type RoomNameType,
-  type DescriptionType,
   RoomNameType,
   DescriptionType,
   RoomId,
@@ -24,9 +19,10 @@ import types/room.{
   Public,
   Invite,
   Friend,
-}
+} as room_t
 
 import types/session.{type Session}
+import wrap/room.{create_room, DummyError}
 
 pub type InputType {
   RoomName
@@ -56,23 +52,6 @@ pub type Msg {
   ToRoom(RoomId)
   InputUpdated(target: InputType, str: String)
   SubmitClicked
-}
-
-pub type CreateRoomErr {
-  DummyError
-}
-
-/// 新しいRoomIdを発行して返す
-fn create_room_proc(
-  roomname: RoomNameType,
-  description: DescriptionType,
-  category_type: Result(CategoryType, Nil),
-  workstyle_type: Result(WorkStyleType, Nil),
-  visibility: Result(VisibilityType, Nil),
-  max_number_of_member: Result(Int, Nil)
-) -> Result(RoomId, CreateRoomErr) {
-  // TODO SERVER API
-  Ok(RoomId(0)) // example room id
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
@@ -171,7 +150,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       }
       let max_number_of_member = int.parse(model.current_maxnumofmember_input)
 
-      case create_room_proc(
+      case create_room(
         room_name,
         description,
         category,

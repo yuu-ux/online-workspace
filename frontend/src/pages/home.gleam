@@ -30,8 +30,9 @@ import types/room.{
   Invite,
   Friend,
   RoomInfo
-}
+} as room_t
 
+import wrap/room.{get_rooms}
 import components/rooms.{room_list_view}
 
 pub type Model {
@@ -49,27 +50,6 @@ pub type Msg {
   ToRoom(RoomId)
 }
 
-pub fn get_rooms(jwt: Token, user_id: UserId) -> List(RoomInfo) {
-  [
-    RoomInfo(
-      roomname: RoomNameType("Room1"),
-      visibility: Public,
-      category: Cat1,
-      work_style: Quiet,
-      max_number_of_member: 10,
-      room_id: RoomId(1)
-    ),
-
-    RoomInfo(
-      roomname: RoomNameType("Room2"),
-      visibility: Friend,
-      category: Cat2,
-      work_style: CasualChat,
-      max_number_of_member: 12,
-      room_id: RoomId(2)
-    ),
-  ]
-}
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
   case session {

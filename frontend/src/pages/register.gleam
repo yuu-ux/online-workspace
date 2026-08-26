@@ -8,6 +8,7 @@ import gleam/list
 import lustre/element/html.{button, div, text, input, p}
 
 import types/session.{type Session}
+import wrap/register.{register_user, PasswordMismatch}
 
 pub type InputType {
   UserName
@@ -35,22 +36,6 @@ pub type Msg {
 
   InputUpdated(target: InputType, str: String)
   SubmitClicked
-}
-
-pub type RegisterErr {
-  PasswordMismatch
-}
-
-fn register_proc(username: String, email: String, password: String, password_confirm: String) -> Result(Nil, RegisterErr) {
-  // TODO SERVER API
-  case password == password_confirm {
-    True -> {
-      Ok(Nil)
-    }
-    False -> {
-      Error(PasswordMismatch)
-    }
-  }
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
@@ -99,7 +84,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     SubmitClicked -> {
       // io.println("current_email_input:" <> model.current_email_input)
       // io.println("current_password_input:" <> model.current_password_input)
-      case register_proc(
+      case register_user(
         model.current_username_input,
         model.current_email_input,
         model.current_password_input,

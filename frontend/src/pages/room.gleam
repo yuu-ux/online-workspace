@@ -1,4 +1,3 @@
-import gleam/dynamic/decode
 import components/btn
 import lustre/event.{on_click, on_input}
 import lustre/attribute
@@ -6,32 +5,20 @@ import lustre/element
 import lustre/effect
 import gleam/io
 import gleam/list
-import gleam/json
 
 import lustre/element/html.{button, div, text, input}
 
 import types/session.{type Session}
-import types/room.{type RoomId, RoomId}
-
+import types/room.{type RoomId, RoomId} as room_t
 import types/user.{type UserInfo, type UserId} as user_t
+
 import wrap/user.{GetUserInfoListAuthErr, get_all_user_info_list}
+import wrap/room.{room_send_msg_proc, close_ws, RoomDummyError, chat_to_json, chat_from_json, connect_to_server,type Chat}
+
 import components/userlist.{user_list_component}
 
 pub type InputType {
   ChatMsg
-}
-
-pub type Chat {
-  Chat(
-    // from: String, // 誰から
-    // timestamp: String,
-    // comment: String, 
-
-    msg_type: String,
-    room_id: RoomId, 
-    user: String,
-    message: String,
-  )
 }
 
 pub type Model {
@@ -54,87 +41,6 @@ pub type Msg {
   WsMessageReceived(String)
 }
 
-pub type RoomErr {
-  DummyError
-}
-
-// ---------------------------------------------------------
-// 1. FFI (JavaScriptの関数をインポート)
-// ---------------------------------------------------------
-
-/// 接続する
-@external(javascript, "./../ffi/ws.js", "connect_ws")
-fn do_connect(url: String, dispatch: fn(String) -> Nil) -> Nil
-
-/// 送る
-@external(javascript, "./../ffi/ws.js", "send_ws")
-fn do_send(message: String) -> Nil
-
-@external(javascript, "./../ffi/ws.js", "close_ws")
-fn close_ws() -> Nil
-
-/// チャット画面に入ったタイミングで接続を開始する
-fn connect_to_server() -> effect.Effect(Msg) {
-  effect.from(fn(dispatch) {
-    let js_callback = fn(received_text: String) {
-      dispatch(WsMessageReceived(received_text))
-    }
-
-    // JS側の接続関数を呼び出す
-    do_connect("/ws-test", js_callback)
-  })
-}
-
-fn room_send_msg_proc(
-  user_name: String,
-  room_id: RoomId,
-  send_msg: String
-) -> Result(Nil, RoomErr) {
-  // TODO SERVER API
-  Ok(
-    do_send(
-      chat_to_json(
-        Chat(
-          msg_type: "msg",
-          room_id: room_id,
-          user: user_name,
-          message: send_msg
-        )
-      )
-    )
-  )
-}
-
-// テストデータ用構造体
-
-// https://gleam-json.hexdocs.pm/
-
-fn chat_to_json(chat: Chat) -> String {
-  json.object([
-    #("type", json.string(chat.msg_type)),
-    #("room_id", json.int(case chat.room_id { RoomId(i) -> i })),
-    #("user", json.string(chat.user)),
-    #("message", json.string(chat.message)),
-  ])
-  |> json.to_string
-}
-
-fn chat_from_json(json_string: String) -> Result(Chat, json.DecodeError) {
-  let chat_decoder = {
-    use msg_type <- decode.field("type", decode.string)
-    use room_id <- decode.field("room_id", decode.int)
-    use user <- decode.field("user", decode.string)
-    use message <- decode.field("message", decode.string)
-    decode.success(Chat(
-      msg_type: msg_type,
-      room_id: RoomId(room_id),
-      user: user,
-      message: message
-    ))
-  }
-  json.parse(from: json_string, using: chat_decoder)
-}
-
 pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
   case get_all_user_info_list(session, room_id) {
     Ok(all_user_in_room) -> {
@@ -149,7 +55,7 @@ pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
           ],
           current_message_input: "",
           messages: []),
-          connect_to_server()
+          connect_to_server(WsMessageReceived)
       )
     }
     Error(e) -> {
@@ -171,7 +77,6 @@ pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
           messages: [err_msg]),
         effect.none()
       )
-
     }
   }
 }
@@ -210,7 +115,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         }
         Error(err_type) -> {
           let err_msg = case err_type {
-            DummyError -> {
+            RoomDummyError -> {
               ["DummyError"]
             }
           }
