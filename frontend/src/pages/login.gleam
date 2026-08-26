@@ -98,7 +98,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   }
 }
 
-import components/authui
+import components/ui
 
 // ---------------------------------------------------------
 // login画面のView
@@ -110,13 +110,13 @@ pub fn view(model: Model) -> element.Element(Msg) {
     // 未ログイン（ゲスト）: ログインフォームを表示
     // -------------------------------------
     Guest -> {
-      authui.centered_card_layout(
+      ui.centered_card_layout(
         // 第1引数: カードの中身（リスト）
         [
-          authui.header_section("ログイン", "アカウント情報を入力してください"),
-          authui.error_messages(model.messages),
+          ui.header_section("ログイン", "アカウント情報を入力してください"),
+          ui.error_messages(model.messages),
           form_section(model),
-          authui.divider_with_text("または"),
+          ui.divider_with_text("または"),
           btn.secondary_button("新規アカウントを作成", ToRegister)
         ],
         // 第2引数: フッター
@@ -128,9 +128,9 @@ pub fn view(model: Model) -> element.Element(Msg) {
     // ログイン済みの場合
     // -------------------------------------
     Authenticated(_jwt, _user_id) -> {
-      authui.centered_text_card_layout(
+      ui.centered_text_card_layout(
         [
-          authui.header_section("ログイン済み", "既にログインしています"),
+          ui.header_section("ログイン済み", "既にログインしています"),
           p([class("text-gray-600")], [text("ワークスペースへ移動して作業を始めましょう。")]),
           btn.primary_button("ホームへ進む", ToHome)
         ],
@@ -143,14 +143,14 @@ pub fn view(model: Model) -> element.Element(Msg) {
 /// 入力フォーム本体のセクション
 fn form_section(model: Model) -> element.Element(Msg) {
   div([class("space-y-5")], [
-    authui.text_input(
+    ui.text_input(
       "メールアドレス",
       "email",
       "you@example.com",
       model.current_email_input,
       fn(val) { InputUpdated(Email, val) }
     ),
-    authui.text_input(
+    ui.text_input(
       "パスワード",
       "password",
       "••••••••",

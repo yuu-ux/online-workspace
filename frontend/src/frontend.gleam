@@ -390,7 +390,6 @@ fn view (model: Model) -> element.Element(Msg) {
 
 pub fn main() {
   let app = lustre.application(init, update, view)
-  io.println("Done!")
   let assert Ok(_) = lustre.start(app, "#app", Nil)
 }
 

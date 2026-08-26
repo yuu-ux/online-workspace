@@ -197,7 +197,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   }
 }
 
-import components/authui as ui
+import components/ui
 
 // ---------------------------------------------------------
 // Create Room画面のView

@@ -125,7 +125,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   }
 }
 
-import components/authui // ※後で components/ui 等に変更予定とのこと
+import components/ui // ※後で components/ui 等に変更予定とのこと
 
 // ---------------------------------------------------------
 // Register画面のView
@@ -137,12 +137,12 @@ pub fn view(model: Model) -> element.Element(Msg) {
     // 未ログイン（ゲスト）: 登録フォームを表示
     // -------------------------------------
     session.Guest -> {
-      authui.centered_card_layout(
+      ui.centered_card_layout(
         [
-          authui.header_section("アカウント登録", "新しいワークスペースに参加しましょう"),
-          authui.error_messages(model.messages),
+          ui.header_section("アカウント登録", "新しいワークスペースに参加しましょう"),
+          ui.error_messages(model.messages),
           form_section(model),
-          authui.divider_with_text("または"),
+          ui.divider_with_text("または"),
           btn.secondary_button("既存のアカウントでログイン", ToLogin)
         ],
         footer_links()
@@ -153,9 +153,9 @@ pub fn view(model: Model) -> element.Element(Msg) {
     // ログイン済みの場合
     // -------------------------------------
     session.Authenticated(_jwt, _user_id) -> {
-      authui.centered_text_card_layout(
+      ui.centered_text_card_layout(
         [
-          authui.header_section("登録完了", "既にログインしています"),
+          ui.header_section("登録完了", "既にログインしています"),
           p([class("text-gray-600")], [text("ワークスペースへ移動して作業を始めましょう。")]),
           btn.primary_button("ホームへ進む", ToHome)
         ],
@@ -170,7 +170,7 @@ fn form_section(model: Model) -> element.Element(Msg) {
   div([class("space-y-4")], [ // 入力項目が多いので少し隙間を詰める(space-y-4)
 
     // ユーザー名
-    authui.text_input(
+    ui.text_input(
       "ユーザー名",
       "text",
       "例: Gleam Taro",
@@ -179,7 +179,7 @@ fn form_section(model: Model) -> element.Element(Msg) {
     ),
 
     // メールアドレス
-    authui.text_input(
+    ui.text_input(
       "メールアドレス",
       "email",
       "you@example.com",
@@ -188,7 +188,7 @@ fn form_section(model: Model) -> element.Element(Msg) {
     ),
 
     // パスワード
-    authui.text_input(
+    ui.text_input(
       "パスワード",
       "password",
       "8文字以上",
@@ -197,7 +197,7 @@ fn form_section(model: Model) -> element.Element(Msg) {
     ),
 
     // パスワード（確認用）
-    authui.text_input(
+    ui.text_input(
       "パスワード（確認用）",
       "password",
       "もう一度入力してください",
