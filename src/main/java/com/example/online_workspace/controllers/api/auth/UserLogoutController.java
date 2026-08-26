@@ -26,7 +26,7 @@ public class UserLogoutController {
 	);
 
 	/**
-	 * セッションを無効化してログアウトする。
+	 * サーバー側セッションを無効化してログアウトする。
 	 *
 	 * @param request HTTPリクエスト
 	 * @param response HTTPレスポンス

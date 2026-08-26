@@ -199,6 +199,20 @@ class AuthenticationControllerIntegrationTests {
 			.andExpect(status().isForbidden());
 	}
 
+	@DisplayName("未ログイン状態ではログアウトできない")
+	@Test
+	void rejectLogoutWithoutAuthenticatedSession() throws Exception {
+		MvcResult csrfResponse = mockMvc.perform(get("/api/v1/auth/csrf"))
+			.andExpect(status().isNoContent())
+			.andReturn();
+		Cookie xsrfCookie = csrfCookie(csrfResponse);
+
+		mockMvc.perform(post("/api/v1/auth/logout")
+				.cookie(xsrfCookie)
+				.header("X-CSRF-TOKEN", xsrfCookie.getValue()))
+			.andExpect(status().isUnauthorized());
+	}
+
 	private void register(String email, String password) throws Exception {
 		MvcResult csrfResponse = mockMvc.perform(get("/api/v1/auth/csrf"))
 			.andExpect(status().isNoContent())

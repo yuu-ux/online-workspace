@@ -123,7 +123,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
         '204':
-          description: ログアウト完了
+          description: ログアウト完了。サーバー側の認証セッションを無効化する。
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
