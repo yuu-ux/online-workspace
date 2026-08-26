@@ -9,7 +9,6 @@ import java.time.Instant;
  * @param name 表示名
  * @param email 正規化済みメールアドレス
  * @param passwordHash BCryptでハッシュ化されたパスワード
- * @param role ロールコード
  * @param accountStatus アカウント状態コード
  * @param suspendedUntil 停止解除日時
  */
@@ -18,7 +17,6 @@ public record UserAuthentication(
 	String name,
 	String email,
 	String passwordHash,
-	String role,
 	String accountStatus,
 	Instant suspendedUntil
 ) {
@@ -29,6 +27,6 @@ public record UserAuthentication(
 	 * @return パスワードハッシュを含まないユーザー情報
 	 */
 	public AuthenticatedUser toAuthenticatedUser() {
-		return new AuthenticatedUser(id, name, email, role, accountStatus, suspendedUntil);
+		return new AuthenticatedUser(id, name, email, accountStatus, suspendedUntil);
 	}
 }

@@ -14,14 +14,6 @@ import com.example.online_workspace.models.WorkSession;
 public interface WorkSessionRepository {
 
 	@Select("""
-		SELECT id
-		FROM users
-		WHERE id = #{userId}
-		FOR UPDATE
-		""")
-	Long lockUserById(@Param("userId") long userId);
-
-	@Select("""
 		SELECT id, user_id, room_id, category_id, started_at, ended_at, created_at, updated_at
 		FROM work_sessions
 		WHERE user_id = #{userId}

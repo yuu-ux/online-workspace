@@ -13,7 +13,6 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -80,7 +79,7 @@ public class UserLoginController {
 		Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(
 			authenticatedUser,
 			null,
-			List.of(new SimpleGrantedAuthority("ROLE_" + authenticatedUser.role()))
+			List.of()
 		);
 		sessionAuthenticationStrategy.onAuthentication(authentication, request, response);
 

@@ -33,11 +33,9 @@ public interface UserRepository {
 		       u.name,
 		       u.email,
 		       u.password_hash,
-		       r.code AS role,
 		       s.code AS account_status,
 		       u.suspended_until
 		FROM users u
-		JOIN roles r ON r.id = u.role_id
 		JOIN account_statuses s ON s.id = u.account_status_id
 		WHERE u.email = #{email}
 		  AND u.deleted_at IS NULL
@@ -55,4 +53,20 @@ public interface UserRepository {
 		VALUES (#{name}, #{email}, #{passwordHash})
 		""")
 	int insert(UserAccount user);
+	/**
+	 * 指定したユーザー行をロックし、存在を確認する。
+	 *
+	 * @param userId ロックするユーザーID
+	 * @return ユーザーが存在する場合はtrue
+	 */
+	@Select("""
+		SELECT EXISTS (
+			SELECT 1
+			FROM users
+			WHERE id = #{userId}
+			FOR UPDATE
+		)
+		""")
+	boolean lockById(@Param("userId") long userId);
+
 }

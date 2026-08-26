@@ -1,0 +1,82 @@
+package com.example.online_workspace.repositories;
+
+import java.time.Instant;
+
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+import com.example.online_workspace.models.RoomDraft;
+
+@Mapper
+public interface RoomRepository {
+
+	@Select("SELECT id FROM users WHERE email = #{email} AND deleted_at IS NULL")
+	Long findActiveUserIdByEmail(@Param("email") String email);
+
+	@Select("""
+		SELECT EXISTS (
+			SELECT 1
+			FROM room_categories rc
+			JOIN room_category_statuses rcs ON rcs.id = rc.status_id
+			WHERE rc.id = #{categoryId} AND rcs.code = 'ACTIVE'
+		)
+		""")
+	boolean isActiveCategory(@Param("categoryId") long categoryId);
+
+	@Insert("""
+		INSERT INTO rooms (
+			name, description, created_by, category_id,
+			work_style_id, max_members
+		)
+		VALUES (
+			#{name}, #{description}, #{createdBy}, #{categoryId},
+			(SELECT id FROM work_styles WHERE code = #{workStyle}),
+			#{maxMembers}
+		)
+		""")
+	@Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+	int insert(RoomDraft room);
+
+	@Insert("INSERT INTO room_members (room_id, user_id) VALUES (#{roomId}, #{userId})")
+	int insertCreatorMembership(@Param("roomId") long roomId, @Param("userId") long userId);
+
+	@Select("""
+		SELECT r.id, r.name, r.description,
+		       rc.id AS category_id, rc.name AS category_name,
+		       rc.description AS category_description, rc.sort_order AS category_sort_order,
+		       ws.code AS work_style, r.max_members,
+		       rs.code AS status,
+		       u.id AS creator_id, u.name AS creator_name, p.icon_url AS creator_icon_url,
+		       r.created_at, r.updated_at
+		FROM rooms r
+		JOIN room_categories rc ON rc.id = r.category_id
+		JOIN work_styles ws ON ws.id = r.work_style_id
+		JOIN room_statuses rs ON rs.id = r.status_id
+		JOIN users u ON u.id = r.created_by
+		LEFT JOIN profiles p ON p.user_id = u.id
+		WHERE r.id = #{roomId}
+		""")
+	RoomView findById(@Param("roomId") long roomId);
+
+	record RoomView(
+		long id,
+		String name,
+		String description,
+		long categoryId,
+		String categoryName,
+		String categoryDescription,
+		int categorySortOrder,
+		String workStyle,
+		short maxMembers,
+		String status,
+		long creatorId,
+		String creatorName,
+		String creatorIconUrl,
+		Instant createdAt,
+		Instant updatedAt
+	) {
+	}
+}

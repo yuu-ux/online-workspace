@@ -8,7 +8,6 @@ import java.time.Instant;
  * @param id ユーザーID
  * @param name 表示名
  * @param email メールアドレス
- * @param role ロールコード
  * @param accountStatus アカウント状態コード
  * @param suspendedUntil 停止解除日時
  */
@@ -16,7 +15,6 @@ public record AuthenticatedUser(
 	long id,
 	String name,
 	String email,
-	String role,
 	String accountStatus,
 	Instant suspendedUntil
 ) {

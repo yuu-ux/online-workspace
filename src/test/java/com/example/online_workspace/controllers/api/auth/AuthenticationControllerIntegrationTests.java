@@ -42,7 +42,6 @@ class AuthenticationControllerIntegrationTests {
 			.andExpect(jsonPath("$.id").isNumber())
 			.andExpect(jsonPath("$.name").value("テストユーザー"))
 			.andExpect(jsonPath("$.email").value(email))
-			.andExpect(jsonPath("$.role").value("USER"))
 			.andExpect(jsonPath("$.accountStatus").value("ACTIVE"))
 			.andReturn();
 

@@ -1,12 +1,19 @@
 package com.example.online_workspace.configs.security;
 
+import com.example.online_workspace.repositories.AccountWithdrawalRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 /**
  * Web画面とSwagger UI向けの認証設定を構成する。
@@ -19,6 +26,7 @@ public class WebSecurityConfig {
 	 *
 	 * @param http HTTPセキュリティの設定オブジェクト
 	 * @param securityContextRepository セキュリティコンテキストの保存先
+	 * @param sessionRegistry セッション一覧の管理先
 	 * @return Web用のSecurityFilterChain
 	 * @throws Exception セキュリティ設定に失敗した場合
 	 */
@@ -26,7 +34,8 @@ public class WebSecurityConfig {
 	@Order(2)
 	public SecurityFilterChain webSecurityFilterChain(
 		HttpSecurity http,
-		SecurityContextRepository securityContextRepository
+		SecurityContextRepository securityContextRepository,
+		SessionRegistry sessionRegistry
 	) throws Exception {
 		http
 			.authorizeHttpRequests((authorize) -> authorize
@@ -46,8 +55,32 @@ public class WebSecurityConfig {
 			)
 			// React側のログイン画面が実装されるまでは、Swagger UIなどのWeb利用向けに
 			// Spring Securityのログイン画面を維持する。React画面統合時にformLoginを削除する。
-			.formLogin(Customizer.withDefaults());
+			.formLogin(Customizer.withDefaults())
+			.sessionManagement(session -> session
+				.maximumSessions(-1)
+				.sessionRegistry(sessionRegistry)
+			);
 
 		return http.build();
+	}
+
+	@Bean
+	public UserDetailsService userDetailsService(AccountWithdrawalRepository repository) {
+		return email -> repository.findActiveByEmail(email)
+			.map(account -> User.withUsername(email)
+				.password(account.passwordHash())
+				.authorities(new String[0])
+				.build())
+			.orElseThrow(() -> new UsernameNotFoundException("有効なアカウントがありません"));
+	}
+
+	@Bean
+	public SessionRegistry sessionRegistry() {
+		return new SessionRegistryImpl();
+	}
+
+	@Bean
+	public HttpSessionEventPublisher httpSessionEventPublisher() {
+		return new HttpSessionEventPublisher();
 	}
 }
