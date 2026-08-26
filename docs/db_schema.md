@@ -34,12 +34,6 @@
 | room_category_statuses | 2 | `INACTIVE` | 利用停止 |
 | friend_statuses | 1 | `ACTIVE` | フレンド |
 | friend_statuses | 2 | `REMOVED` | 解除済み |
-| report_reasons | 1 | `HARASSMENT` | ハラスメント |
-| report_reasons | 2 | `DEFAMATION` | 誹謗中傷 |
-| report_reasons | 3 | `SPAM` | スパム |
-| report_reasons | 4 | `FRAUD_OR_IMPERSONATION` | 詐欺・なりすまし |
-| report_reasons | 5 | `INAPPROPRIATE_CONTENT` | 不適切コンテンツ |
-| report_reasons | 6 | `OTHER` | その他 |
 
 ## users テーブル
 
@@ -156,14 +150,13 @@
 
 ## friends テーブル
 
-ユーザーが一方向に登録したフレンドと、お気に入り・解除状態を管理する。フレンド解除時はレコードを削除せず、状態を `REMOVED` に更新する。
+ユーザーが一方向に登録したフレンドと解除状態を管理する。フレンド解除時はレコードを削除せず、状態を `REMOVED` に更新する。
 
 | カラム名 | 型 | オプション | 説明 |
 |:--|:--|:--|:--|
 | id | BIGSERIAL | PRIMARY KEY | フレンド登録ID |
 | user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | 登録したユーザーID |
 | friend_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | 登録されたユーザーID |
-| is_favorite | BOOLEAN | NOT NULL, DEFAULT FALSE | お気に入りに登録しているか |
 | status_id | SMALLINT | NOT NULL, DEFAULT 1, FOREIGN KEY REFERENCES friend_statuses(id) | フレンド状態。既定値は `ACTIVE` |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
@@ -174,45 +167,3 @@
   - 同じ相手の重複登録を防ぎ、`user_id` を使うフレンド一覧検索にも利用する。
 - `CHECK (user_id <> friend_user_id)`
   - 自分自身のフレンド登録を防ぐ。
-
-## reports テーブル
-
-ユーザーに対する通報と、その確認状況を管理する。現要件では通報対象はメッセージ単位ではなくユーザー単位とする。
-
-| カラム名 | 型 | オプション | 説明 |
-|:--|:--|:--|:--|
-| id | BIGSERIAL | PRIMARY KEY | 通報ID |
-| reporter_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 通報したユーザーID |
-| target_user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) | 通報対象のユーザーID |
-| room_id | BIGINT | DEFAULT NULL, FOREIGN KEY REFERENCES rooms(id) | 問題が起きたルームID |
-| reason_id | SMALLINT | NOT NULL, FOREIGN KEY REFERENCES report_reasons(id) | 選択式の通報理由。自由入力ではなくマスターから選択する |
-| details | TEXT | DEFAULT NULL | 通報者が任意入力する詳細説明 |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 通報日時 |
-| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
-
-### 制約
-
-- `CHECK (reporter_user_id <> target_user_id)`
-  - 自分自身への通報を防ぐ。
-
-## work_sessions テーブル
-
-ユーザーがルームに入室してから退出するまでの自動計測結果を、作業履歴として管理する。任意の手動タイマーそのものを管理するテーブルではない。
-
-| カラム名 | 型 | オプション | 説明 |
-|:--|:--|:--|:--|
-| id | BIGSERIAL | PRIMARY KEY | 作業履歴ID |
-| user_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE | 作業したユーザーID |
-| room_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES rooms(id) | 作業したルームID |
-| category_id | BIGINT | NOT NULL, FOREIGN KEY REFERENCES room_categories(id) | 作業時点のカテゴリID |
-| started_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 入室して自動計測を開始した日時 |
-| ended_at | TIMESTAMPTZ | DEFAULT NULL | 退出して自動計測を終了した日時。計測中は `NULL` |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
-| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
-
-### インデックス・制約
-
-- `CHECK (ended_at IS NULL OR ended_at >= started_at)`
-  - 終了日時が開始日時より前になることを防ぐ。
-- `UNIQUE INDEX (user_id) WHERE ended_at IS NULL`
-  - 1人のユーザーが複数のルームで同時に計測を開始することを防ぐ。
