@@ -11,7 +11,6 @@ import pages/register
 import pages/privacypolicy
 import pages/create_room
 import pages/room
-import pages/invitation
 import pages/mypage
 import pages/friend
 import pages/profile
@@ -30,7 +29,6 @@ pub type Page {
   Register(register.Model)
   CreateRoom(create_room.Model)
   Room(room.Model)
-  Invitation(invitation.Model)
   // UserInfo
   UserInfoFromFriend(userinfofromfriend.Model)
   UserInfoFromRoom(userinfofromroom.Model)
@@ -53,7 +51,6 @@ pub type Msg {
   RegisterMsg(register.Msg)
   CreateRoomMsg(create_room.Msg)
   RoomMsg(room.Msg)
-  InvitationMsg(invitation.Msg)
   UserInfoFromFriendMsg(userinfofromfriend.Msg)
   UserInfoFromRoomMsg(userinfofromroom.Msg)
 }
@@ -257,13 +254,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(session: init_home_model.session, current_page: Home(init_home_model)), effect.none())
     }
 
-    Room(room_model), RoomMsg(room.ToInvitation) -> {
-      let #(update_room_model, update_effect) = room.update(room_model, room.ToInvitation)
-
-      let #(init_invitation_model, _) = invitation.init(update_room_model.session, update_room_model.room_id)
-      #(Model(..model, current_page: Invitation(init_invitation_model)), effect.none())
-    }
-    
     Room(room_model), RoomMsg(room.ToUserInfo(user_info)) -> {
       let #(update_user_info_model, _) = userinfofromroom.init(room_model.session, user_info, room_model.room_id)
       #(Model(..model, current_page: UserInfoFromRoom(update_user_info_model)), effect.none())
@@ -274,27 +264,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     Room (room_model), RoomMsg(other) -> {
       let #(update_room_model, update_effect) = room.update(room_model, other)
       #(Model(..model, current_page: Room(update_room_model)), update_effect |> effect.map(RoomMsg))
-    }
-
-    // -- invitation --
-
-    Invitation(invitation_model), InvitationMsg(invitation.ToHome) -> {
-      let #(update_invitation_model, _) = invitation.update(invitation_model, invitation.ToHome)
-      let #(init_home_model, _) = home.init(update_invitation_model.session)
-      #(Model(session: update_invitation_model.session, current_page: Home(init_home_model)), effect.none())
-    }
-
-    Invitation(invitation_model), InvitationMsg(invitation.BackToRoom) -> {
-      let #(update_invitation_model, _) = invitation.update(invitation_model, invitation.BackToRoom)
-      let #(init_room_model, _) = room.init(update_invitation_model.session, update_invitation_model.room_id) 
-      #(Model(..model, current_page: Room(init_room_model)), effect.none())
-    }
-
-    // invitation other
-
-    Invitation(invitation_model), InvitationMsg(other) -> {
-      let #(update_invitation_model, update_effect) = invitation.update(invitation_model, other)
-      #(Model(..model, current_page: Invitation(update_invitation_model)), update_effect |> effect.map(InvitationMsg))
     }
 
     // -- userinfofromfriend --
@@ -349,10 +318,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       io.println("unreachables")
       #(model, effect.none())
     }
-    _, InvitationMsg(_) -> {
-      io.println("unreachables")
-      #(model, effect.none())
-    }
     _, MyPageMsg(_) -> {
       io.println("unreachables")
       #(model, effect.none())
@@ -398,9 +363,6 @@ fn view (model: Model) -> element.Element(Msg) {
     }
     Room(room_model) -> {
       room.view(room_model) |> element.map(RoomMsg)
-    }
-    Invitation(invitation_model) -> {
-      invitation.view(invitation_model) |> element.map(InvitationMsg)
     }
     MyPage(mypage_model) -> {
       mypage.view(mypage_model) |> element.map(MyPageMsg)

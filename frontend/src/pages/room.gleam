@@ -48,7 +48,6 @@ pub type Model {
 pub type Msg {
   ToHome
   // ToLogin
-  ToInvitation
   ToUserInfo(UserInfo)
   InputUpdated(target: InputType, str: String)
   SubmitClicked
@@ -189,11 +188,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(model, effect.none())
     }
 
-    ToInvitation -> {
-      close_ws()
-      #(model, effect.none())
-    }
-
     // 文字が入力されたら、Modelの current_input をリアルタイムに書き換える
     InputUpdated(target, text) -> {
       let new_model = case target {
@@ -262,7 +256,6 @@ pub fn view (model: Model) -> element.Element(Msg) {
         text("Room"),
         // 参加者一覧
         user_list_component(model.member_list, ToUserInfo),
-        button([on_click(ToInvitation)], [text("招待")]),
         // chat欄
         div([], [
           div([],
