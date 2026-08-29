@@ -59,8 +59,7 @@ class ApiKeyRateLimitIntegrationTests {
 				  "description": "一緒に作業します",
 				  "categoryId": 1,
 				  "workStyle": "FOCUS",
-				  "maxMembers": 12,
-				  "visibility": "PUBLIC"
+				  "maxMembers": 12
 				}
 				""");
 	}
