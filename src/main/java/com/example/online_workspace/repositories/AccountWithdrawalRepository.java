@@ -58,16 +58,4 @@ public interface AccountWithdrawalRepository {
 		@Param("withdrawnAt") OffsetDateTime withdrawnAt
 	);
 
-	@Update("""
-		UPDATE work_sessions
-		SET ended_at = #{withdrawnAt},
-		    updated_at = #{withdrawnAt}
-		WHERE user_id = #{userId}
-		  AND ended_at IS NULL
-		""")
-	int finishActiveWorkSessions(
-		@Param("userId") long userId,
-		@Param("withdrawnAt") OffsetDateTime withdrawnAt
-	);
-
 }

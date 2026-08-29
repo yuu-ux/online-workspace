@@ -22,9 +22,9 @@ class RoomListControllerIntegrationTests {
 	@Autowired
 	private MockMvc mockMvc;
 
-	@DisplayName("公開中のルームだけを人数と参加可否付きで返す")
+	@DisplayName("受付中のルームだけを人数と参加可否付きで返す")
 	@Test
-	void listsOnlyOpenPublicRoomsWithJoinability() throws Exception {
+	void listsOnlyOpenRoomsWithJoinability() throws Exception {
 		mockMvc.perform(get("/api/v1/rooms").with(user("viewer@example.com")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.items", hasSize(4)))
@@ -33,8 +33,8 @@ class RoomListControllerIntegrationTests {
 			.andExpect(jsonPath("$.items[0].joinable").value(false))
 			.andExpect(jsonPath("$.items[0].joinRestriction").value("FULL"))
 			.andExpect(jsonPath("$.items[1].id").value(13))
-			.andExpect(jsonPath("$.items[1].joinable").value(false))
-			.andExpect(jsonPath("$.items[1].joinRestriction").value("BLOCKED"))
+			.andExpect(jsonPath("$.items[1].joinable").value(true))
+			.andExpect(jsonPath("$.items[1].joinRestriction").doesNotExist())
 			.andExpect(jsonPath("$.items[2].name").value("参加可能"))
 			.andExpect(jsonPath("$.items[2].category.name").value("開発"))
 			.andExpect(jsonPath("$.items[2].workStyle").value("FOCUS"))
@@ -43,19 +43,6 @@ class RoomListControllerIntegrationTests {
 			.andExpect(jsonPath("$.items[2].joinable").value(true))
 			.andExpect(jsonPath("$.page.totalElements").value(4))
 			.andExpect(jsonPath("$.page.totalPages").value(1));
-	}
-
-	@DisplayName("閲覧者からのブロックも参加不可として返す")
-	@Test
-	void detectsBlocksCreatedByViewer() throws Exception {
-		mockMvc.perform(get("/api/v1/rooms")
-				.param("categoryId", "2")
-				.with(user("viewer@example.com")))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.items", hasSize(1)))
-			.andExpect(jsonPath("$.items[0].id").value(15))
-			.andExpect(jsonPath("$.items[0].joinable").value(false))
-			.andExpect(jsonPath("$.items[0].joinRestriction").value("BLOCKED"));
 	}
 
 	@DisplayName("作業スタイルで絞り込みページングできる")

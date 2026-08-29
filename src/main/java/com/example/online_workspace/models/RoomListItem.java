@@ -12,12 +12,10 @@ public record RoomListItem(
 	String workStyle,
 	int maxMembers,
 	int currentMembers,
-	String visibility,
 	String status,
 	long creatorId,
 	String creatorName,
 	String creatorIconUrl,
-	boolean blocked,
 	Instant createdAt
 ) {
 }

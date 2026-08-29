@@ -14,8 +14,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.online_workspace.models.RoomMember;
 import com.example.online_workspace.repositories.RoomMembershipRepository;
-import com.example.online_workspace.repositories.users.UserRepository;
-import com.example.online_workspace.repositories.WorkSessionRepository;
 
 @MybatisTest
 @Sql(scripts = "/room-membership-service-test.sql")
@@ -25,26 +23,17 @@ class RoomMembershipServiceTests {
 	private RoomMembershipRepository membershipRepository;
 
 	@Autowired
-	private WorkSessionRepository workSessionRepository;
-
-	@Autowired
-	private UserRepository userRepository;
-
-	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
 	private RoomMembershipService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new RoomMembershipService(
-			membershipRepository,
-			new WorkSessionService(workSessionRepository, userRepository)
-		);
+		service = new RoomMembershipService(membershipRepository);
 	}
 
 	@Test
-	void joinsPublicRoomAndStartsWorkSession() {
+	void joinsRoom() {
 		RoomMember member = service.join(10L, "member@example.com");
 
 		assertThat(member.userId()).isEqualTo(2L);
@@ -54,16 +43,6 @@ class RoomMembershipServiceTests {
 			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NULL",
 			Integer.class
 		)).isOne();
-		assertThat(workSessionRepository.findActiveByUserIdForUpdate(2L).roomId()).isEqualTo(10L);
-	}
-
-	@Test
-	void onlyCreatorFriendCanJoinFriendsOnlyRoom() {
-		assertThat(service.join(11L, "member@example.com").userId()).isEqualTo(2L);
-
-		assertThatThrownBy(() -> service.join(11L, "other@example.com"))
-			.isInstanceOfSatisfying(ResponseStatusException.class,
-				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
 	}
 
 	@Test
@@ -78,11 +57,6 @@ class RoomMembershipServiceTests {
 		jdbcTemplate.update(
 			"INSERT INTO room_members (room_id, user_id, joined_at) VALUES (10, 2, CURRENT_TIMESTAMP)"
 		);
-		jdbcTemplate.update("""
-			INSERT INTO work_sessions (user_id, room_id, category_id, started_at)
-			VALUES (2, 10, 100, CURRENT_TIMESTAMP)
-			""");
-
 		assertThatThrownBy(() -> service.join(11L, "member@example.com"))
 			.isInstanceOfSatisfying(ResponseStatusException.class,
 				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
@@ -90,41 +64,15 @@ class RoomMembershipServiceTests {
 			"SELECT COUNT(*) FROM room_members WHERE user_id = 2 AND left_at IS NULL",
 			Integer.class
 		)).isOne();
-		assertThat(workSessionRepository.findActiveByUserIdForUpdate(2L).roomId()).isEqualTo(10L);
 	}
 
 	@Test
-	void rejectsJoinWhenEitherUserHasBlockedTheOther() {
-		jdbcTemplate.update(
-			"INSERT INTO blocks (blocker_user_id, blocked_user_id) VALUES (?, ?)",
-			1L,
-			2L
-		);
-
-		assertThatThrownBy(() -> service.join(14L, "member@example.com"))
-			.isInstanceOfSatisfying(ResponseStatusException.class,
-				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
-
-		jdbcTemplate.update("DELETE FROM blocks");
-		jdbcTemplate.update(
-			"INSERT INTO blocks (blocker_user_id, blocked_user_id) VALUES (?, ?)",
-			2L,
-			1L
-		);
-
-		assertThatThrownBy(() -> service.join(14L, "member@example.com"))
-			.isInstanceOfSatisfying(ResponseStatusException.class,
-				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
-	}
-
-	@Test
-	void leavingRoomEndsMembershipAndWorkSession() {
+	void leavesRoom() {
 		service.join(10L, "member@example.com");
 
 		service.leave(10L, "member@example.com");
 
 		assertThat(membershipRepository.hasActiveMembership(2L)).isFalse();
-		assertThat(workSessionRepository.findActiveByUserIdForUpdate(2L)).isNull();
 		assertThat(jdbcTemplate.queryForObject(
 			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NOT NULL",
 			Integer.class

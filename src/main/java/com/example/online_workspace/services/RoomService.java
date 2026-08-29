@@ -38,8 +38,7 @@ public class RoomService {
 			creatorId,
 			command.categoryId(),
 			command.workStyle(),
-			command.maxMembers(),
-			command.visibility()
+			command.maxMembers()
 		);
 		if (repository.insert(room) != 1 || room.getId() == null) {
 			throw new IllegalStateException("Room was not created");
@@ -60,8 +59,7 @@ public class RoomService {
 		String description,
 		long categoryId,
 		String workStyle,
-		int maxMembers,
-		String visibility
+		int maxMembers
 	) {
 	}
 }

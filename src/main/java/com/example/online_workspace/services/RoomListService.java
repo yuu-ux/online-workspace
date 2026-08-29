@@ -21,17 +21,16 @@ public class RoomListService {
 
 	@Transactional(readOnly = true)
 	public Result list(String email, Long categoryId, String workStyle, int page, int size) {
-		Long userId = email == null ? null : repository.findActiveUserIdByEmail(email);
-		if (userId == null) {
+		if (email == null || repository.findActiveUserIdByEmail(email) == null) {
 			throw new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "認証が必要です。");
 		}
 
-		long totalElements = repository.countPublicRooms(categoryId, workStyle);
+		long totalElements = repository.countOpenRooms(categoryId, workStyle);
 		long offset = (long) page * size;
 		boolean requestedPageIsOutOfRange = offset >= totalElements;
 		List<RoomListItem> items = requestedPageIsOutOfRange
 			? List.of()
-			: repository.findPublicRooms(userId, categoryId, workStyle, size, offset);
+			: repository.findOpenRooms(categoryId, workStyle, size, offset);
 		return new Result(items, totalElements);
 	}
 

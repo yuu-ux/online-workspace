@@ -24,10 +24,8 @@ public interface RoomMembershipRepository {
 	Long findActiveUserIdByEmailForUpdate(@Param("email") String email);
 
 	@Select("""
-		SELECT r.id, r.created_by, r.max_members,
-		       v.code AS visibility, rs.code AS status
+		SELECT r.id, r.max_members, rs.code AS status
 		FROM rooms r
-		JOIN visibilities v ON v.id = r.visibility_id
 		JOIN room_statuses rs ON rs.id = r.status_id
 		WHERE r.id = #{roomId}
 		FOR UPDATE OF r
@@ -48,28 +46,6 @@ public interface RoomMembershipRepository {
 		WHERE room_id = #{roomId} AND left_at IS NULL
 		""")
 	int countActiveMembers(@Param("roomId") long roomId);
-
-	@Select("""
-		SELECT EXISTS (
-			SELECT 1 FROM friends f
-			JOIN friend_statuses fs ON fs.id = f.status_id
-			WHERE f.user_id = #{creatorId}
-			  AND f.friend_user_id = #{userId}
-			  AND fs.code = 'ACTIVE'
-		)
-		""")
-	boolean isCreatorFriend(@Param("creatorId") long creatorId, @Param("userId") long userId);
-
-	@Select("""
-		SELECT EXISTS (
-			SELECT 1 FROM room_members rm
-			JOIN blocks b
-			  ON (b.blocker_user_id = #{userId} AND b.blocked_user_id = rm.user_id)
-			  OR (b.blocked_user_id = #{userId} AND b.blocker_user_id = rm.user_id)
-			WHERE rm.room_id = #{roomId} AND rm.left_at IS NULL
-		)
-		""")
-	boolean hasBlockConflict(@Param("roomId") long roomId, @Param("userId") long userId);
 
 	@Insert("""
 		INSERT INTO room_members (room_id, user_id, joined_at)
@@ -108,6 +84,6 @@ public interface RoomMembershipRepository {
 		""")
 	int leave(@Param("membershipId") long membershipId, @Param("leftAt") Instant leftAt);
 
-	record JoinPolicy(long id, long createdBy, int maxMembers, String visibility, String status) {
+	record JoinPolicy(long id, int maxMembers, String status) {
 	}
 }
