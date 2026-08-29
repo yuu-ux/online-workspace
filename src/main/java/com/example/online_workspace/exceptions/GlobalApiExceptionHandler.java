@@ -33,10 +33,13 @@ public class GlobalApiExceptionHandler {
 	private static final Logger log = LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
 
 	@ExceptionHandler(ApiException.class)
-	ResponseEntity<ApiErrorResponse> handleApiException(
+	ResponseEntity<?> handleApiException(
 		ApiException exception,
 		HttpServletRequest request
 	) {
+		if (!exception.getFieldErrors().isEmpty()) {
+			return validationProblem(request, exception.getStatus(), exception.getFieldErrors());
+		}
 		return problem(
 			exception.getStatus(),
 			ApiErrorResponseFactory.create(

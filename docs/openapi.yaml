@@ -1060,6 +1060,7 @@ components:
           format: uri
           maxLength: 500
           nullable: true
+          description: http/httpsの画像URL。nullを指定すると設定済みのアイコンを削除する。
         bio:
           type: string
           maxLength: 500
