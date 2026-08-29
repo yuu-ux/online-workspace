@@ -1,12 +1,14 @@
 package com.example.online_workspace.configs.security;
 
 import com.example.online_workspace.exceptions.ApiErrorWriter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
@@ -28,8 +30,14 @@ public class ApiSecurityConfig {
 	@Order(1)
 	public SecurityFilterChain apiSecurityFilterChain(
 		HttpSecurity http,
-		ApiErrorWriter apiErrorWriter
+		ApiErrorWriter apiErrorWriter,
+		@Value("${app.security.api-key.value:}") String apiKey,
+		@Value("${app.security.api-key.principal:}") String apiKeyPrincipal,
+		@Value("${app.security.rate-limit.requests-per-minute:60}") int requestsPerMinute
 	) throws Exception {
+		ApiKeyAuthenticationFilter apiKeyAuthenticationFilter =
+			new ApiKeyAuthenticationFilter(apiKey, apiKeyPrincipal, apiErrorWriter);
+		ApiRateLimitFilter apiRateLimitFilter = new ApiRateLimitFilter(requestsPerMinute, apiErrorWriter);
 		CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 		csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
 		CsrfTokenRequestAttributeHandler csrfRequestHandler = new CsrfTokenRequestAttributeHandler();
@@ -39,6 +47,7 @@ public class ApiSecurityConfig {
 			.csrf(csrf -> csrf
 				.csrfTokenRepository(csrfTokenRepository)
 				.csrfTokenRequestHandler(csrfRequestHandler)
+				.ignoringRequestMatchers(apiKeyAuthenticationFilter::hasValidApiKey)
 			)
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(
@@ -64,7 +73,9 @@ public class ApiSecurityConfig {
 					"FORBIDDEN",
 					"この操作を行う権限がありません。"
 				))
-			);
+			)
+			.addFilterBefore(apiKeyAuthenticationFilter, CsrfFilter.class)
+			.addFilterAfter(apiRateLimitFilter, ApiKeyAuthenticationFilter.class);
 
 		return http.build();
 	}
