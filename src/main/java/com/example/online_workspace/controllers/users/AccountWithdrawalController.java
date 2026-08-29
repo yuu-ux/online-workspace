@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers;
+package com.example.online_workspace.controllers.users;
 
 import com.example.online_workspace.forms.WithdrawRequest;
 import com.example.online_workspace.services.AccountWithdrawalService;

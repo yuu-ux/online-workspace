@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.api.auth;
+package com.example.online_workspace.controllers.auth;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;

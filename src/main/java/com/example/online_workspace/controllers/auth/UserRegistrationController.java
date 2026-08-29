@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.api.auth;
+package com.example.online_workspace.controllers.auth;
 
 import com.example.online_workspace.forms.auth.UserRegistrationForm;
 import com.example.online_workspace.services.auth.UserRegistrationService;

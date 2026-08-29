@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.api.rooms;
+package com.example.online_workspace.controllers.rooms;
 
 import java.time.Instant;
 
