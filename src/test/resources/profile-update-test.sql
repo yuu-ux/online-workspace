@@ -2,9 +2,6 @@ DROP TABLE IF EXISTS profiles;
 DROP TABLE IF EXISTS room_categories;
 DROP TABLE IF EXISTS room_category_statuses;
 
-ALTER TABLE roles ADD COLUMN IF NOT EXISTS code VARCHAR(50);
-UPDATE roles SET code = CASE id WHEN 2 THEN 'ADMIN' ELSE 'USER' END;
-
 CREATE TABLE room_category_statuses (
     id SMALLINT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE

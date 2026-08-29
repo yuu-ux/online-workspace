@@ -17,9 +17,8 @@ public interface ProfileRepository {
 		       COALESCE(p.bio, '') AS bio,
 		       c.id AS work_category_id, c.name AS work_category_name,
 		       c.description AS work_category_description, c.sort_order AS work_category_sort_order,
-		       u.email, r.code AS role, s.code AS account_status, u.created_at
+		       u.email, s.code AS account_status, u.created_at
 		FROM users u
-		JOIN roles r ON r.id = u.role_id
 		JOIN account_statuses s ON s.id = u.account_status_id
 		LEFT JOIN profiles p ON p.user_id = u.id
 		LEFT JOIN room_categories c ON c.id = p.work_category_id
@@ -92,7 +91,6 @@ public interface ProfileRepository {
 		String workCategoryDescription,
 		Integer workCategorySortOrder,
 		String email,
-		String role,
 		String accountStatus,
 		Instant createdAt
 	) {

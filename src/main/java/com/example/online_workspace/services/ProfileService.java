@@ -75,7 +75,6 @@ public class ProfileService {
 			"NONE",
 			false,
 			row.email(),
-			row.role(),
 			row.accountStatus(),
 			row.createdAt()
 		);
@@ -95,7 +94,6 @@ public class ProfileService {
 		String friendship,
 		boolean blocked,
 		String email,
-		String role,
 		String accountStatus,
 		Instant createdAt
 	) {
