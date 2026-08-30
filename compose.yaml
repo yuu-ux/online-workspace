@@ -19,6 +19,7 @@ services:
       - "5173:5173"
     container_name: online-workspace-frontend
     working_dir: /app
+    user: "0:0"
     command: gleam run -m lustre/dev start --host=0.0.0.0 --port=5173
     volumes:
       - ./frontend:/app
