@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 /**
@@ -50,7 +51,8 @@ public class WebSecurityConfig {
 			.sessionManagement(session -> session
 				.maximumSessions(-1)
 				.sessionRegistry(sessionRegistry)
-			);
+			)
+			.addFilterBefore(new SecurityAuditFilter("web"), CsrfFilter.class);
 
 		return http.build();
 	}

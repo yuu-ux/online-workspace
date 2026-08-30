@@ -5,8 +5,10 @@ services:
     restart: unless-stopped
     ports:
       - "8088:80"
+      - "8443:443"
     volumes:
       - ./docker/nginx/config:/etc/nginx/conf.d:ro
+      - ./docker/nginx/certs:/etc/nginx/tls:ro
     depends_on:
       - frontend
       - backend

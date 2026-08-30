@@ -11,6 +11,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @Configuration
@@ -41,7 +42,8 @@ public class OperationsSecurityConfig {
 			.exceptionHandling(exceptions -> exceptions
 				.authenticationEntryPoint((request, response, exception) -> response.sendError(401))
 				.accessDeniedHandler((request, response, exception) -> response.sendError(401))
-			);
+			)
+			.addFilterBefore(new SecurityAuditFilter("operations"), CsrfFilter.class);
 
 		return http.build();
 	}

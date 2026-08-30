@@ -40,6 +40,10 @@ public class ApiSecurityConfig {
 		ApiRateLimitFilter apiRateLimitFilter = new ApiRateLimitFilter(requestsPerMinute, apiErrorWriter);
 		CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 		csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
+		csrfTokenRepository.setCookieCustomizer(cookie -> cookie
+			.secure(true)
+			.sameSite("Lax")
+		);
 		CsrfTokenRequestAttributeHandler csrfRequestHandler = new CsrfTokenRequestAttributeHandler();
 
 		http
@@ -74,6 +78,7 @@ public class ApiSecurityConfig {
 					"この操作を行う権限がありません。"
 				))
 			)
+			.addFilterBefore(new SecurityAuditFilter("api"), CsrfFilter.class)
 			.addFilterBefore(apiKeyAuthenticationFilter, CsrfFilter.class)
 			.addFilterAfter(apiRateLimitFilter, ApiKeyAuthenticationFilter.class);
 
