@@ -43,6 +43,9 @@ frontend/.vite/
 frontend/*.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
+!frontend/.lustre/
+frontend/.lustre/*
+!frontend/.lustre/.gitkeep
 
 # Docker volume mountpoints
 !frontend/build/
