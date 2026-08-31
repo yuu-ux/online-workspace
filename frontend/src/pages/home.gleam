@@ -1,4 +1,5 @@
 import components/btn
+import components/ui
 import gleam/int
 import gleam/list
 import lustre/event.{on_click}
@@ -33,12 +34,15 @@ import types/room.{
 } as room_t
 
 import wrap/room.{get_rooms}
+import wrap/session.{logout_proc}
+import wrap/api.{type ApiError, ApiError}
 import components/rooms.{room_list_view}
 
 pub type Model {
   Model(
     session: Session,
-    rooms: List(RoomInfo)
+    rooms: List(RoomInfo),
+    messages: List(String),
   )
 }
 
@@ -48,6 +52,8 @@ pub type Msg {
   ToLogout
   ToMyPage
   ToRoom(RoomId)
+  RoomsLoaded(Result(List(RoomInfo), ApiError))
+  LogoutCompleted(Result(Nil, ApiError))
 }
 
 
@@ -55,28 +61,32 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
   case session {
     Guest -> {
       #(
-        Model(session: session, rooms: []),
+        Model(session: session, rooms: [], messages: []),
         effect.none()
       )
     }
-    Authenticated (jwt, user_info) -> {
+    Authenticated(..) -> {
       #(
-        Model(session: session, rooms: get_rooms(jwt, user_info.user_id)),
-        effect.none()
+        Model(session: session, rooms: [], messages: []),
+        get_rooms(RoomsLoaded),
       )
     }
   }
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
-  // case msg {
-  //   ToCreateRoom -> {}
-  //   ToLogin -> {}
-  //   ToLogout -> {}
-  //   ToMyPage -> {}
-  //   ToRoom(room_id) -> {}
-  // }
-  #(model, effect.none())
+  case msg {
+    ToLogout -> #(model, logout_proc(LogoutCompleted))
+    RoomsLoaded(Ok(rooms)) ->
+      #(Model(..model, rooms: rooms, messages: []), effect.none())
+    RoomsLoaded(Error(ApiError(message))) ->
+      #(Model(..model, messages: [message]), effect.none())
+    LogoutCompleted(Ok(_)) ->
+      #(Model(session: Guest, rooms: [], messages: []), effect.none())
+    LogoutCompleted(Error(ApiError(message))) ->
+      #(Model(..model, messages: [message]), effect.none())
+    _ -> #(model, effect.none())
+  }
 }
 
 // ---------------------------------------------------------
@@ -202,6 +212,7 @@ fn authenticated_content(model: Model) -> element.Element(Msg) {
     // ルーム一覧のグリッド表示
     // ※以前作成した room_list_view コンポーネントをここで呼び出します
     // ※ room_list_view 側で grid クラスを持たせている前提です
+    ui.error_messages(model.messages),
     room_list_view(model.rooms, ToRoom)
   ])
 }

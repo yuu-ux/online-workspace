@@ -8,7 +8,8 @@ import gleam/list
 import lustre/element/html.{button, div, text, input, h2, p, label}
 
 import types/session.{type Session, Guest, Authenticated} as session_t
-import wrap/session.{login_proc, DummyError}
+import wrap/session.{login_proc}
+import wrap/api.{type ApiError, ApiError}
 
 pub type InputType {
   Email
@@ -32,6 +33,7 @@ pub type Msg {
 
   InputUpdated(target: InputType, str: String)
   SubmitClicked
+  LoginCompleted(Result(Session, ApiError))
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
@@ -70,23 +72,23 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     // 送信ボタンが押されたら、入力内容を履歴に追加し、入力欄を空にする
     SubmitClicked -> {
-      io.println("current_email_input:" <> model.current_email_input)
-      io.println("current_password_input:" <> model.current_password_input)
-      case login_proc(model.current_email_input, model.current_password_input) {
+      #(
+        Model(..model, messages: []),
+        login_proc(
+          model.current_email_input,
+          model.current_password_input,
+          LoginCompleted,
+        ),
+      )
+    }
+
+    LoginCompleted(response) -> {
+      case response {
         Ok(session) -> {
           #(Model(..model, session: session), effect.from(fn (dispatch) { dispatch(ToHome) }))
         }
-        Error(err_type) -> {
-          let err_msg = case err_type {
-            DummyError -> {
-              ["DummyError"]
-            }
-          }
-          let new_model = Model(
-              ..model,
-              messages: err_msg
-            )
-          #(new_model, effect.none())
+        Error(ApiError(message)) -> {
+          #(Model(..model, messages: [message]), effect.none())
         }
       }
     }
@@ -172,4 +174,3 @@ fn footer_links() -> element.Element(Msg) {
     ]
   )
 }
-

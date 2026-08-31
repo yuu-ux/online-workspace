@@ -4,6 +4,8 @@ import lustre
 import gleam/io
 
 import types/session
+import wrap/session as session_api
+import wrap/api as api
 
 import pages/home
 import pages/login
@@ -53,6 +55,7 @@ pub type Msg {
   RoomMsg(room.Msg)
   UserInfoFromFriendMsg(userinfofromfriend.Msg)
   UserInfoFromRoomMsg(userinfofromroom.Msg)
+  SessionLoaded(Result(session.Session, api.ApiError))
 }
 
 fn init(_flag) -> #(Model, effect.Effect(Msg)) {
@@ -61,7 +64,7 @@ fn init(_flag) -> #(Model, effect.Effect(Msg)) {
       current_page: Home(init_home_model),
       session: session.Guest
       ), 
-    effect.none()
+    session_api.get_session(SessionLoaded)
   )
 }
 
@@ -69,12 +72,25 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   io.println("--- Update ---")
   case model.current_page, msg {
 
+    _, SessionLoaded(Ok(current_session)) -> {
+      let #(home_model, home_effect) = home.init(current_session)
+      #(
+        Model(session: current_session, current_page: Home(home_model)),
+        home_effect |> effect.map(HomeMsg),
+      )
+    }
+
+    _, SessionLoaded(Error(_)) -> #(model, effect.none())
+
     // -- mypage --
 
     MyPage(mypage_model), MyPageMsg(mypage.ToHome) -> {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToHome)
-      let #(init_home_model, _) = home.init(update_mypage_model.session)
-      #(Model(session: update_mypage_model.session, current_page: Home(init_home_model)), effect.none())
+      let #(init_home_model, home_effect) = home.init(update_mypage_model.session)
+      #(
+        Model(session: update_mypage_model.session, current_page: Home(init_home_model)),
+        home_effect |> effect.map(HomeMsg),
+      )
     }
 
     MyPage(mypage_model), MyPageMsg(mypage.ToFriend) -> {
@@ -165,6 +181,11 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     Home(home_model), HomeMsg(home.ToLogout) -> {
+      let #(update_home_model, update_effect) = home.update(home_model, home.ToLogout)
+      #(
+        Model(..model, current_page: Home(update_home_model)),
+        update_effect |> effect.map(HomeMsg),
+      )
     }
 
     Home(home_model), HomeMsg(home.ToRoom(room_id)) -> {
@@ -173,12 +194,34 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, current_page: Room(init_room_model)), update_effect |> effect.map(RoomMsg))
     }
 
+    Home(home_model), HomeMsg(home.RoomsLoaded(response)) -> {
+      let #(update_home_model, update_effect) = home.update(home_model, home.RoomsLoaded(response))
+      #(
+        Model(..model, current_page: Home(update_home_model)),
+        update_effect |> effect.map(HomeMsg),
+      )
+    }
+
+    Home(home_model), HomeMsg(home.LogoutCompleted(response)) -> {
+      let #(update_home_model, update_effect) = home.update(home_model, home.LogoutCompleted(response))
+      #(
+        Model(
+          session: update_home_model.session,
+          current_page: Home(update_home_model),
+        ),
+        update_effect |> effect.map(HomeMsg),
+      )
+    }
+
     // -- login --
 
     Login(login_model), LoginMsg(login.ToHome) -> {
       let #(update_login_model, _) = login.update(login_model, login.ToHome)
-      let #(init_home_model, _) = home.init(update_login_model.session)
-      #(Model(session: update_login_model.session, current_page: Home(init_home_model)), effect.none())
+      let #(init_home_model, home_effect) = home.init(update_login_model.session)
+      #(
+        Model(session: update_login_model.session, current_page: Home(init_home_model)),
+        home_effect |> effect.map(HomeMsg),
+      )
     }
 
     Login(_login_model), LoginMsg(login.ToRegister) -> {
@@ -228,8 +271,11 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     CreateRoom(create_room_model), CreateRoomMsg(create_room.ToHome) -> {
       let #(init_create_room_model, _) = create_room.update(create_room_model, create_room.ToHome)
-      let #(init_home_model, _) = home.init(init_create_room_model.session)
-      #(Model(session: init_create_room_model.session, current_page: Home(init_home_model)), effect.none())
+      let #(init_home_model, home_effect) = home.init(init_create_room_model.session)
+      #(
+        Model(session: init_create_room_model.session, current_page: Home(init_home_model)),
+        home_effect |> effect.map(HomeMsg),
+      )
     }
 
     CreateRoom(create_room_model), CreateRoomMsg(create_room.ToRoom(room_id)) -> {
@@ -249,9 +295,12 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     Room(room_model), RoomMsg(room.ToHome) -> {
       let #(update_room_model, _) = room.update(room_model, room.ToHome)
-      let #(init_home_model, _) = home.init(update_room_model.session)
+      let #(init_home_model, home_effect) = home.init(update_room_model.session)
 
-      #(Model(session: init_home_model.session, current_page: Home(init_home_model)), effect.none())
+      #(
+        Model(session: init_home_model.session, current_page: Home(init_home_model)),
+        home_effect |> effect.map(HomeMsg),
+      )
     }
 
     Room(room_model), RoomMsg(room.ToUserInfo(user_info)) -> {
@@ -344,6 +393,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       io.println("unreachables")
       #(model, effect.none())
     }
+
   }
 }
 
@@ -392,4 +442,3 @@ pub fn main() {
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
 }
-

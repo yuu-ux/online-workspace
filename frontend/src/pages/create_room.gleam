@@ -22,14 +22,14 @@ import types/room.{
 } as room_t
 
 import types/session.{type Session}
-import wrap/room.{create_room, DummyError}
+import wrap/room.{create_room}
+import wrap/api.{type ApiError, ApiError}
 
 pub type InputType {
   RoomName
   Description
   Category
   WorkStyle
-  Visibility
   MaxNumOfMember
 }
 
@@ -40,7 +40,6 @@ pub type Model {
     current_description_input: String,
     current_category_input: String,
     current_workstyle_input: String,
-    current_visibility_input: String,
     current_maxnumofmember_input: String,
     messages: List(String)
   )
@@ -52,6 +51,7 @@ pub type Msg {
   ToRoom(RoomId)
   InputUpdated(target: InputType, str: String)
   SubmitClicked
+  RoomCreated(Result(RoomId, ApiError))
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
@@ -60,9 +60,8 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
       session: session,
       current_roomname_input: "",
       current_description_input: "",
-      current_category_input: "",
-      current_workstyle_input: "",
-      current_visibility_input: "",
+      current_category_input: "category 1",
+      current_workstyle_input: "Quiet",
       current_maxnumofmember_input: "12",
       messages: []),
     effect.none()
@@ -102,10 +101,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           Model(..model, current_workstyle_input: text)
         }
 
-        Visibility -> {
-          Model(..model, current_visibility_input: text)
-        }
-
         MaxNumOfMember -> {
           Model(..model, current_maxnumofmember_input: text)
         }
@@ -142,35 +137,31 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         }
       }
 
-      let visibility = case model.current_visibility_input {
-        "Public" -> { Ok(Public) }
-        "Invitation Only" -> { Ok(Invite) }
-        "Friend Only" -> { Ok(Friend) }
-        _ -> { Error(Nil) }
-      }
       let max_number_of_member = int.parse(model.current_maxnumofmember_input)
 
-      case create_room(
-        room_name,
-        description,
-        category,
-        work_style,
-        visibility,
-        max_number_of_member
-      ) {
-        // TODO
-        Ok(room_id) -> {
-          // 成功したらToRoomを呼ぶ
-          #(Model(..model, session: model.session), effect.from(fn (dispatch) { dispatch(ToRoom(room_id)) }))
-        }
-        Error(err_type) -> {
-          let msg = case err_type {
-            DummyError -> {
-              ["DummyError"]
-            }
-          }
-          #(Model(..model, messages: msg), effect.none())
-        }
+      case category, work_style, max_number_of_member {
+        Ok(category), Ok(work_style), Ok(max_members) -> #(
+          Model(..model, messages: []),
+          create_room(
+            room_name,
+            description,
+            category,
+            work_style,
+            max_members,
+            RoomCreated,
+          ),
+        )
+        _, _, _ ->
+          #(Model(..model, messages: ["入力内容を確認してください"]), effect.none())
+      }
+    }
+
+    RoomCreated(response) -> {
+      case response {
+        Ok(room_id) ->
+          #(model, effect.from(fn(dispatch) { dispatch(ToRoom(room_id)) }))
+        Error(ApiError(message)) ->
+          #(Model(..model, messages: [message]), effect.none())
       }
     }
   }
@@ -242,9 +233,7 @@ fn form_section(model: Model) -> element.Element(Msg) {
       "カテゴリ",
       model.current_category_input,
       [
-        #("category 1", "カテゴリ 1"),
-        #("category 2", "カテゴリ 2"),
-        #("category 3", "カテゴリ 3")
+        #("category 1", "未分類")
       ],
       fn(val) { InputUpdated(Category, val) }
     ),
@@ -260,19 +249,7 @@ fn form_section(model: Model) -> element.Element(Msg) {
       fn(val) { InputUpdated(WorkStyle, val) }
     ),
 
-    // 5. 公開範囲（セレクトボックス）
-    ui.select_box(
-      "公開設定",
-      model.current_visibility_input, // 元コードでは category_input になっていましたが修正と推測
-      [
-        #("Public", "🌎 全体に公開 (Public)"),
-        #("Invitation Only", "✉️ 招待制 (Invitation Only)"),
-        #("Friend Only", "🤝 フレンドのみ (Friend Only)")
-      ],
-      fn(val) { InputUpdated(Visibility, val) }
-    ),
-
-    // 6. 最大人数（数値入力）
+    // 5. 最大人数（数値入力）
     ui.number_input(
       "最大参加人数",
       model.current_maxnumofmember_input,

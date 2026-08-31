@@ -8,7 +8,8 @@ import gleam/list
 import lustre/element/html.{button, div, text, input, p}
 
 import types/session.{type Session}
-import wrap/register.{register_user, PasswordMismatch}
+import wrap/register.{type RegisterErr, register_user, PasswordMismatch, RequestFailed}
+import wrap/api.{ApiError}
 
 pub type InputType {
   UserName
@@ -36,6 +37,7 @@ pub type Msg {
 
   InputUpdated(target: InputType, str: String)
   SubmitClicked
+  RegistrationCompleted(Result(Nil, RegisterErr))
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
@@ -84,22 +86,27 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     SubmitClicked -> {
       // io.println("current_email_input:" <> model.current_email_input)
       // io.println("current_password_input:" <> model.current_password_input)
-      case register_user(
-        model.current_username_input,
-        model.current_email_input,
-        model.current_password_input,
-        model.current_password_confirm_input,
-      ) {
+      #(
+        Model(..model, messages: []),
+        register_user(
+          model.current_username_input,
+          model.current_email_input,
+          model.current_password_input,
+          model.current_password_confirm_input,
+          RegistrationCompleted,
+        ),
+      )
+    }
+
+    RegistrationCompleted(response) -> {
+      case response {
         Ok(_) -> {
           #(model, effect.from(fn (dispatch) { dispatch (ToLogin )}))
         }
-        Error(err_msg) -> {
-          case err_msg {
-            PasswordMismatch -> {
-              #(Model(..model, messages: ["パスワードを確認してください"]), effect.none())
-            }
-          }
-        }
+        Error(PasswordMismatch) ->
+          #(Model(..model, messages: ["パスワードを確認してください"]), effect.none())
+        Error(RequestFailed(ApiError(message))) ->
+          #(Model(..model, messages: [message]), effect.none())
       }
     }
 
@@ -208,4 +215,3 @@ fn footer_links() -> element.Element(Msg) {
     ]
   )
 }
-
