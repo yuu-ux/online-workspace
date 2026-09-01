@@ -3,7 +3,7 @@ package com.example.online_workspace.controllers.auth;
 import com.example.online_workspace.models.users.AuthenticatedUser;
 
 /**
- * Gleamクライアントへ返す現在のブラウザセッション状態。
+ * クライアントへ返す現在のブラウザセッション状態。
  *
  * @param authenticated 現在のリクエストが認証済みユーザーを持つかどうか
  * @param user 認証済みユーザー。取得できない場合は {@code null}
