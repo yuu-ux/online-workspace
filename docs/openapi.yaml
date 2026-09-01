@@ -1226,12 +1226,15 @@ components:
 
     RoomMember:
       type: object
-      required: [membershipId, user, joinedAt]
+      required: [membershipId, user, online, joinedAt]
       properties:
         membershipId:
           $ref: '#/components/schemas/Id'
         user:
           $ref: '#/components/schemas/UserSummary'
+        online:
+          type: boolean
+          description: 認証済みWebSocket接続が1つ以上ある場合はtrue
         joinedAt:
           type: string
           format: date-time
@@ -1285,10 +1288,13 @@ components:
 
     Friend:
       type: object
-      required: [user, createdAt]
+      required: [user, online, createdAt]
       properties:
         user:
           $ref: '#/components/schemas/UserSummary'
+        online:
+          type: boolean
+          description: 認証済みWebSocket接続が1つ以上ある場合はtrue
         createdAt:
           type: string
           format: date-time

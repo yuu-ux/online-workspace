@@ -1,6 +1,7 @@
 package com.example.online_workspace.repositories;
 
 import java.time.Instant;
+import java.util.List;
 
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -15,6 +16,57 @@ public interface RoomMembershipRepository {
 
 	@Select("SELECT CURRENT_TIMESTAMP")
 	Instant currentTimestamp();
+
+	@Select("SELECT EXISTS (SELECT 1 FROM rooms WHERE id = #{roomId})")
+	boolean roomExists(@Param("roomId") long roomId);
+
+	@Select("""
+		SELECT EXISTS (
+			SELECT 1
+			FROM room_members rm
+			JOIN users u ON u.id = rm.user_id
+			WHERE rm.room_id = #{roomId}
+			  AND u.email = #{email}
+			  AND rm.left_at IS NULL
+			  AND u.deleted_at IS NULL
+		)
+		""")
+	boolean isActiveMember(@Param("roomId") long roomId, @Param("email") String email);
+
+	@Select("""
+		SELECT rm.id AS membership_id, u.id AS user_id, u.name AS user_name,
+		       u.email, p.icon_url, rm.joined_at
+		FROM room_members rm
+		JOIN users u ON u.id = rm.user_id
+		LEFT JOIN profiles p ON p.user_id = u.id
+		WHERE rm.room_id = #{roomId}
+		  AND rm.left_at IS NULL
+		  AND u.deleted_at IS NULL
+		ORDER BY rm.joined_at, rm.id
+		""")
+	List<ActiveMember> findActiveMembers(@Param("roomId") long roomId);
+
+	@Select("""
+		SELECT u.email
+		FROM room_members rm
+		JOIN users u ON u.id = rm.user_id
+		WHERE rm.room_id = #{roomId}
+		  AND rm.left_at IS NULL
+		  AND u.deleted_at IS NULL
+		""")
+	List<String> findActiveMemberEmails(@Param("roomId") long roomId);
+
+	@Select("""
+		SELECT rm.room_id, u.id AS user_id
+		FROM room_members rm
+		JOIN users u ON u.id = rm.user_id
+		WHERE u.email = #{email}
+		  AND rm.left_at IS NULL
+		  AND u.deleted_at IS NULL
+		ORDER BY rm.joined_at DESC
+		LIMIT 1
+		""")
+	ActivePresence findActivePresence(@Param("email") String email);
 
 	@Select("""
 		SELECT id FROM users
@@ -85,5 +137,18 @@ public interface RoomMembershipRepository {
 	int leave(@Param("membershipId") long membershipId, @Param("leftAt") Instant leftAt);
 
 	record JoinPolicy(long id, int maxMembers, String status) {
+	}
+
+	record ActiveMember(
+		long membershipId,
+		long userId,
+		String userName,
+		String email,
+		String iconUrl,
+		Instant joinedAt
+	) {
+	}
+
+	record ActivePresence(long roomId, long userId) {
 	}
 }
