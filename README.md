@@ -125,7 +125,7 @@ Browser -> proxy container
   └─ /ws      -> backend container
 ```
 
-React のビルドは Node.js 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
+Gleam フロントエンドのビルドは Node.js 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
 
 ```text
 gleam source -> npm run build -> dist/ -> nginx

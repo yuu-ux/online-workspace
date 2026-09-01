@@ -74,7 +74,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     // 送信ボタンが押されたら、入力内容を履歴に追加し、入力欄を空にする
     SubmitClicked -> {
-
+      #(model, effect.none())
     }
   }
 }
@@ -119,4 +119,3 @@ pub fn view (model: Model) -> element.Element(Msg) {
     }
   }
 }
-

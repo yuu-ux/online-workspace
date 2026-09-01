@@ -1,0 +1,20 @@
+name: Frontend build
+
+on:
+  pull_request:
+    paths:
+      - frontend/**
+      - .github/workflows/frontend-build.yaml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --file frontend/Dockerfile.dev --tag online-workspace-frontend frontend
+      - run: docker run --rm online-workspace-frontend npm test
+      - run: docker run --rm online-workspace-frontend npm run build

@@ -1,13 +1,13 @@
 import components/btn
+import components/ui
 import lustre/event.{on_click, on_input}
 import lustre/attribute.{class, placeholder, type_, value}
 import lustre/element
 import lustre/effect
-import gleam/io
 import gleam/list
 import lustre/element/html.{button, div, text, input, h2, p, label}
 
-import types/session.{type Session, Guest, Authenticated} as session_t
+import types/session.{type Session, Guest, Authenticated}
 import wrap/session.{login_proc, DummyError}
 
 pub type InputType {
@@ -70,8 +70,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     // 送信ボタンが押されたら、入力内容を履歴に追加し、入力欄を空にする
     SubmitClicked -> {
-      io.println("current_email_input:" <> model.current_email_input)
-      io.println("current_password_input:" <> model.current_password_input)
       case login_proc(model.current_email_input, model.current_password_input) {
         Ok(session) -> {
           #(Model(..model, session: session), effect.from(fn (dispatch) { dispatch(ToHome) }))
@@ -91,14 +89,15 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       }
     }
 
-    _ -> {
-      io.println("hello")
-      #(Model(..model, session: session_t.Guest), effect.none())
+    ToPrivacyPolicy -> {
+      #(model, effect.none())
+    }
+
+    ToTOS -> {
+      #(model, effect.none())
     }
   }
 }
-
-import components/ui
 
 // ---------------------------------------------------------
 // login画面のView
@@ -172,4 +171,3 @@ fn footer_links() -> element.Element(Msg) {
     ]
   )
 }
-

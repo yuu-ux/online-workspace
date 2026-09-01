@@ -39,7 +39,10 @@ pub fn create_room(
   max_number_of_member: Result(Int, Nil)
 ) -> Result(RoomId, CreateRoomErr) {
   // TODO SERVER API
-  Ok(RoomId(0)) // example room id
+  case category_type, workstyle_type, visibility, max_number_of_member {
+    Ok(_), Ok(_), Ok(_), Ok(_) -> Ok(RoomId(0))
+    _, _, _, _ -> Error(DummyError)
+  }
 }
 
 pub fn get_rooms(jwt: Token, user_id: UserId) -> List(RoomInfo) {
@@ -91,7 +94,7 @@ fn do_connect(url: String, dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
-fn do_send(message: String) -> Nil
+fn do_send(message: String) -> Bool
 
 @external(javascript, "./../ffi/ws.js", "close_ws")
 pub fn close_ws() -> Nil
@@ -114,18 +117,19 @@ pub fn room_send_msg_proc(
   send_msg: String
 ) -> Result(Nil, RoomErr) {
   // TODO SERVER API
-  Ok(
-    do_send(
-      chat_to_json(
-        Chat(
-          msg_type: "msg",
-          room_id: room_id,
-          user: user_name,
-          message: send_msg
-        )
-      )
+  let message = chat_to_json(
+    Chat(
+      msg_type: "msg",
+      room_id: room_id,
+      user: user_name,
+      message: send_msg
     )
   )
+
+  case do_send(message) {
+    True -> Ok(Nil)
+    False -> Error(RoomDummyError)
+  }
 }
 
 // TODO テストデータ用構造体
@@ -157,4 +161,3 @@ pub fn chat_from_json(json_string: String) -> Result(Chat, json.DecodeError) {
   }
   json.parse(from: json_string, using: chat_decoder)
 }
-

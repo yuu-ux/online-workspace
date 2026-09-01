@@ -1,9 +1,9 @@
 import components/btn
+import components/ui
 import lustre/event.{on_click, on_input}
 import lustre/attribute.{class}
 import lustre/element
 import lustre/effect
-import gleam/io
 import gleam/list
 import lustre/element/html.{button, div, text, input, p}
 
@@ -103,14 +103,15 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       }
     }
 
-    _ -> {
-      io.println("hello")
-      #(Model(..model, session: session.Guest), effect.none())
+    ToPrivacyPolicy -> {
+      #(model, effect.none())
+    }
+
+    ToTOS -> {
+      #(model, effect.none())
     }
   }
 }
-
-import components/ui // ※後で components/ui 等に変更予定とのこと
 
 // ---------------------------------------------------------
 // Register画面のView
@@ -208,4 +209,3 @@ fn footer_links() -> element.Element(Msg) {
     ]
   )
 }
-
