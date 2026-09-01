@@ -27,6 +27,7 @@ Controllerは機能単位のパッケージに配置します。
 controllers/
 ├── auth/
 ├── members/
+├── messages/
 ├── rooms/
 ├── users/
 └── workhistory/

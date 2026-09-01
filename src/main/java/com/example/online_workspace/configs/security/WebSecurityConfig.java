@@ -31,6 +31,7 @@ public class WebSecurityConfig {
 	@Order(2)
 	public SecurityFilterChain webSecurityFilterChain(HttpSecurity http, SessionRegistry sessionRegistry) throws Exception {
 		http
+			.csrf(csrf -> csrf.ignoringRequestMatchers("/ws/**"))
 			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers(
 					"/swagger-ui.html",
