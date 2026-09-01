@@ -27,7 +27,7 @@ MVPで実装済みの主な機能は以下。
 - システム監視
 - マイページ / プロフィール編集 / 退会
 
-また、最終版のフロントエンドは React + React Router + Tailwind CSS を前提としているが、現状の実動作部分は Thymeleaf 中心である。
+また、最終版のフロントエンドはGleam + Lustre + Tailwind CSSを前提としているが、現状の実動作部分はThymeleaf中心である。
 
 ## 判断
 
@@ -36,7 +36,7 @@ MVPで実装済みの主な機能は以下。
 - 要件定義と画面遷移図を正として、最終版向けのDBスキーマとAPIを設計する
 - API設計はOpenAPIを採用し、バックエンドとフロントエンドの契約を先に固定する
 - Swagger UIを導入し、OpenAPI仕様をブラウザ上で確認できるようにする
-- Reactを本体UIとして実装する
+- Gleamを本体UIとして実装する
 - Spring BootはAPIサーバー寄りに移行する
 - 既存MVPのコードは、認証、WebSocket、ルーム/チャット処理など、使える部分だけ移植する
 - Thymeleaf画面は最終版UIの中心にはしない
@@ -79,9 +79,9 @@ MVPで実装済みの主な機能は以下。
 
 ### フロントエンドの前提が違う
 
-要件では React + React Router + Tailwind CSS が前提だが、現状の実装済み画面は Thymeleaf である。
+要件ではGleam + Lustre + Tailwind CSSが前提だが、現状の実装済み画面はThymeleafである。
 
-そのため、画面はReactで作り直し、既存Thymeleafは画面構成や挙動確認の参考として使う。
+そのため、画面はGleamで作り直し、既存Thymeleafは画面構成や挙動確認の参考として使う。
 
 ## 詳細設計について
 
@@ -119,7 +119,7 @@ DBは後から大きく変えると影響範囲が広いため、最初に要件
 
 ### 2. API一覧
 
-Reactから利用する前提で、先にAPI境界を決める。
+Gleamから利用する前提で、先にAPI境界を決める。
 
 API仕様はOpenAPIで管理する。OpenAPIを正として、バックエンド実装、フロントエンドのAPIクライアント、レビュー観点を揃える。
 
@@ -176,11 +176,11 @@ issueの粒度は以下を基準にする。
 - 最小詳細設計
 - DBスキーマ設計
 - API一覧作成
-- React移行方針の確定
+- Gleam移行方針の確定
 
 ### 6/22 - 6/25
 
-- React土台
+- Gleam土台
 - 認証導線
 - プロフィール
 - ルーム一覧
@@ -229,7 +229,7 @@ issueの粒度は以下を基準にする。
 1. DBスキーマ案を作成する
 2. OpenAPI仕様を作成する
 3. Swagger UIを導入する
-4. React画面単位の実装順を決める
+4. Gleam画面単位の実装順を決める
 5. 既存MVPから移植するクラスを洗い出す
 6. Flywayの新しいマイグレーション方針を決める
 7. `docs/implementation_issues.md` のissueを優先度順に実装する

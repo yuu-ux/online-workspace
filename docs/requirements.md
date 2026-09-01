@@ -34,8 +34,8 @@
 
 ### 3.1 フロントエンド
 
-- React
-    - React Router
+- Gleam
+    - Lustre
 - Tailwind CSS
 
 ### 3.2 バックエンド
