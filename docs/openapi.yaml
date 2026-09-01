@@ -3,7 +3,7 @@ info:
   title: Online Workspace API
   version: 0.1.0
   description: |
-    Online Workspace の React クライアントと Spring Boot サーバー間の REST API 契約。
+    Online Workspace のフロントエンドと Spring Boot サーバー間の REST API 契約。
     日時は RFC 3339、ID は 64 bit integer、JSON の property 名は lowerCamelCase とする。
 
     ブラウザ向け API は `SESSION` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
@@ -92,8 +92,12 @@ paths:
                 $ref: '#/components/schemas/AuthenticatedUser'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
@@ -109,7 +113,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
         '204':
-          description: ログアウト完了
+          description: ログアウト完了。サーバー側の認証セッションを無効化する。
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -151,7 +155,7 @@ paths:
           description: XSRF-TOKEN cookieを発行した。レスポンス本文は空。
           headers:
             Set-Cookie:
-              description: "XSRF-TOKEN cookie。Reactから読み取れるようHttpOnlyは付与しない"
+              description: "XSRF-TOKEN cookie。ブラウザクライアントから読み取れるようHttpOnlyは付与しない"
               schema:
                 type: string
         '429':
@@ -914,12 +918,14 @@ components:
           type: string
           format: email
           maxLength: 255
+          description: 前後の空白を除去し、小文字化して照合する
         password:
           type: string
           format: password
-          description: UTF-8 エンコード時に72バイト以内
           minLength: 1
           maxLength: 72
+          pattern: '^[\x21-\x7E]+$'
+          description: 半角の英字・数字・記号（空白を除く）。UTF-8エンコード時に72バイト以内
           writeOnly: true
 
     AuthenticatedUser:
