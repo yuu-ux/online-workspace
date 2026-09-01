@@ -13,7 +13,7 @@
 ## controllersディレクトリ
 
 - `controllers/api/`: JSONを返すREST Controller。URLは `/api/v1/**` とする。
-- `controllers/mvc/`: HTML画面を返すMVC Controller。React中心の現在は使用しない。
+- `controllers/mvc/`: HTML画面を返すMVC Controller。Gleam中心の現在は使用しない。
 
 認証系API（/api/v1/auth/**）のコントローラーは `controllers/api/auth/` にまとめる。
 

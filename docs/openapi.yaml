@@ -3,7 +3,7 @@ info:
   title: Online Workspace API
   version: 0.1.0
   description: |
-    Online Workspace の React クライアントと Spring Boot サーバー間の REST API 契約。
+    Online Workspace の Gleam クライアントと Spring Boot サーバー間の REST API 契約。
     日時は RFC 3339、ID は 64 bit integer、JSON の property 名は lowerCamelCase とする。
 
     ブラウザ向け API は `SESSION` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
@@ -151,7 +151,7 @@ paths:
           description: XSRF-TOKEN cookieを発行した。レスポンス本文は空。
           headers:
             Set-Cookie:
-              description: "XSRF-TOKEN cookie。Reactから読み取れるようHttpOnlyは付与しない"
+              description: "XSRF-TOKEN cookie。ブラウザ側のGleamクライアントから読み取れるようHttpOnlyは付与しない"
               schema:
                 type: string
         '429':
