@@ -17,4 +17,6 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker build --file frontend/Dockerfile.dev --tag online-workspace-frontend frontend
       - run: docker run --rm online-workspace-frontend npm test
-      - run: docker run --rm online-workspace-frontend npm run build
+      - run: >-
+          docker run --rm online-workspace-frontend sh -c
+          'npm run build >/tmp/build.log 2>&1 || { tail -n 250 /tmp/build.log; exit 1; }'
