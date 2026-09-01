@@ -7,7 +7,7 @@ import lustre/effect
 import gleam/list
 import lustre/element/html.{button, div, text, input, h2, p, label}
 
-import types/session.{type Session, Guest, Authenticated}
+import types/session.{type Session, Guest, Authenticated} as session_t
 import wrap/session.{login_proc, DummyError}
 
 pub type InputType {
