@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.servlet.http.Cookie;
 import org.springframework.http.MediaType;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -71,27 +73,29 @@ class SessionControllerIntegrationTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("セッション利用者"))
 			.andReturn();
-		Cookie session = loginResponse.getResponse().getCookie("SESSION");
+		MockHttpSession session = (MockHttpSession) loginResponse.getRequest().getSession(false);
 		assertNotNull(session);
 
-		mockMvc.perform(get("/api/v1/auth/session").cookie(session))
+		mockMvc.perform(get("/api/v1/auth/session").session(session))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.authenticated").value(true))
 			.andExpect(jsonPath("$.user.email").value(email));
 
-		MvcResult logoutCsrfResponse = mockMvc.perform(get("/api/v1/auth/csrf").cookie(session))
+		MvcResult logoutCsrfResponse = mockMvc.perform(get("/api/v1/auth/csrf").session(session))
 			.andExpect(status().isNoContent())
 			.andReturn();
 		Cookie logoutCsrf = logoutCsrfResponse.getResponse().getCookie("XSRF-TOKEN");
 		assertNotNull(logoutCsrf);
 
 		mockMvc.perform(post("/api/v1/auth/logout")
-				.cookie(session, logoutCsrf)
+				.session(session)
+				.cookie(logoutCsrf)
 				.header("X-CSRF-TOKEN", logoutCsrf.getValue()))
 			.andExpect(status().isNoContent())
 			.andExpect(content().string(""));
+		assertTrue(session.isInvalid());
 
-		mockMvc.perform(get("/api/v1/auth/session").cookie(session))
+		mockMvc.perform(get("/api/v1/auth/session"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.authenticated").value(false));
 	}
