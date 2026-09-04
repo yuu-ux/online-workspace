@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -33,17 +35,20 @@ public class UserLoginController {
 	private final LoginRateLimiter loginRateLimiter;
 	private final SecurityContextRepository securityContextRepository;
 	private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
+	private final AuthenticationEventPublisher authenticationEventPublisher;
 
 	public UserLoginController(
 		UserLoginService userLoginService,
 		LoginRateLimiter loginRateLimiter,
 		SecurityContextRepository securityContextRepository,
-		SessionAuthenticationStrategy sessionAuthenticationStrategy
+		SessionAuthenticationStrategy sessionAuthenticationStrategy,
+		AuthenticationEventPublisher authenticationEventPublisher
 	) {
 		this.userLoginService = userLoginService;
 		this.loginRateLimiter = loginRateLimiter;
 		this.securityContextRepository = securityContextRepository;
 		this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
+		this.authenticationEventPublisher = authenticationEventPublisher;
 	}
 
 	@PostMapping("/login")
@@ -57,11 +62,16 @@ public class UserLoginController {
 			throw new TooManyLoginAttemptsException(LoginRateLimiter.RETRY_AFTER_SECONDS);
 		}
 
+		Authentication attemptedAuthentication = UsernamePasswordAuthenticationToken.unauthenticated(form.email(), null);
 		UserAuthentication user;
 		try {
 			user = userLoginService.authenticate(form.email(), form.password());
 		} catch (InvalidLoginCredentialsException exception) {
 			loginRateLimiter.recordFailure(form.email(), clientAddress);
+			authenticationEventPublisher.publishAuthenticationFailure(
+				new BadCredentialsException("Invalid login credentials"),
+				attemptedAuthentication
+			);
 			throw exception;
 		}
 
@@ -76,6 +86,7 @@ public class UserLoginController {
 		context.setAuthentication(authentication);
 		SecurityContextHolder.setContext(context);
 		securityContextRepository.saveContext(context, request, response);
+		authenticationEventPublisher.publishAuthenticationSuccess(authentication);
 		return responseUser;
 	}
 }
