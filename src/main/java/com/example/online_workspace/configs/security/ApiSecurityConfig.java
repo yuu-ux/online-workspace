@@ -3,11 +3,15 @@ package com.example.online_workspace.configs.security;
 import com.example.online_workspace.exceptions.ApiErrorWriter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
@@ -18,7 +22,6 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.core.session.SessionRegistry;
 
 /**
  * API向けの認証・認可とCSRF保護を構成する。
@@ -100,6 +103,13 @@ public class ApiSecurityConfig {
 	@Bean
 	public SecurityContextRepository securityContextRepository() {
 		return new HttpSessionSecurityContextRepository();
+	}
+
+	@Bean
+	public AuthenticationEventPublisher authenticationEventPublisher(
+		ApplicationEventPublisher applicationEventPublisher
+	) {
+		return new DefaultAuthenticationEventPublisher(applicationEventPublisher);
 	}
 
 	@Bean
