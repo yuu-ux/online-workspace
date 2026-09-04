@@ -3,8 +3,10 @@ package com.example.online_workspace.controllers.auth;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.event.LogoutSuccessEvent;
 import org.springframework.security.web.authentication.logout.CompositeLogoutHandler;
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
@@ -22,10 +24,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserLogoutController {
 
 	private final LogoutHandler logoutHandler;
+	private final ApplicationEventPublisher eventPublisher;
 
 	public UserLogoutController(
-		@Value("${server.servlet.session.cookie.name:SESSION}") String sessionCookieName
+		@Value("${server.servlet.session.cookie.name:SESSION}") String sessionCookieName,
+		ApplicationEventPublisher eventPublisher
 	) {
+		this.eventPublisher = eventPublisher;
 		logoutHandler = new CompositeLogoutHandler(
 			new SecurityContextLogoutHandler(),
 			new CookieClearingLogoutHandler(sessionCookieName)
@@ -40,5 +45,6 @@ public class UserLogoutController {
 		Authentication authentication
 	) {
 		logoutHandler.logout(request, response, authentication);
+		eventPublisher.publishEvent(new LogoutSuccessEvent(authentication));
 	}
 }
