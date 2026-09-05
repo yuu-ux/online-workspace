@@ -55,6 +55,9 @@ frontend/build/*
 frontend/node_modules/*
 !frontend/node_modules/.gitkeep
 
+### Local TLS ###
+docker/nginx/certs/
+
 ### Codex worktrees ###
 .codex/worktrees/
 

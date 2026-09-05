@@ -2,6 +2,7 @@ package com.example.online_workspace.repositories.users;
 
 import com.example.online_workspace.models.users.UserAccount;
 import com.example.online_workspace.models.users.AuthenticatedUser;
+import java.time.Instant;
 import java.util.Optional;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -13,6 +14,23 @@ import org.apache.ibatis.annotations.Select;
  */
 @Mapper
 public interface UserRepository {
+
+	record MyProfileRow(
+		long id,
+		String name,
+		String iconUrl,
+		boolean isPublic,
+		String bio,
+		Long categoryId,
+		String categoryName,
+		String categoryDescription,
+		Integer categorySortOrder,
+		String email,
+		String role,
+		String accountStatus,
+		Instant createdAt
+	) {
+	}
 
 	/**
 	 * 指定したメールアドレスの登録有無を確認する。
@@ -47,6 +65,34 @@ public interface UserRepository {
 		VALUES (#{name}, #{email}, #{passwordHash})
 		""")
 	int insert(UserAccount user);
+
+	@Select("""
+		SELECT
+			u.id,
+			u.name,
+			p.icon_url,
+			COALESCE(p.is_public, TRUE) AS is_public,
+			COALESCE(p.bio, '') AS bio,
+			c.id AS category_id,
+			c.name AS category_name,
+			c.description AS category_description,
+			c.sort_order AS category_sort_order,
+			u.email,
+			r.code AS role,
+			s.code AS account_status,
+			u.created_at
+		FROM users u
+		JOIN roles r ON r.id = u.role_id
+		JOIN account_statuses s ON s.id = u.account_status_id
+		LEFT JOIN profiles p ON p.user_id = u.id
+		LEFT JOIN room_categories c ON c.id = p.work_category_id
+		WHERE u.email = #{email}
+		  AND u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
+		""")
+	MyProfileRow findMyProfileByEmail(@Param("email") String email);
+
 	/**
 	 * 指定したユーザー行をロックし、存在を確認する。
 	 *

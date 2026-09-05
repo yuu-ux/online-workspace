@@ -2,8 +2,8 @@
 
 オンラインで他のユーザーと一緒に作業できるWebアプリケーションです。
 
-最終版の要件に基づき、gleam + Spring Boot + MyBatis + PostgreSQLで開発しています。
-旧MVPのThymeleaf実装は削除し、gleamから利用するREST APIを中心に実装します。
+最終版の要件に基づき、Gleam + Spring Boot + MyBatis + PostgreSQLで開発しています。
+旧MVPのThymeleaf実装は削除し、画面を返すMVC Controllerは置かず、Gleamから利用するREST APIを実装します。
 
 仕様は以下のドキュメントを参照してください。
 
@@ -19,6 +19,20 @@
 - Backend: Spring Boot / Spring Security / MyBatis / Bean Validation / WebSocket
 - Database: PostgreSQL / Flyway
 
+## バックエンド構成
+
+Controllerは機能単位のパッケージに配置します。
+
+```text
+controllers/
+├── auth/
+├── members/
+├── messages/
+├── rooms/
+├── users/
+└── workhistory/
+```
+
 ## ローカル起動
 
 ### Docker Compose で起動
@@ -26,12 +40,14 @@
 開発時は proxy / backend / frontend / db / maildev をまとめて起動できます。
 
 ```bash
+./scripts/generate-local-tls.sh
 docker compose up
 ```
 
 起動後のURL:
 
-- Proxy: http://localhost:8088
+- Proxy: https://localhost:8443（自己署名証明書）
+- HTTP redirect: http://localhost:8088
 - Backend: http://localhost:8080
 - MailDev: http://localhost:1080
 - PostgreSQL: localhost:5432
@@ -43,6 +59,9 @@ docker compose up
 - `backend`: Spring Boot dev server
 - `db`: PostgreSQL 16
 - `maildev`: 開発用メール確認サーバー
+
+HTTPS / WSS、Cookie、CSRF、CORS、セキュリティヘッダー、監査ログの方針と
+確認方法は[Webセキュリティ方針](docs/web_security.md)を参照してください。
 
 ### Backend 単体で起動
 
@@ -145,9 +164,9 @@ npx --yes openapi-typescript@7.13.0
 
 Backend 起動後、次のURLで `docs/openapi.yaml` を表示できる。
 
-- Swagger UI: http://localhost:8080/swagger-ui.html
-- OpenAPI YAML: http://localhost:8080/openapi.yaml
+- Swagger UI: https://localhost:8443/swagger-ui.html
+- OpenAPI YAML: https://localhost:8443/openapi.yaml
 
-認証が必要な API を `Try it out` で確認する場合は、先に同じブラウザで http://localhost:8080/login からログインする。session cookie は同一 origin のリクエストに自動で付与される。API key 認証は Swagger UI 右上の `Authorize` から `X-API-Key` を設定する。
+認証が必要な API を `Try it out` で確認する場合は、先に同じブラウザで https://localhost:8443/login からログインする。session cookie は同一 origin のリクエストに自動で付与される。API key 認証は Swagger UI 右上の `Authorize` から `X-API-Key` を設定する。
 
 状態を変更する API では CSRF token が必要になる。Swagger UI は `XSRF-TOKEN` cookie の値を `X-CSRF-TOKEN` header として送信する設定になっている。
