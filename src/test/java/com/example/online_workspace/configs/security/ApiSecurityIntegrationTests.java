@@ -58,7 +58,7 @@ class ApiSecurityIntegrationTests {
 		try {
 			mockMvc.perform(get("/api/v1/rooms")
 					.queryParam("email", "private@example.com")
-					.header("Cookie", "SESSION=secret-session"))
+					.header("Cookie", "JSESSIONID=secret-session"))
 				.andExpect(status().isUnauthorized());
 		} finally {
 			logger.detachAppender(appender);

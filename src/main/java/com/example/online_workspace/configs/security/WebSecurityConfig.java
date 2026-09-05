@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
@@ -30,7 +31,11 @@ public class WebSecurityConfig {
 	 */
 	@Bean
 	@Order(2)
-	public SecurityFilterChain webSecurityFilterChain(HttpSecurity http, SessionRegistry sessionRegistry) throws Exception {
+	public SecurityFilterChain webSecurityFilterChain(
+		HttpSecurity http,
+		SecurityContextRepository securityContextRepository,
+		SessionRegistry sessionRegistry
+	) throws Exception {
 		http
 			.csrf(csrf -> csrf.ignoringRequestMatchers("/ws/**"))
 			.authorizeHttpRequests((authorize) -> authorize
@@ -44,6 +49,9 @@ public class WebSecurityConfig {
 				// 将来、未認証アクセスを許可するエンドポイントを追加する場合は
 				// anyRequest() より前に個別ルールを追加する。
 				.anyRequest().authenticated()
+			)
+			.securityContext(securityContext -> securityContext
+				.securityContextRepository(securityContextRepository)
 			)
 			// フロントエンドのログイン画面が実装されるまでは、Swagger UIなどの
 			// Web利用向けにSpring Securityのログイン画面を維持する。

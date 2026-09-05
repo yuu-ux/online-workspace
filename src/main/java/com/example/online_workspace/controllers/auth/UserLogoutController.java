@@ -2,8 +2,9 @@ package com.example.online_workspace.controllers.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.event.LogoutSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.CompositeLogoutHandler;
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
@@ -21,15 +22,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 public class UserLogoutController {
 
-	private final LogoutHandler logoutHandler;
+	private final LogoutHandler logoutHandler = new CompositeLogoutHandler(
+		new SecurityContextLogoutHandler(),
+		new CookieClearingLogoutHandler("JSESSIONID")
+	);
+	private final ApplicationEventPublisher applicationEventPublisher;
 
-	public UserLogoutController(
-		@Value("${server.servlet.session.cookie.name:SESSION}") String sessionCookieName
-	) {
-		logoutHandler = new CompositeLogoutHandler(
-			new SecurityContextLogoutHandler(),
-			new CookieClearingLogoutHandler(sessionCookieName)
-		);
+	public UserLogoutController(ApplicationEventPublisher applicationEventPublisher) {
+		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
 	@PostMapping("/logout")
@@ -40,5 +40,6 @@ public class UserLogoutController {
 		Authentication authentication
 	) {
 		logoutHandler.logout(request, response, authentication);
+		applicationEventPublisher.publishEvent(new LogoutSuccessEvent(authentication));
 	}
 }
