@@ -4,7 +4,7 @@ import gleam/json
 import gleam/result
 import lustre/effect
 import types/session.{type Session, Authenticated, Guest, Token}
-import types/user.{UserId, UserInfo}
+import types/user.{type UserInfo, UserId, UserInfo}
 import wrap/api.{type ApiError}
 
 pub fn login_proc(

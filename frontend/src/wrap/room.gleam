@@ -67,7 +67,8 @@ pub fn get_rooms(
 }
 
 fn rooms_decoder() -> decode.Decoder(List(RoomInfo)) {
-  decode.field("items", decode.list(room_decoder()))
+  use rooms <- decode.field("items", decode.list(room_decoder()))
+  decode.success(rooms)
 }
 
 fn room_decoder() -> decode.Decoder(RoomInfo) {
@@ -75,7 +76,7 @@ fn room_decoder() -> decode.Decoder(RoomInfo) {
   use name <- decode.field("name", decode.string)
   use category_id <- decode.field(
     "category",
-    decode.field("id", decode.int),
+    category_id_decoder(),
   )
   use work_style <- decode.field("workStyle", decode.string)
   use max_members <- decode.field("maxMembers", decode.int)
@@ -90,6 +91,11 @@ fn room_decoder() -> decode.Decoder(RoomInfo) {
     max_number_of_member: max_members,
     room_id: RoomId(id),
   ))
+}
+
+fn category_id_decoder() -> decode.Decoder(Int) {
+  use id <- decode.field("id", decode.int)
+  decode.success(id)
 }
 
 fn room_id_decoder() -> decode.Decoder(RoomId) {
