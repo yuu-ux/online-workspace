@@ -7,16 +7,30 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 
 /**
  * API向けの認証・認可とCSRF保護を構成する。
  */
 @Configuration
 public class ApiSecurityConfig {
+
+	@Bean
+	AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+		return configuration.getAuthenticationManager();
+	}
+
+	@Bean
+	SecurityContextRepository securityContextRepository() {
+		return new HttpSessionSecurityContextRepository();
+	}
 
 	/**
 	 * API用のSecurityFilterChainを生成する。
@@ -33,7 +47,8 @@ public class ApiSecurityConfig {
 		ApiErrorWriter apiErrorWriter,
 		@Value("${app.security.api-key.value:}") String apiKey,
 		@Value("${app.security.api-key.principal:}") String apiKeyPrincipal,
-		@Value("${app.security.rate-limit.requests-per-minute:60}") int requestsPerMinute
+		@Value("${app.security.rate-limit.requests-per-minute:60}") int requestsPerMinute,
+		SecurityContextRepository securityContextRepository
 	) throws Exception {
 		ApiKeyAuthenticationFilter apiKeyAuthenticationFilter =
 			new ApiKeyAuthenticationFilter(apiKey, apiKeyPrincipal, apiErrorWriter);
@@ -48,6 +63,9 @@ public class ApiSecurityConfig {
 
 		http
 			.securityMatcher("/api/v1/**")
+			.securityContext(context -> context
+				.securityContextRepository(securityContextRepository)
+			)
 			.csrf(csrf -> csrf
 				.csrfTokenRepository(csrfTokenRepository)
 				.csrfTokenRequestHandler(csrfRequestHandler)

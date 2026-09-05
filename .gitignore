@@ -43,6 +43,17 @@ frontend/.vite/
 frontend/*.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
+!frontend/.lustre/
+frontend/.lustre/*
+!frontend/.lustre/.gitkeep
+
+# Docker volume mountpoints
+!frontend/build/
+frontend/build/*
+!frontend/build/.gitkeep
+!frontend/node_modules/
+frontend/node_modules/*
+!frontend/node_modules/.gitkeep
 
 ### Local TLS ###
 docker/nginx/certs/

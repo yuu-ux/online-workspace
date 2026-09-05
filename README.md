@@ -2,8 +2,8 @@
 
 オンラインで他のユーザーと一緒に作業できるWebアプリケーションです。
 
-最終版の要件に基づき、React + Spring Boot + MyBatis + PostgreSQLで開発しています。
-旧MVPのThymeleaf実装は削除し、画面を返すMVC Controllerは置かず、Reactから利用するREST APIを実装します。
+最終版の要件に基づき、Gleam + Spring Boot + MyBatis + PostgreSQLで開発しています。
+旧MVPのThymeleaf実装は削除し、画面を返すMVC Controllerは置かず、Gleamから利用するREST APIを実装します。
 
 仕様は以下のドキュメントを参照してください。
 
@@ -15,7 +15,7 @@
 
 ## 技術スタック
 
-- Frontend: React / React Router / Tailwind CSS
+- Frontend: gleam / lustre / Tailwind CSS
 - Backend: Spring Boot / Spring Security / MyBatis / Bean Validation / WebSocket
 - Database: PostgreSQL / Flyway
 
@@ -44,13 +44,6 @@ controllers/
 docker compose up
 ```
 
-ホストの UID/GID が `1000:1000` 以外の Linux 環境では、bind mount
-への書き込み権限を合わせて起動します。
-
-```bash
-HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up
-```
-
 起動後のURL:
 
 - Proxy: https://localhost:8443（自己署名証明書）
@@ -62,7 +55,7 @@ HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up
 コンテナ構成:
 
 - `proxy`: 開発用 nginx reverse proxy
-- `frontend`: Vite React dev server
+- `frontend`: Vite gleam dev server
 - `backend`: Spring Boot dev server
 - `db`: PostgreSQL 16
 - `maildev`: 開発用メール確認サーバー
@@ -124,7 +117,7 @@ Grafana の匿名アクセスは無効です。Prometheus データソースと
 
 ## フロントエンド開発方針
 
-本番環境では nginx がビルド済みの React 静的ファイルを配信します。React 用の常駐アプリケーションサーバーは立てません。
+本番環境では nginx がビルド済みの gleam 静的ファイルを配信します。gleam 用の常駐アプリケーションサーバーは立てません。
 
 ```text
 Browser -> nginx
@@ -138,7 +131,7 @@ Browser -> nginx
 ```text
 Browser -> proxy container
   ├─ /        -> frontend container
-  │              ├─ React 開発用ファイル配信
+  │              ├─ gleam 開発用ファイル配信
   │              └─ HMR
   ├─ /api/*   -> backend container
   └─ /ws      -> backend container
@@ -147,7 +140,7 @@ Browser -> proxy container
 React のビルドは Node.js 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
 
 ```text
-React source -> npm run build -> dist/ -> nginx
+gleam source -> npm run build -> dist/ -> nginx
 ```
 
 ## テスト
