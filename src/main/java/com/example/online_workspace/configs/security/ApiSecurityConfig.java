@@ -1,6 +1,7 @@
 package com.example.online_workspace.configs.security;
 
 import com.example.online_workspace.exceptions.ApiErrorWriter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,10 +38,20 @@ public class ApiSecurityConfig {
 	public SecurityFilterChain apiSecurityFilterChain(
 		HttpSecurity http,
 		ApiErrorWriter apiErrorWriter,
-		SecurityContextRepository securityContextRepository
+		SecurityContextRepository securityContextRepository,
+		@Value("${app.security.api-key.value:}") String apiKey,
+		@Value("${app.security.api-key.principal:}") String apiKeyPrincipal,
+		@Value("${app.security.rate-limit.requests-per-minute:60}") int requestsPerMinute
 	) throws Exception {
+		ApiKeyAuthenticationFilter apiKeyAuthenticationFilter =
+			new ApiKeyAuthenticationFilter(apiKey, apiKeyPrincipal, apiErrorWriter);
+		ApiRateLimitFilter apiRateLimitFilter = new ApiRateLimitFilter(requestsPerMinute, apiErrorWriter);
 		CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 		csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
+		csrfTokenRepository.setCookieCustomizer(cookie -> cookie
+			.secure(true)
+			.sameSite("Lax")
+		);
 		CsrfTokenRequestAttributeHandler csrfRequestHandler = new CsrfTokenRequestAttributeHandler();
 
 		http
@@ -48,6 +59,7 @@ public class ApiSecurityConfig {
 			.csrf(csrf -> csrf
 				.csrfTokenRepository(csrfTokenRepository)
 				.csrfTokenRequestHandler(csrfRequestHandler)
+				.ignoringRequestMatchers(apiKeyAuthenticationFilter::hasValidApiKey)
 			)
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(
@@ -77,7 +89,9 @@ public class ApiSecurityConfig {
 					"この操作を行う権限がありません。"
 				))
 			)
-			.addFilterBefore(new SecurityAuditFilter("api"), CsrfFilter.class);
+			.addFilterBefore(new SecurityAuditFilter("api"), CsrfFilter.class)
+			.addFilterBefore(apiKeyAuthenticationFilter, CsrfFilter.class)
+			.addFilterAfter(apiRateLimitFilter, ApiKeyAuthenticationFilter.class);
 
 		return http.build();
 	}

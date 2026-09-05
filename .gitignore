@@ -44,6 +44,9 @@ frontend/*.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
 
+### Local TLS ###
+docker/nginx/certs/
+
 ### Codex worktrees ###
 .codex/worktrees/
 
