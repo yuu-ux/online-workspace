@@ -6,7 +6,7 @@ info:
     Online Workspace のフロントエンドと Spring Boot サーバー間の REST API 契約。
     日時は RFC 3339、ID は 64 bit integer、JSON の property 名は lowerCamelCase とする。
 
-    ブラウザ向け API は `SESSION` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
+    ブラウザ向け API は `JSESSIONID` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
     `XSRF-TOKEN` cookieを発行し、その値を状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
 
     API key 認証と rate limit の採点対象は、ルーム一覧、作成、詳細、更新、削除の5 operation とする。
@@ -80,7 +80,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
         '200':
-          description: ログインしたユーザー。`SESSION` cookie を設定する
+          description: ログインしたユーザー。`JSESSIONID` cookie を設定する
           headers:
             Set-Cookie:
               schema:
@@ -730,7 +730,7 @@ components:
     sessionAuth:
       type: apiKey
       in: cookie
-      name: SESSION
+      name: JSESSIONID
       description: Spring Security の server-side session cookie
     csrfToken:
       type: apiKey
@@ -900,6 +900,7 @@ components:
           type: string
           format: email
           maxLength: 255
+          description: 前後の空白を除去し、小文字化して照合する
         password:
           type: string
           format: password

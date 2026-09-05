@@ -31,7 +31,7 @@ X-Content-Type-Options、X-Frame-Optionsを付与する。WebSocketのUpgradeは
 
 - React、REST API、WebSocketは同一オリジンのNginx proxy経由で利用し、クロスオリジン通信は許可しない。
 - ブラウザは`GET /api/v1/auth/csrf`で`XSRF-TOKEN` Cookieを取得し、状態変更リクエストで同じ値を`X-CSRF-TOKEN`ヘッダーへ設定する。
-- `SESSION` Cookieは`Secure`、`HttpOnly`、`SameSite=Lax`とする。
+- `JSESSIONID` Cookieは`Secure`、`HttpOnly`、`SameSite=Lax`とする。
 - `XSRF-TOKEN` CookieはReactから読むため`HttpOnly`を付けず、`Secure`、`SameSite=Lax`とする。
 - Nginxが付ける`X-Forwarded-*`はSpring Bootで解釈し、外部URLとCookieのHTTPS属性を維持する。
 
