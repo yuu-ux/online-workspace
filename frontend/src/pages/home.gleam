@@ -34,7 +34,7 @@ import types/room.{
 } as room_t
 
 import wrap/room.{get_rooms}
-import wrap/session.{logout_proc}
+import wrap/session as session_api
 import wrap/api.{type ApiError, ApiError}
 import components/rooms.{room_list_view}
 
@@ -76,7 +76,7 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
-    ToLogout -> #(model, logout_proc(LogoutCompleted))
+    ToLogout -> #(model, session_api.logout_proc(LogoutCompleted))
     RoomsLoaded(Ok(rooms)) ->
       #(Model(..model, rooms: rooms, messages: []), effect.none())
     RoomsLoaded(Error(ApiError(message))) ->

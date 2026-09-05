@@ -67,7 +67,8 @@ pub fn get_rooms(
 }
 
 fn rooms_decoder() -> decode.Decoder(List(RoomInfo)) {
-  decode.field("items", decode.list(room_decoder()))
+  use rooms <- decode.field("items", decode.list(room_decoder()))
+  decode.success(rooms)
 }
 
 fn room_decoder() -> decode.Decoder(RoomInfo) {
@@ -75,7 +76,7 @@ fn room_decoder() -> decode.Decoder(RoomInfo) {
   use name <- decode.field("name", decode.string)
   use category_id <- decode.field(
     "category",
-    decode.field("id", decode.int),
+    category_id_decoder(),
   )
   use work_style <- decode.field("workStyle", decode.string)
   use max_members <- decode.field("maxMembers", decode.int)
@@ -90,6 +91,11 @@ fn room_decoder() -> decode.Decoder(RoomInfo) {
     max_number_of_member: max_members,
     room_id: RoomId(id),
   ))
+}
+
+fn category_id_decoder() -> decode.Decoder(Int) {
+  use id <- decode.field("id", decode.int)
+  decode.success(id)
 }
 
 fn room_id_decoder() -> decode.Decoder(RoomId) {
@@ -147,7 +153,7 @@ fn do_connect(url: String, dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
-fn do_send(message: String) -> Nil
+fn do_send(message: String) -> Bool
 
 @external(javascript, "./../ffi/ws.js", "close_ws")
 pub fn close_ws() -> Nil
@@ -170,18 +176,19 @@ pub fn room_send_msg_proc(
   send_msg: String
 ) -> Result(Nil, RoomErr) {
   // TODO SERVER API
-  Ok(
-    do_send(
-      chat_to_json(
-        Chat(
-          msg_type: "msg",
-          room_id: room_id,
-          user: user_name,
-          message: send_msg
-        )
-      )
+  let message = chat_to_json(
+    Chat(
+      msg_type: "msg",
+      room_id: room_id,
+      user: user_name,
+      message: send_msg
     )
   )
+
+  case do_send(message) {
+    True -> Ok(Nil)
+    False -> Error(RoomDummyError)
+  }
 }
 
 // TODO テストデータ用構造体
