@@ -1,10 +1,13 @@
 package com.example.online_workspace.configs.security;
 
 import com.example.online_workspace.exceptions.ApiErrorWriter;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -80,5 +83,18 @@ public class ApiSecurityConfig {
 	@Bean
 	public SessionAuthenticationStrategy sessionAuthenticationStrategy() {
 		return new ChangeSessionIdAuthenticationStrategy();
+	}
+
+	/**
+	 * API認証で発生する成功・失敗イベントの発行元を構成する。
+	 *
+	 * @param applicationEventPublisher Springのアプリケーションイベント発行元
+	 * @return Spring Securityの認証イベント発行元
+	 */
+	@Bean
+	public AuthenticationEventPublisher authenticationEventPublisher(
+		ApplicationEventPublisher applicationEventPublisher
+	) {
+		return new DefaultAuthenticationEventPublisher(applicationEventPublisher);
 	}
 }

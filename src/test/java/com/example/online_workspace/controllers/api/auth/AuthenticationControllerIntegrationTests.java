@@ -3,6 +3,7 @@ package com.example.online_workspace.controllers.api.auth;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -11,14 +12,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import java.util.UUID;
 
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -26,6 +32,8 @@ import org.springframework.test.web.servlet.MvcResult;
 @SpringBootTest
 @AutoConfigureMockMvc
 class AuthenticationControllerIntegrationTests {
+
+	private static final String SECURITY_AUDIT_LOGGER = "SECURITY_AUDIT";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -57,6 +65,75 @@ class AuthenticationControllerIntegrationTests {
 		performLogin(" " + email.toUpperCase() + " ", "password-123")
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.email").value(email));
+	}
+
+	@DisplayName("ログイン後の保護APIは認証ユーザーのメールアドレスで利用できる")
+	@Test
+	void loggedInSessionUsesEmailAsAuthenticationName() throws Exception {
+		String email = uniqueEmail();
+		register(email, "password-123");
+		MvcResult login = performLogin(email, "password-123")
+			.andExpect(status().isOk())
+			.andReturn();
+
+		mockMvc.perform(get("/api/v1/rooms")
+				.session((MockHttpSession) login.getRequest().getSession(false)))
+			.andExpect(status().isOk());
+	}
+
+	@DisplayName("ログイン成功はSECURITY_AUDITへ記録される")
+	@Test
+	void successfulLoginIsWrittenToSecurityAuditLog() throws Exception {
+		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
+		String email = uniqueEmail();
+		String password = "password-123";
+		try {
+			register(email, password);
+			performLogin(email, password)
+				.andExpect(status().isOk());
+
+			assertTrue(hasAuditMessage(appender, "event=authentication outcome=success"));
+			assertTrue(hasNoAuditMessageContaining(appender, email));
+			assertTrue(hasNoAuditMessageContaining(appender, password));
+		} finally {
+			detachSecurityAuditAppender(appender);
+		}
+	}
+
+	@DisplayName("ログイン失敗はSECURITY_AUDITへ記録される")
+	@Test
+	void failedLoginIsWrittenToSecurityAuditLog() throws Exception {
+		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
+		try {
+			performLogin(uniqueEmail(), "wrong-password")
+				.andExpect(status().isUnauthorized());
+
+			assertTrue(hasAuditMessage(appender, "event=authentication outcome=denied"));
+		} finally {
+			detachSecurityAuditAppender(appender);
+		}
+	}
+
+	@DisplayName("レート制限中のログイン試行はSECURITY_AUDITへ記録される")
+	@Test
+	void rateLimitedLoginIsWrittenToSecurityAuditLog() throws Exception {
+		String email = uniqueEmail();
+		register(email, "password-123");
+		for (int attempt = 1; attempt <= 5; attempt++) {
+			performLogin(email, "wrong-password")
+				.andExpect(status().isUnauthorized());
+		}
+
+		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
+		try {
+			performLogin(email, "wrong-password")
+				.andExpect(status().isTooManyRequests());
+
+			assertTrue(hasAuditMessage(appender, "event=authentication outcome=denied reason=rate_limit"));
+			assertTrue(hasAuditMessage(appender, "retryAfterSeconds=900"));
+		} finally {
+			detachSecurityAuditAppender(appender);
+		}
 	}
 
 	@DisplayName("認証情報が不正なログインは401を返す")
@@ -91,6 +168,7 @@ class AuthenticationControllerIntegrationTests {
 
 		performLogin(email, "wrong-password")
 			.andExpect(status().isTooManyRequests())
+			.andExpect(content().contentTypeCompatibleWith(APPLICATION_PROBLEM_JSON))
 			.andExpect(header().string("Retry-After", "900"))
 			.andExpect(jsonPath("$.code").value("TOO_MANY_REQUESTS"));
 	}
@@ -181,6 +259,28 @@ class AuthenticationControllerIntegrationTests {
 			.andExpect(cookie().maxAge("JSESSIONID", 0));
 
 		assertTrue(session.isInvalid());
+	}
+
+	@DisplayName("ログアウト成功はSECURITY_AUDITへ記録される")
+	@Test
+	void successfulLogoutIsWrittenToSecurityAuditLog() throws Exception {
+		String email = uniqueEmail();
+		register(email, "password-123");
+		MvcResult login = performLogin(email, "password-123")
+			.andExpect(status().isOk())
+			.andReturn();
+		MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
+		assertNotNull(session);
+
+		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
+		try {
+			performLogout(session)
+				.andExpect(status().isNoContent());
+
+			assertTrue(hasAuditMessage(appender, "event=logout outcome=success"));
+		} finally {
+			detachSecurityAuditAppender(appender);
+		}
 	}
 
 	@DisplayName("ログアウトAPIはCSRFトークンなしでは403を返す")
@@ -282,5 +382,29 @@ class AuthenticationControllerIntegrationTests {
 
 	private String uniqueEmail() {
 		return "login-" + UUID.randomUUID() + "@example.com";
+	}
+
+	private ListAppender<ILoggingEvent> attachSecurityAuditAppender() {
+		Logger logger = (Logger) LoggerFactory.getLogger(SECURITY_AUDIT_LOGGER);
+		ListAppender<ILoggingEvent> appender = new ListAppender<>();
+		appender.start();
+		logger.addAppender(appender);
+		return appender;
+	}
+
+	private void detachSecurityAuditAppender(ListAppender<ILoggingEvent> appender) {
+		Logger logger = (Logger) LoggerFactory.getLogger(SECURITY_AUDIT_LOGGER);
+		logger.detachAppender(appender);
+		appender.stop();
+	}
+
+	private boolean hasAuditMessage(ListAppender<ILoggingEvent> appender, String messagePart) {
+		return appender.list.stream()
+			.anyMatch(event -> event.getFormattedMessage().contains(messagePart));
+	}
+
+	private boolean hasNoAuditMessageContaining(ListAppender<ILoggingEvent> appender, String value) {
+		return appender.list.stream()
+			.noneMatch(event -> event.getFormattedMessage().contains(value));
 	}
 }

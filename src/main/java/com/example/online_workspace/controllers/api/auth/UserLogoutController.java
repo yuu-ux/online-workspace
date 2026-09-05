@@ -2,7 +2,9 @@ package com.example.online_workspace.controllers.api.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.event.LogoutSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.CompositeLogoutHandler;
 import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
@@ -24,6 +26,11 @@ public class UserLogoutController {
 		new SecurityContextLogoutHandler(),
 		new CookieClearingLogoutHandler("JSESSIONID")
 	);
+	private final ApplicationEventPublisher applicationEventPublisher;
+
+	public UserLogoutController(ApplicationEventPublisher applicationEventPublisher) {
+		this.applicationEventPublisher = applicationEventPublisher;
+	}
 
 	/**
 	 * サーバー側セッションを無効化してログアウトする。
@@ -40,5 +47,6 @@ public class UserLogoutController {
 		Authentication authentication
 	) {
 		logoutHandler.logout(request, response, authentication);
+		applicationEventPublisher.publishEvent(new LogoutSuccessEvent(authentication));
 	}
 }

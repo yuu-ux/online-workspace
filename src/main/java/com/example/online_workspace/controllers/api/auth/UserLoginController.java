@@ -1,9 +1,11 @@
 package com.example.online_workspace.controllers.api.auth;
 
+import com.example.online_workspace.events.security.LoginRateLimitExceededEvent;
 import com.example.online_workspace.exceptions.InvalidLoginCredentialsException;
 import com.example.online_workspace.exceptions.TooManyLoginAttemptsException;
 import com.example.online_workspace.forms.auth.UserLoginForm;
 import com.example.online_workspace.models.users.AuthenticatedUser;
+import com.example.online_workspace.models.users.AuthenticatedUserPrincipal;
 import com.example.online_workspace.models.users.UserAuthentication;
 import com.example.online_workspace.services.auth.LoginRateLimiter;
 import com.example.online_workspace.services.auth.UserLoginService;
@@ -11,6 +13,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -33,17 +38,23 @@ public class UserLoginController {
 	private final LoginRateLimiter loginRateLimiter;
 	private final SecurityContextRepository securityContextRepository;
 	private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
+	private final AuthenticationEventPublisher authenticationEventPublisher;
+	private final ApplicationEventPublisher applicationEventPublisher;
 
 	public UserLoginController(
 		UserLoginService userLoginService,
 		LoginRateLimiter loginRateLimiter,
 		SecurityContextRepository securityContextRepository,
-		SessionAuthenticationStrategy sessionAuthenticationStrategy
+		SessionAuthenticationStrategy sessionAuthenticationStrategy,
+		AuthenticationEventPublisher authenticationEventPublisher,
+		ApplicationEventPublisher applicationEventPublisher
 	) {
 		this.userLoginService = userLoginService;
 		this.loginRateLimiter = loginRateLimiter;
 		this.securityContextRepository = securityContextRepository;
 		this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
+		this.authenticationEventPublisher = authenticationEventPublisher;
+		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
 	/**
@@ -63,21 +74,32 @@ public class UserLoginController {
 		String email = form.email();
 		String clientAddress = clientAddress(request);
 		if (loginRateLimiter.isBlocked(email, clientAddress)) {
+			applicationEventPublisher.publishEvent(
+				new LoginRateLimitExceededEvent(LoginRateLimiter.BLOCK_DURATION_SECONDS)
+			);
 			throw new TooManyLoginAttemptsException(LoginRateLimiter.BLOCK_DURATION_SECONDS);
 		}
 
 		UserAuthentication user;
+		Authentication attemptedAuthentication = UsernamePasswordAuthenticationToken.unauthenticated(
+			email,
+			null
+		);
 		try {
 			user = userLoginService.authenticate(email, form.password());
 		} catch (InvalidLoginCredentialsException exception) {
 			loginRateLimiter.recordFailure(email, clientAddress);
+			authenticationEventPublisher.publishAuthenticationFailure(
+				new BadCredentialsException("Invalid login credentials"),
+				attemptedAuthentication
+			);
 			throw exception;
 		}
 
 		loginRateLimiter.reset(email, clientAddress);
 		AuthenticatedUser authenticatedUser = user.toAuthenticatedUser();
 		Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(
-			authenticatedUser,
+			new AuthenticatedUserPrincipal(authenticatedUser),
 			null,
 			List.of()
 		);
@@ -87,6 +109,7 @@ public class UserLoginController {
 		context.setAuthentication(authentication);
 		SecurityContextHolder.setContext(context);
 		securityContextRepository.saveContext(context, request, response);
+		authenticationEventPublisher.publishAuthenticationSuccess(authentication);
 		return authenticatedUser;
 	}
 
