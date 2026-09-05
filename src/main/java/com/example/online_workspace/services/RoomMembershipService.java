@@ -1,6 +1,7 @@
 package com.example.online_workspace.services;
 
 import java.time.Instant;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -9,15 +10,41 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.online_workspace.models.RoomMember;
 import com.example.online_workspace.repositories.RoomMembershipRepository;
+import com.example.online_workspace.repositories.RoomMembershipRepository.ActiveMember;
 import com.example.online_workspace.repositories.RoomMembershipRepository.JoinPolicy;
 
 @Service
 public class RoomMembershipService {
 
 	private final RoomMembershipRepository repository;
+	private final OnlinePresenceService presence;
 
-	public RoomMembershipService(RoomMembershipRepository repository) {
+	public RoomMembershipService(
+		RoomMembershipRepository repository,
+		OnlinePresenceService presence
+	) {
 		this.repository = repository;
+		this.presence = presence;
+	}
+
+	@Transactional(readOnly = true)
+	public List<OnlineRoomMember> list(long roomId, String userEmail) {
+		if (roomId <= 0 || !repository.roomExists(roomId)) {
+			throw notFound("Room not found");
+		}
+		if (userEmail == null || userEmail.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+		}
+		if (!repository.isActiveMember(roomId, userEmail)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Room membership required");
+		}
+		return repository.findActiveMembers(roomId).stream()
+			.map(this::withPresence)
+			.toList();
+	}
+
+	public boolean isOnline(String userEmail) {
+		return presence.isOnline(userEmail);
 	}
 
 	@Transactional
@@ -60,6 +87,19 @@ public class RoomMembershipService {
 		return member;
 	}
 
+	private OnlineRoomMember withPresence(ActiveMember member) {
+		return new OnlineRoomMember(
+			new RoomMember(
+				member.membershipId(),
+				member.userId(),
+				member.userName(),
+				member.iconUrl(),
+				member.joinedAt()
+			),
+			presence.isOnline(member.email())
+		);
+	}
+
 	private long requireUserId(String email) {
 		if (email == null || email.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
@@ -91,6 +131,9 @@ public class RoomMembershipService {
 
 	private ResponseStatusException conflict(String reason) {
 		return new ResponseStatusException(HttpStatus.CONFLICT, reason);
+	}
+
+	public record OnlineRoomMember(RoomMember member, boolean online) {
 	}
 
 }
