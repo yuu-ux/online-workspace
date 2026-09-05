@@ -1,6 +1,8 @@
 package com.example.online_workspace.repositories.users;
 
 import com.example.online_workspace.models.users.UserAccount;
+import com.example.online_workspace.models.users.AuthenticatedUser;
+import java.util.Optional;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -20,6 +22,19 @@ public interface UserRepository {
 	 */
 	@Select("SELECT EXISTS (SELECT 1 FROM users WHERE email = #{email})")
 	boolean existsByEmail(@Param("email") String email);
+
+	@Select("""
+		SELECT users.id,
+		       users.name,
+		       users.email,
+		       account_statuses.code AS account_status,
+		       users.suspended_until
+		FROM users
+		INNER JOIN account_statuses ON account_statuses.id = users.account_status_id
+		WHERE users.email = #{email}
+		  AND users.deleted_at IS NULL
+		""")
+	Optional<AuthenticatedUser> findAuthenticatedByEmail(@Param("email") String email);
 
 	/**
 	 * ユーザーの認証情報を登録する。

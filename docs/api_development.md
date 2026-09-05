@@ -1,6 +1,6 @@
 # API 契約の更新手順
 
-`docs/openapi.yaml` を Gleam と Spring Boot の API 契約の正とする。API の実装を変更する Issue では、実装と同じ PR で OpenAPI も更新する。
+`docs/openapi.yaml` を React と Spring Boot の API 契約の正とする。API の実装を変更する Issue では、実装と同じ PR で OpenAPI も更新する。
 
 ## 更新が必要な変更
 
@@ -16,7 +16,7 @@ WebSocket のイベント契約は `docs/websocket_events.md` で管理する。
 
 1. 対象 Issue の受入条件を確認し、先に `docs/openapi.yaml` の operation と schema を更新する。
 2. Spring Boot の Controller、DTO、validation、security を契約に合わせて実装する。
-3. Gleam の型または API client を OpenAPI に合わせて更新し、画面実装を更新する。
+3. React の型または API client を OpenAPI から再生成し、画面実装を更新する。
 4. 正常系に加え、400、401、403、404、409、422、429、500 など対象 operation の異常系をテストする。
 5. 次の lint を実行し、error がないことを確認する。
 
@@ -26,10 +26,16 @@ npx --yes @redocly/cli@2.43.2 lint online-workspace@v1
 
 同じ lint は `OpenAPI lint` GitHub Actions でも実行される。
 
+フロントエンドで利用できる TypeScript 型は次のコマンドで `build/generated/openapi.d.ts` に生成できる。React 基盤の導入後は、生成先をフロントエンドの API client 配下へ変更する。
+
+```bash
+npx --yes openapi-typescript@7.13.0
+```
+
 ## 認証とrate limit
 
-- Gleam クライアントは最初に `GET /api/v1/auth/csrf` を呼び、発行された `XSRF-TOKEN` cookieの値をsession認証の状態変更リクエストで `X-CSRF-TOKEN` headerへ設定する。
-- APIはSPA向けのCSRF request handlerを使用する。Gleam クライアントやSwagger UIは `XSRF-TOKEN` cookieの値を `X-CSRF-TOKEN` headerへ設定する。
+- Reactは最初に `GET /api/v1/auth/csrf` を呼び、発行された `XSRF-TOKEN` cookieの値をsession認証の状態変更リクエストで `X-CSRF-TOKEN` headerへ設定する。
+- APIはSPA向けのCSRF request handlerを使用する。ReactやSwagger UIは `XSRF-TOKEN` cookieの値を `X-CSRF-TOKEN` headerへ設定する。
 - API keyの採点対象は `GET /rooms`、`POST /rooms`、`GET /rooms/{roomId}`、`PUT /rooms/{roomId}`、`DELETE /rooms/{roomId}` の5 operationとする。
 - 採点対象5 operationはsession認証またはAPI key認証を受け付ける。API keyはユーザーまたはservice principalへ紐付け、同じ認可ルールを適用する。
 - 採点対象5 operationにはkey単位のrate limitを適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。

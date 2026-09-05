@@ -6,15 +6,29 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 
 /**
  * API向けの認証・認可とCSRF保護を構成する。
  */
 @Configuration
 public class ApiSecurityConfig {
+
+	@Bean
+	AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+		return configuration.getAuthenticationManager();
+	}
+
+	@Bean
+	SecurityContextRepository securityContextRepository() {
+		return new HttpSessionSecurityContextRepository();
+	}
 
 	/**
 	 * API用のSecurityFilterChainを生成する。
@@ -28,7 +42,8 @@ public class ApiSecurityConfig {
 	@Order(1)
 	public SecurityFilterChain apiSecurityFilterChain(
 		HttpSecurity http,
-		ApiErrorWriter apiErrorWriter
+		ApiErrorWriter apiErrorWriter,
+		SecurityContextRepository securityContextRepository
 	) throws Exception {
 		CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 		csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
@@ -36,6 +51,9 @@ public class ApiSecurityConfig {
 
 		http
 			.securityMatcher("/api/v1/**")
+			.securityContext(context -> context
+				.securityContextRepository(securityContextRepository)
+			)
 			.csrf(csrf -> csrf
 				.csrfTokenRepository(csrfTokenRepository)
 				.csrfTokenRequestHandler(csrfRequestHandler)

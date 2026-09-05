@@ -1,6 +1,7 @@
 import lustre/effect
 import gleam/dynamic/decode
 import gleam/json
+import gleam/result
 import types/room.{
   type CategoryType,
   type WorkStyleType,
@@ -25,43 +26,104 @@ import types/room.{
 
 import types/user.{type UserId}
 import types/session.{type Session,type Token, Guest, Authenticated}
-
-pub type CreateRoomErr {
-  DummyError
-}
+import wrap/api.{type ApiError}
 
 pub fn create_room(
   roomname: RoomNameType,
   description: DescriptionType,
-  category_type: Result(CategoryType, Nil),
-  workstyle_type: Result(WorkStyleType, Nil),
-  visibility: Result(VisibilityType, Nil),
-  max_number_of_member: Result(Int, Nil)
-) -> Result(RoomId, CreateRoomErr) {
-  // TODO SERVER API
-  Ok(RoomId(0)) // example room id
+  category_type: CategoryType,
+  workstyle_type: WorkStyleType,
+  max_number_of_member: Int,
+  to_msg: fn(Result(RoomId, ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  let RoomNameType(name) = roomname
+  let DescriptionType(description) = description
+  api.json_request(
+    "POST",
+    "/api/v1/rooms",
+    json.object([
+      #("name", json.string(name)),
+      #("description", json.string(description)),
+      #("categoryId", json.int(category_id(category_type))),
+      #("workStyle", json.string(work_style_code(workstyle_type))),
+      #("maxMembers", json.int(max_number_of_member)),
+    ])
+    |> json.to_string,
+    room_id_decoder(),
+    to_msg,
+  )
 }
 
-pub fn get_rooms(jwt: Token, user_id: UserId) -> List(RoomInfo) {
-  [
-    RoomInfo(
-      roomname: RoomNameType("Room1"),
-      visibility: Public,
-      category: Cat1,
-      work_style: Quiet,
-      max_number_of_member: 10,
-      room_id: RoomId(1)
-    ),
+pub fn get_rooms(
+  to_msg: fn(Result(List(RoomInfo), ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.json_request(
+    "GET",
+    "/api/v1/rooms",
+    "",
+    rooms_decoder(),
+    to_msg,
+  )
+}
 
-    RoomInfo(
-      roomname: RoomNameType("Room2"),
-      visibility: Friend,
-      category: Cat2,
-      work_style: CasualChat,
-      max_number_of_member: 12,
-      room_id: RoomId(2)
-    ),
-  ]
+fn rooms_decoder() -> decode.Decoder(List(RoomInfo)) {
+  use rooms <- decode.field("items", decode.list(room_decoder()))
+  decode.success(rooms)
+}
+
+fn room_decoder() -> decode.Decoder(RoomInfo) {
+  use id <- decode.field("id", decode.int)
+  use name <- decode.field("name", decode.string)
+  use category_id <- decode.field(
+    "category",
+    category_id_decoder(),
+  )
+  use work_style <- decode.field("workStyle", decode.string)
+  use max_members <- decode.field("maxMembers", decode.int)
+  decode.success(RoomInfo(
+    roomname: RoomNameType(name),
+    visibility: Public,
+    category: category_from_id(category_id),
+    work_style: case work_style {
+      "CHAT_OK" -> CasualChat
+      _ -> Quiet
+    },
+    max_number_of_member: max_members,
+    room_id: RoomId(id),
+  ))
+}
+
+fn category_id_decoder() -> decode.Decoder(Int) {
+  use id <- decode.field("id", decode.int)
+  decode.success(id)
+}
+
+fn room_id_decoder() -> decode.Decoder(RoomId) {
+  use id <- decode.field("id", decode.int)
+  decode.success(RoomId(id))
+}
+
+fn category_id(category: CategoryType) -> Int {
+  case category {
+    Cat1 -> 1
+    Cat2 -> 2
+    Cat3 -> 3
+  }
+}
+
+fn category_from_id(id: Int) -> CategoryType {
+  case id {
+    1 -> Cat1
+    2 -> Cat2
+    _ -> Cat3
+  }
+}
+
+fn work_style_code(work_style: WorkStyleType) -> String {
+  case work_style {
+    CasualChat -> "CHAT_OK"
+    Quiet -> "FOCUS"
+  }
 }
 
 pub type RoomErr {
@@ -91,7 +153,7 @@ fn do_connect(url: String, dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
-fn do_send(message: String) -> Nil
+fn do_send(message: String) -> Bool
 
 @external(javascript, "./../ffi/ws.js", "close_ws")
 pub fn close_ws() -> Nil
@@ -114,18 +176,19 @@ pub fn room_send_msg_proc(
   send_msg: String
 ) -> Result(Nil, RoomErr) {
   // TODO SERVER API
-  Ok(
-    do_send(
-      chat_to_json(
-        Chat(
-          msg_type: "msg",
-          room_id: room_id,
-          user: user_name,
-          message: send_msg
-        )
-      )
+  let message = chat_to_json(
+    Chat(
+      msg_type: "msg",
+      room_id: room_id,
+      user: user_name,
+      message: send_msg
     )
   )
+
+  case do_send(message) {
+    True -> Ok(Nil)
+    False -> Error(RoomDummyError)
+  }
 }
 
 // TODO テストデータ用構造体
@@ -157,4 +220,3 @@ pub fn chat_from_json(json_string: String) -> Result(Chat, json.DecodeError) {
   }
   json.parse(from: json_string, using: chat_decoder)
 }
-

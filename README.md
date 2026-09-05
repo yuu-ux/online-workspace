@@ -2,8 +2,8 @@
 
 オンラインで他のユーザーと一緒に作業できるWebアプリケーションです。
 
-最終版の要件に基づき、Gleam + Spring Boot + MyBatis + PostgreSQLで開発しています。
-旧MVPのThymeleaf実装は削除し、Gleamから利用するREST APIを中心に実装します。
+最終版の要件に基づき、gleam + Spring Boot + MyBatis + PostgreSQLで開発しています。
+旧MVPのThymeleaf実装は削除し、gleamから利用するREST APIを中心に実装します。
 
 仕様は以下のドキュメントを参照してください。
 
@@ -15,7 +15,7 @@
 
 ## 技術スタック
 
-- Frontend: Gleam / Lustre / Tailwind CSS
+- Frontend: gleam / lustre / Tailwind CSS
 - Backend: Spring Boot / Spring Security / MyBatis / Bean Validation / WebSocket
 - Database: PostgreSQL / Flyway
 
@@ -29,13 +29,6 @@
 docker compose up
 ```
 
-ホストの UID/GID が `1000:1000` 以外の Linux 環境では、bind mount
-への書き込み権限を合わせて起動します。
-
-```bash
-HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up
-```
-
 起動後のURL:
 
 - Proxy: http://localhost:8088
@@ -46,7 +39,7 @@ HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose up
 コンテナ構成:
 
 - `proxy`: 開発用 nginx reverse proxy
-- `frontend`: Lustre development server
+- `frontend`: Vite gleam dev server
 - `backend`: Spring Boot dev server
 - `db`: PostgreSQL 16
 - `maildev`: 開発用メール確認サーバー
@@ -105,7 +98,7 @@ Grafana の匿名アクセスは無効です。Prometheus データソースと
 
 ## フロントエンド開発方針
 
-本番環境では nginx がビルド済みの Gleam 静的ファイルを配信します。Gleam 用の常駐アプリケーションサーバーは立てません。
+本番環境では nginx がビルド済みの gleam 静的ファイルを配信します。gleam 用の常駐アプリケーションサーバーは立てません。
 
 ```text
 Browser -> nginx
@@ -114,21 +107,21 @@ Browser -> nginx
   └─ /ws      -> Spring Boot
 ```
 
-開発時は `proxy` コンテナ経由で `frontend` コンテナの Lustre development server にアクセスします。作業者ごとの Gleam と Node.js のバージョン差を避けるため、開発環境はコンテナ内に用意します。
+開発時は `proxy` コンテナ経由で `frontend` コンテナの Vite dev server にアクセスします。作業者ごとの Node.js バージョン差を避けるため、Node.js 環境はコンテナ内に用意します。
 
 ```text
 Browser -> proxy container
   ├─ /        -> frontend container
-  │              ├─ Gleam 開発用ファイル配信
+  │              ├─ gleam 開発用ファイル配信
   │              └─ HMR
   ├─ /api/*   -> backend container
   └─ /ws      -> backend container
 ```
 
-Gleam のビルドは Node.js 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
+React のビルドは Node.js 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
 
 ```text
-Gleam source -> npm run build -> dist/ -> nginx
+gleam source -> npm run build -> dist/ -> nginx
 ```
 
 ## テスト
@@ -143,6 +136,7 @@ REST API の契約は `docs/openapi.yaml` で管理する。API を変更する 
 
 ```bash
 npx --yes @redocly/cli@2.43.2 lint online-workspace@v1
+npx --yes openapi-typescript@7.13.0
 ```
 
 詳細は [API 契約の更新手順](docs/api_development.md) を参照する。
