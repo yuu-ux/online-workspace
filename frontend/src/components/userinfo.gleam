@@ -54,10 +54,10 @@ pub fn init(session: Session, target_user_info:UserInfo) -> #(Model, effect.Effe
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     BlockOnChecked(s) -> {
-
+      #(Model(..model, is_blocked: s), effect.none())
     }
     FriendOnChecked(s) -> {
-
+      #(Model(..model, is_friend: s), effect.none())
     }
   }
 }
@@ -105,4 +105,3 @@ pub fn view (model: Model) -> element.Element(Msg) {
     }
   }
 }
-

@@ -3,7 +3,6 @@ import lustre/event.{on_click, on_input}
 import lustre/attribute
 import lustre/element
 import lustre/effect
-import gleam/io
 import gleam/list
 
 import lustre/element/html.{button, div, text, input}
@@ -110,8 +109,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         model.room_id,
         model.current_message_input) {
         Ok(_) -> {
-
-          #(model, effect.none())
+          #(Model(..model, current_message_input: ""), effect.none())
         }
         Error(err_type) -> {
           let err_msg = case err_type {
@@ -126,13 +124,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     WsMessageReceived(m) -> {
-      io.println("msg from server"<> m)
-
       case chat_from_json(m) {
-        Ok(chat) -> {
+        Ok(chat) if chat.room_id == model.room_id -> {
           #(Model(..model, chat_list: [chat, ..model.chat_list]), effect.none())
         }
-        Error(e) -> {
+        Ok(_) -> #(model, effect.none())
+        Error(_) -> {
           #(Model(..model, messages: ["レスポンス解析エラー"]), effect.none())
         }
       }
@@ -185,4 +182,3 @@ pub fn view (model: Model) -> element.Element(Msg) {
     }
   }
 }
-

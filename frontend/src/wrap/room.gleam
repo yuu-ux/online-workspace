@@ -147,7 +147,7 @@ fn do_connect(url: String, dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
-fn do_send(message: String) -> Nil
+fn do_send(message: String) -> Bool
 
 @external(javascript, "./../ffi/ws.js", "close_ws")
 pub fn close_ws() -> Nil
@@ -170,18 +170,19 @@ pub fn room_send_msg_proc(
   send_msg: String
 ) -> Result(Nil, RoomErr) {
   // TODO SERVER API
-  Ok(
-    do_send(
-      chat_to_json(
-        Chat(
-          msg_type: "msg",
-          room_id: room_id,
-          user: user_name,
-          message: send_msg
-        )
-      )
+  let message = chat_to_json(
+    Chat(
+      msg_type: "msg",
+      room_id: room_id,
+      user: user_name,
+      message: send_msg
     )
   )
+
+  case do_send(message) {
+    True -> Ok(Nil)
+    False -> Error(RoomDummyError)
+  }
 }
 
 // TODO テストデータ用構造体

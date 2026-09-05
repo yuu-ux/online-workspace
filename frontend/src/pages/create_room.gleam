@@ -1,4 +1,5 @@
 import components/btn
+import components/ui
 import gleam/int
 import lustre/event.{on_click, on_input}
 import lustre/attribute.{class}
@@ -166,8 +167,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
   }
 }
-
-import components/ui
 
 // ---------------------------------------------------------
 // Create Room画面のView
