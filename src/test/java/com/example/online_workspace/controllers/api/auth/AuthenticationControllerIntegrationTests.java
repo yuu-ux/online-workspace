@@ -79,9 +79,11 @@ class AuthenticationControllerIntegrationTests {
 			.andExpect(status().isOk())
 			.andReturn();
 
-		mockMvc.perform(get("/api/v1/rooms")
+		mockMvc.perform(get("/api/v1/auth/session")
 				.session((MockHttpSession) login.getRequest().getSession(false)))
-			.andExpect(status().isOk());
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.authenticated").value(true))
+			.andExpect(jsonPath("$.user.email").value(email));
 	}
 
 	@DisplayName("ログイン成功はSECURITY_AUDITへ記録される")
