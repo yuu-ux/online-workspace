@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
@@ -75,7 +76,8 @@ public class ApiSecurityConfig {
 					"FORBIDDEN",
 					"この操作を行う権限がありません。"
 				))
-			);
+			)
+			.addFilterBefore(new SecurityAuditFilter("api"), CsrfFilter.class);
 
 		return http.build();
 	}
