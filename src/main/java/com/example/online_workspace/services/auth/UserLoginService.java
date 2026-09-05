@@ -3,6 +3,7 @@ package com.example.online_workspace.services.auth;
 import com.example.online_workspace.exceptions.InvalidLoginCredentialsException;
 import com.example.online_workspace.models.users.UserAuthentication;
 import com.example.online_workspace.repositories.users.UserRepository;
+import java.time.Instant;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +35,10 @@ public class UserLoginService {
 		UserAuthentication user = userRepository.findByEmail(email);
 		String passwordHash = user == null ? DUMMY_PASSWORD_HASH : user.passwordHash();
 		boolean passwordMatches = passwordEncoder.matches(password, passwordHash);
-		if (!passwordMatches || user == null || !"ACTIVE".equals(user.accountStatus())) {
+		boolean unavailable = user == null
+			|| !"ACTIVE".equals(user.accountStatus())
+			|| user.suspendedUntil() != null && user.suspendedUntil().isAfter(Instant.now());
+		if (!passwordMatches || unavailable) {
 			throw new InvalidLoginCredentialsException();
 		}
 		return user;

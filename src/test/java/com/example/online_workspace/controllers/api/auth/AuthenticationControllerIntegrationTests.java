@@ -38,6 +38,9 @@ class AuthenticationControllerIntegrationTests {
 	@Autowired
 	private MockMvc mockMvc;
 
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
 	@DisplayName("#16で登録したユーザーがログインでき、サーバーセッションとユーザー情報が返る")
 	@Test
 	void registeredUserCanLoginAndSessionIsCreated() throws Exception {
@@ -151,6 +154,21 @@ class AuthenticationControllerIntegrationTests {
 	@Test
 	void rejectLoginForUnknownEmail() throws Exception {
 		performLogin(uniqueEmail(), "password-123")
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+	}
+
+	@DisplayName("利用中でも停止期限が未来のユーザーはログインできない")
+	@Test
+	void rejectLoginForActiveAccountWithFutureSuspension() throws Exception {
+		String email = uniqueEmail();
+		register(email, "password-123");
+		jdbcTemplate.update(
+			"UPDATE users SET suspended_until = DATEADD('DAY', 1, CURRENT_TIMESTAMP) WHERE email = ?",
+			email
+		);
+
+		performLogin(email, "password-123")
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
 	}
