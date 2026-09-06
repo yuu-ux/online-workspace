@@ -2,11 +2,14 @@ package com.example.online_workspace.configs.security;
 
 import com.example.online_workspace.exceptions.ApiErrorWriter;
 import java.util.List;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
@@ -16,7 +19,6 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.core.session.SessionRegistry;
 
@@ -31,6 +33,7 @@ public class ApiSecurityConfig {
 	 *
 	 * @param http HTTPセキュリティの設定オブジェクト
 	 * @param apiErrorWriter APIエラーレスポンスの出力処理
+	 * @param securityContextRepository セキュリティコンテキストの保存先
 	 * @return API用のSecurityFilterChain
 	 * @throws Exception セキュリティ設定に失敗した場合
 	 */
@@ -98,15 +101,17 @@ public class ApiSecurityConfig {
 	}
 
 	@Bean
-	public SecurityContextRepository securityContextRepository() {
-		return new HttpSessionSecurityContextRepository();
-	}
-
-	@Bean
 	public SessionAuthenticationStrategy sessionAuthenticationStrategy(SessionRegistry sessionRegistry) {
 		return new CompositeSessionAuthenticationStrategy(List.of(
 			new ChangeSessionIdAuthenticationStrategy(),
 			new RegisterSessionAuthenticationStrategy(sessionRegistry)
 		));
+	}
+
+	@Bean
+	public AuthenticationEventPublisher authenticationEventPublisher(
+		ApplicationEventPublisher applicationEventPublisher
+	) {
+		return new DefaultAuthenticationEventPublisher(applicationEventPublisher);
 	}
 }

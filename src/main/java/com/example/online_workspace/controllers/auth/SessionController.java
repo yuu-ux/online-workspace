@@ -1,6 +1,7 @@
 package com.example.online_workspace.controllers.auth;
 
 import com.example.online_workspace.models.users.AuthenticatedUser;
+import com.example.online_workspace.models.users.AuthenticatedUserPrincipal;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,7 +19,7 @@ public class SessionController {
 	/**
 	 * 現在のリクエストが認証済みセッションを持つかどうかを返す。
 	 *
-	 * @return 現在のセッション状態。ユーザー情報は認証機能の実装時に追加する
+	 * @return 現在のセッション状態。認証済みの場合はユーザー情報を含む
 	 */
 	@GetMapping("/session")
 	public SessionStatusResponse getSessionStatus() {
@@ -27,8 +28,8 @@ public class SessionController {
 			&& authentication.isAuthenticated()
 			&& !(authentication instanceof AnonymousAuthenticationToken);
 
-		AuthenticatedUser user = authentication != null && authentication.getDetails() instanceof AuthenticatedUser details
-			? details
+		AuthenticatedUser user = authentication != null && authentication.getPrincipal() instanceof AuthenticatedUserPrincipal principal
+			? principal.user()
 			: null;
 		return new SessionStatusResponse(authenticated, user);
 	}
