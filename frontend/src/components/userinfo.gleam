@@ -6,7 +6,9 @@ import types/user.{type UserInfo} as user_t
 import types/session.{type Session, Authenticated, Guest} as session_t
 import lustre/element/html.{div, text, input}
 import lustre/effect
-import wrap/user.{is_friend, is_blocked}
+import gleam/list
+import wrap/api.{type ApiError, ApiError}
+import wrap/user.{add_friend, is_blocked, is_friend, remove_friend}
 
 pub type Model {
   Model(
@@ -22,6 +24,8 @@ pub type Model {
 pub type Msg {
   BlockOnChecked(Bool)
   FriendOnChecked(Bool)
+  AddFriendCompleted(Result(Nil, ApiError))
+  RemoveFriendCompleted(Result(Nil, ApiError))
 }
 
 pub fn init(session: Session, target_user_info:UserInfo) -> #(Model, effect.Effect(Msg)) {
@@ -57,7 +61,23 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, is_blocked: s), effect.none())
     }
     FriendOnChecked(s) -> {
-      #(Model(..model, is_friend: s), effect.none())
+      let operation = case s {
+        True -> add_friend(model.user_info.user_id, AddFriendCompleted)
+        False -> remove_friend(model.user_info.user_id, RemoveFriendCompleted)
+      }
+      #(Model(..model, messages: []), operation)
+    }
+    AddFriendCompleted(Ok(_)) -> {
+      #(Model(..model, is_friend: True), effect.none())
+    }
+    AddFriendCompleted(Error(ApiError(message))) -> {
+      #(Model(..model, messages: [message]), effect.none())
+    }
+    RemoveFriendCompleted(Ok(_)) -> {
+      #(Model(..model, is_friend: False), effect.none())
+    }
+    RemoveFriendCompleted(Error(ApiError(message))) -> {
+      #(Model(..model, messages: [message]), effect.none())
     }
   }
 }
@@ -100,7 +120,8 @@ pub fn view (model: Model) -> element.Element(Msg) {
               ),
             ])
           ]
-        )
+        ),
+        div([], list.map(model.messages, fn(message) { text(message) }))
       ])
     }
   }

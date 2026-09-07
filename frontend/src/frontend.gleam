@@ -104,8 +104,11 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     MyPage(mypage_model), MyPageMsg(mypage.ToFriend) -> {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToFriend)
-      let #(init_friend_model, _) = friend.init(update_mypage_model.session)
-      #(Model(session: update_mypage_model.session, current_page: Friend(init_friend_model)), effect.none())
+      let #(init_friend_model, friend_effect) = friend.init(update_mypage_model.session)
+      #(
+        Model(session: update_mypage_model.session, current_page: Friend(init_friend_model)),
+        friend_effect |> effect.map(FriendMsg),
+      )
     }
 
     MyPage(mypage_model), MyPageMsg(mypage.ToHistory) -> {
@@ -344,8 +347,11 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // -- userinfofromfriend --
 
     UserInfoFromFriend(userinfofromfriend_model), UserInfoFromFriendMsg(userinfofromfriend.ToFriend) -> {
-      let #(init_friend_model, _) = friend.init(userinfofromfriend_model.user_info_component.session)
-      #(Model(..model, current_page: Friend(init_friend_model)), effect.none())
+      let #(init_friend_model, friend_effect) = friend.init(userinfofromfriend_model.user_info_component.session)
+      #(
+        Model(..model, current_page: Friend(init_friend_model)),
+        friend_effect |> effect.map(FriendMsg),
+      )
     }
 
     // userinfofromfriend other

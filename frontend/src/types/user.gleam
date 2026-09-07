@@ -9,3 +9,9 @@ pub type UserInfo {
   )
 }
 
+pub type FriendInfo {
+  FriendInfo(
+    user: UserInfo,
+    online: Bool
+  )
+}
