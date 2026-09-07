@@ -99,4 +99,42 @@ class SessionControllerIntegrationTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.authenticated").value(false));
 	}
+
+	@DisplayName("認証状態APIはプロフィール変更後の最新ユーザー情報を返す")
+	@Test
+	void sessionStatusReturnsUpdatedUserDetails() throws Exception {
+		String email = "session-refresh@example.com";
+		jdbcTemplate.update("DELETE FROM users WHERE email = ?", email);
+		jdbcTemplate.update(
+			"INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+			"変更前ユーザー",
+			email,
+			passwordEncoder.encode("password-123")
+		);
+
+		MvcResult csrfResponse = mockMvc.perform(get("/api/v1/auth/csrf"))
+			.andExpect(status().isNoContent())
+			.andReturn();
+		Cookie csrf = csrfResponse.getResponse().getCookie("XSRF-TOKEN");
+		assertNotNull(csrf);
+
+		MvcResult loginResponse = mockMvc.perform(post("/api/v1/auth/login")
+				.cookie(csrf)
+				.header("X-CSRF-TOKEN", csrf.getValue())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{"email":"session-refresh@example.com","password":"password-123"}
+					"""))
+			.andExpect(status().isOk())
+			.andReturn();
+		MockHttpSession session = (MockHttpSession) loginResponse.getRequest().getSession(false);
+		assertNotNull(session);
+
+		jdbcTemplate.update("UPDATE users SET name = ? WHERE email = ?", "変更後ユーザー", email);
+
+		mockMvc.perform(get("/api/v1/auth/session").session(session))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.authenticated").value(true))
+			.andExpect(jsonPath("$.user.name").value("変更後ユーザー"));
+	}
 }

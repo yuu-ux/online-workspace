@@ -1,8 +1,10 @@
 package com.example.online_workspace.repositories.users;
 
+import com.example.online_workspace.models.users.AuthenticatedUser;
 import com.example.online_workspace.models.users.UserAccount;
 import com.example.online_workspace.models.users.UserAuthentication;
 import java.time.Instant;
+import java.util.Optional;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -52,6 +54,21 @@ public interface UserRepository {
 		)
 		""")
 	boolean isActiveByEmail(@Param("email") String email);
+
+	@Select("""
+		SELECT u.id,
+		       u.name,
+		       u.email,
+		       s.code AS account_status,
+		       u.suspended_until
+		FROM users u
+		JOIN account_statuses s ON s.id = u.account_status_id
+		WHERE u.email = #{email}
+		  AND u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
+		""")
+	Optional<AuthenticatedUser> findActiveAuthenticatedByEmail(@Param("email") String email);
 
 	/**
 	 * ログインに必要なユーザー情報を取得する。

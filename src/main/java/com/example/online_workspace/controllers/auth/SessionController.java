@@ -1,7 +1,7 @@
 package com.example.online_workspace.controllers.auth;
 
 import com.example.online_workspace.models.users.AuthenticatedUser;
-import com.example.online_workspace.models.users.AuthenticatedUserPrincipal;
+import com.example.online_workspace.repositories.users.UserRepository;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class SessionController {
+	private final UserRepository userRepository;
+
+	public SessionController(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
+
 	/**
 	 * 現在のリクエストが認証済みセッションを持つかどうかを返す。
 	 *
@@ -27,8 +33,8 @@ public class SessionController {
 			&& authentication.isAuthenticated()
 			&& !(authentication instanceof AnonymousAuthenticationToken);
 
-		AuthenticatedUser user = authentication != null && authentication.getPrincipal() instanceof AuthenticatedUserPrincipal principal
-			? principal.user()
+		AuthenticatedUser user = authenticated
+			? userRepository.findActiveAuthenticatedByEmail(authentication.getName()).orElse(null)
 			: null;
 		return new SessionStatusResponse(authenticated && user != null, user);
 	}
