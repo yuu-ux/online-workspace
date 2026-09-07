@@ -1,5 +1,6 @@
 package com.example.online_workspace.controllers.auth;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -64,6 +65,28 @@ class AuthenticationControllerIntegrationTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.authenticated").value(true))
 			.andExpect(jsonPath("$.user.email").value(email));
+	}
+
+	@DisplayName("ログイン後に停止されたユーザーは認証状態を復元できない")
+	@Test
+	void suspendedSessionIsRejected() throws Exception {
+		String email = uniqueEmail();
+		register(email, "password-123");
+		MvcResult login = performLogin(email, "password-123")
+			.andExpect(status().isOk())
+			.andReturn();
+		MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
+		assertNotNull(session);
+
+		jdbcTemplate.update(
+			"UPDATE users SET suspended_until = DATEADD('DAY', 1, CURRENT_TIMESTAMP) WHERE email = ?",
+			email
+		);
+
+		mockMvc.perform(get("/api/v1/auth/session").session(session))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.authenticated").value(false))
+			.andExpect(jsonPath("$.user").value(nullValue()));
 	}
 
 	@DisplayName("ログイン成功はSECURITY_AUDITへ記録される")

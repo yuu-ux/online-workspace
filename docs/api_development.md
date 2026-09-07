@@ -38,7 +38,7 @@ npx --yes openapi-typescript@7.13.0
 - APIはSPA向けのCSRF request handlerを使用する。ReactやSwagger UIは `XSRF-TOKEN` cookieの値を `X-CSRF-TOKEN` headerへ設定する。
 - `POST /api/v1/auth/login` は #16 の登録処理と同じく、メールアドレスの前後の空白を除去して `Locale.ROOT` で小文字化して照合する。成功時は `JSESSIONID` cookie にサーバー側セッションを保存する。
 - ログインに5回連続で失敗した場合、6回目以降の同じメールアドレス・接続元アドレスからの試行を15分間 `429 Too Many Requests` とする。429レスポンスには `Retry-After: 900` を返し、成功したログインで失敗回数をリセットする。現状は単一アプリケーションインスタンス向けの上限付きインメモリ管理であり、複数インスタンス化時は共有ストアへ差し替える。
-- `JSESSIONID` cookieは `HttpOnly=true`、`SameSite=Lax`、ローカル開発では `Secure=false` を既定値とする。本番では `SESSION_COOKIE_SECURE=true` を設定する。`SESSION_COOKIE_HTTP_ONLY`、`SESSION_COOKIE_SECURE`、`SESSION_COOKIE_SAME_SITE` で環境ごとに変更できる。
+- `JSESSIONID` cookieは `HttpOnly=true`、`SameSite=Lax` とする。HTTPSのComposeプロキシ経由では `Secure=true`、HTTPでバックエンドへ直接接続する場合は `Secure=false` を設定する。本番では `SESSION_COOKIE_SECURE=true` を設定する。`SESSION_COOKIE_HTTP_ONLY`、`SESSION_COOKIE_SECURE`、`SESSION_COOKIE_SAME_SITE` で環境ごとに変更できる。
 - `JSESSIONID` cookieは永続CookieにせずセッションCookieとして発行する。ページリロード中は認証状態を維持するが、ブラウザ終了後のログイン状態維持（Remember Me）は対象外とする。
 
 ### 認証API呼び出し

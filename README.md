@@ -74,8 +74,8 @@ HTTPS / WSS、Cookie、CSRF、CORS、セキュリティヘッダー、監査ロ�
 2. アプリを起動します。
 
 ブラウザから `http://localhost:8080` のバックエンドへ直接接続して認証APIを確認する場合は、
-`SESSION_COOKIE_SECURE=false` を設定してください。Compose経由のローカル開発ではfalse、
-本番では `SESSION_COOKIE_SECURE=true` を設定します。
+`SESSION_COOKIE_SECURE=false` を設定してください。HTTPSのComposeプロキシ経由ではtrue、
+本番でも `SESSION_COOKIE_SECURE=true` を設定します。
 
 ```bash
 SESSION_COOKIE_SECURE=false ./gradlew bootRun

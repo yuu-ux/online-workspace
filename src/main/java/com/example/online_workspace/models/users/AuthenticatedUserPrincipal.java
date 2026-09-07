@@ -10,6 +10,17 @@ import org.springframework.security.core.AuthenticatedPrincipal;
 public record AuthenticatedUserPrincipal(AuthenticatedUser user) implements AuthenticatedPrincipal {
 
 	@Override
+	public boolean equals(Object other) {
+		return other instanceof AuthenticatedUserPrincipal principal
+			&& user.id() == principal.user.id();
+	}
+
+	@Override
+	public int hashCode() {
+		return Long.hashCode(user.id());
+	}
+
+	@Override
 	public String getName() {
 		return user.email();
 	}
