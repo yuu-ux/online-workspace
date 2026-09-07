@@ -27,4 +27,10 @@ class UserRepositoryTests {
 		assertThat(profile.isPublic()).isTrue();
 		assertThat(profile.categoryId()).isNull();
 	}
+
+	@Test
+	void checksWhetherAnAccountCanAuthenticate() {
+		assertThat(repository.isActiveByEmail("me@example.com")).isTrue();
+		assertThat(repository.isActiveByEmail("unknown@example.com")).isFalse();
+	}
 }

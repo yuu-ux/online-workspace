@@ -30,7 +30,7 @@ final class ActiveUserAuthenticationFilter extends OncePerRequestFilter {
 	) throws ServletException, IOException {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (isApplicationSessionAuthentication(authentication)
-			&& userRepository.findAuthenticatedByEmail(authentication.getName()).isEmpty()) {
+			&& !userRepository.isActiveByEmail(authentication.getName())) {
 			SecurityContextHolder.clearContext();
 		}
 
