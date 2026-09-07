@@ -1,6 +1,7 @@
 package com.example.online_workspace.configs.security;
 
 import com.example.online_workspace.repositories.AccountWithdrawalRepository;
+import com.example.online_workspace.repositories.users.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -34,8 +35,11 @@ public class WebSecurityConfig {
 	public SecurityFilterChain webSecurityFilterChain(
 		HttpSecurity http,
 		SecurityContextRepository securityContextRepository,
+		UserRepository userRepository,
 		SessionRegistry sessionRegistry
 	) throws Exception {
+		ActiveUserAuthenticationFilter activeUserAuthenticationFilter =
+			new ActiveUserAuthenticationFilter(userRepository);
 		http
 			.csrf(csrf -> csrf.ignoringRequestMatchers("/ws/**"))
 			.authorizeHttpRequests((authorize) -> authorize
@@ -60,6 +64,7 @@ public class WebSecurityConfig {
 				.maximumSessions(-1)
 				.sessionRegistry(sessionRegistry)
 			)
+			.addFilterBefore(activeUserAuthenticationFilter, CsrfFilter.class)
 			.addFilterBefore(new SecurityAuditFilter("web"), CsrfFilter.class);
 
 		return http.build();
