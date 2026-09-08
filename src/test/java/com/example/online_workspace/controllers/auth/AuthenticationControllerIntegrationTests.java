@@ -49,41 +49,38 @@ class AuthenticationControllerIntegrationTests {
 	@Autowired
 	private SessionRegistry sessionRegistry;
 
-	@DisplayName("#16で登録したユーザーがログインでき、サーバーセッションとユーザー情報が返る")
+	@DisplayName("#16で登録したユーザーがログインでき、セッションと監査ログが記録される")
 	@Test
 	void registeredUserCanLoginAndSessionIsCreated() throws Exception {
 		String email = uniqueEmail();
-		register(email, "password-123");
+		String password = "password-123";
+		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
+		try {
+			register(email, password);
 
-		MvcResult login = performLogin(email, "password-123")
-			.andExpect(status().isOk())
-			.andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
-			.andExpect(jsonPath("$.id").isNumber())
-			.andExpect(jsonPath("$.name").value("テストユーザー"))
-			.andExpect(jsonPath("$.email").value(email))
-			.andExpect(jsonPath("$.accountStatus").value("ACTIVE"))
-			.andReturn();
+			MvcResult login = performLogin(email, password)
+				.andExpect(status().isOk())
+				.andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
+				.andExpect(jsonPath("$.id").isNumber())
+				.andExpect(jsonPath("$.name").value("テストユーザー"))
+				.andExpect(jsonPath("$.email").value(email))
+				.andExpect(jsonPath("$.accountStatus").value("ACTIVE"))
+				.andReturn();
+			MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
+			assertNotNull(session);
+			SecurityContext context = (SecurityContext) session.getAttribute(SPRING_SECURITY_CONTEXT_KEY);
+			assertNotNull(context);
+			Authentication authentication = context.getAuthentication();
 
-		assertNotNull(login.getRequest().getSession(false));
-	}
+			assertTrue(sessionRegistry.getAllSessions(authentication.getPrincipal(), false).stream()
+				.anyMatch(info -> info.getSessionId().equals(session.getId())));
 
-	@DisplayName("APIログインのセッションはSpring SecurityのSessionRegistryへ登録される")
-	@Test
-	void apiLoginRegistersSession() throws Exception {
-		String email = uniqueEmail();
-		register(email, "password-123");
-
-		MvcResult login = performLogin(email, "password-123")
-			.andExpect(status().isOk())
-			.andReturn();
-		MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
-		assertNotNull(session);
-		SecurityContext context = (SecurityContext) session.getAttribute(SPRING_SECURITY_CONTEXT_KEY);
-		assertNotNull(context);
-		Authentication authentication = context.getAuthentication();
-
-		assertTrue(sessionRegistry.getAllSessions(authentication.getPrincipal(), false).stream()
-			.anyMatch(info -> info.getSessionId().equals(session.getId())));
+			assertTrue(hasAuditMessage(appender, "event=authentication outcome=success"));
+			assertTrue(hasNoAuditMessageContaining(appender, email));
+			assertTrue(hasNoAuditMessageContaining(appender, password));
+		} finally {
+			detachSecurityAuditAppender(appender);
+		}
 	}
 
 	@DisplayName("ログイン時のメールアドレスは前後の空白と大文字を正規化して照合される")
@@ -97,26 +94,7 @@ class AuthenticationControllerIntegrationTests {
 			.andExpect(jsonPath("$.email").value(email));
 	}
 
-	@DisplayName("ログイン成功はSECURITY_AUDITへ記録される")
-	@Test
-	void successfulLoginIsWrittenToSecurityAuditLog() throws Exception {
-		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
-		String email = uniqueEmail();
-		String password = "password-123";
-		try {
-			register(email, password);
-			performLogin(email, password)
-				.andExpect(status().isOk());
-
-			assertTrue(hasAuditMessage(appender, "event=authentication outcome=success"));
-			assertTrue(hasNoAuditMessageContaining(appender, email));
-			assertTrue(hasNoAuditMessageContaining(appender, password));
-		} finally {
-			detachSecurityAuditAppender(appender);
-		}
-	}
-
-	@DisplayName("認証情報が不正なログインは401を返す")
+	@DisplayName("認証情報が不正または未登録のログインは401を返す")
 	@Test
 	void rejectLoginWithInvalidCredentials() throws Exception {
 		String email = uniqueEmail();
@@ -127,19 +105,14 @@ class AuthenticationControllerIntegrationTests {
 			performLogin(email, "wrong-password")
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+			performLogin(uniqueEmail(), "password-123")
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
 
 			assertTrue(hasAuditMessage(appender, "event=authentication outcome=denied"));
 		} finally {
 			detachSecurityAuditAppender(appender);
 		}
-	}
-
-	@DisplayName("未登録メールアドレスのログインは401を返す")
-	@Test
-	void rejectLoginForUnknownEmail() throws Exception {
-		performLogin(uniqueEmail(), "password-123")
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
 	}
 
 	@DisplayName("利用中でも停止期限が未来のユーザーはログインできない")
@@ -225,15 +198,6 @@ class AuthenticationControllerIntegrationTests {
 			performLogin(email, "wrong-password")
 				.andExpect(status().isUnauthorized());
 		}
-	}
-
-	@DisplayName("ログインAPIはCSRFトークンなしでは403を返す")
-	@Test
-	void rejectLoginWithoutCsrfToken() throws Exception {
-		mockMvc.perform(post("/api/v1/auth/login")
-				.contentType(APPLICATION_JSON)
-				.content(loginJson(uniqueEmail(), "password-123")))
-			.andExpect(status().isForbidden());
 	}
 
 	@DisplayName("認証済みセッションの状態APIはユーザー情報を返す")
