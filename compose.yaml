@@ -9,6 +9,7 @@ services:
     volumes:
       - ./docker/nginx/config:/etc/nginx/conf.d:ro
       - ./docker/nginx/certs:/etc/nginx/tls:ro
+      - ./frontend/priv/static:/var/www/static:ro
     depends_on:
       - frontend
       - backend
