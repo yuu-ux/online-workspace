@@ -12,7 +12,18 @@ import types/room.{type RoomId, RoomId} as room_t
 import types/user.{type UserInfo, type UserId} as user_t
 
 import wrap/user.{GetUserInfoListAuthErr, get_all_user_info_list}
-import wrap/room.{room_send_msg_proc, close_ws, RoomDummyError, chat_to_json, chat_from_json, connect_to_server,type Chat}
+import wrap/api.{type ApiError, ApiError}
+import wrap/room.{
+  room_send_msg_proc,
+  close_ws,
+  RoomDummyError,
+  chat_to_json,
+  chat_from_json,
+  connect_to_server,
+  create_room_invite,
+  type InviteInfo,
+  type Chat,
+}
 
 import components/userlist.{user_list_component}
 
@@ -27,6 +38,7 @@ pub type Model {
     member_list: List(UserInfo),
     chat_list: List(Chat), // 会話履歴表示用
     current_message_input: String,
+    invite_url: String,
     messages: List(String)
   )
 }
@@ -38,6 +50,8 @@ pub type Msg {
   InputUpdated(target: InputType, str: String)
   SubmitClicked
   WsMessageReceived(String)
+  CreateInviteClicked
+  InviteCreated(Result(InviteInfo, ApiError))
 }
 
 pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
@@ -53,6 +67,7 @@ pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
             // Chat(from: "Alice", timestamp: "2026-8-12", comment: "hello"),
           ],
           current_message_input: "",
+          invite_url: "",
           messages: []),
           connect_to_server(WsMessageReceived)
       )
@@ -73,6 +88,7 @@ pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
             // Chat(from: "Alice", timestamp: "2026-8-12", comment: "hello"),
           ],
           current_message_input: "",
+          invite_url: "",
           messages: [err_msg]),
         effect.none()
       )
@@ -134,6 +150,18 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         }
       }
     }
+
+    CreateInviteClicked -> {
+      #(model, create_room_invite(model.room_id, InviteCreated))
+    }
+
+    InviteCreated(Ok(invite)) -> {
+      #(Model(..model, invite_url: invite.invite_url, messages: []), effect.none())
+    }
+
+    InviteCreated(Error(ApiError(message))) -> {
+      #(Model(..model, messages: [message]), effect.none())
+    }
   }
 }
 
@@ -173,6 +201,12 @@ pub fn view (model: Model) -> element.Element(Msg) {
           button([
             on_click(SubmitClicked)
           ], [text("send")])
+        ]),
+        div([], [
+          button([
+            on_click(CreateInviteClicked)
+          ], [text("招待リンクを発行")]),
+          div([], [text(model.invite_url)])
         ]),
         btn.to_home_btn_component(ToHome),
         // エラー表示用
