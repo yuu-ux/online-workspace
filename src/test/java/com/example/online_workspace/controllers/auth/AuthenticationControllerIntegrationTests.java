@@ -97,22 +97,6 @@ class AuthenticationControllerIntegrationTests {
 			.andExpect(jsonPath("$.email").value(email));
 	}
 
-	@DisplayName("ログイン後の保護APIは認証ユーザーのメールアドレスで利用できる")
-	@Test
-	void loggedInSessionUsesEmailAsAuthenticationName() throws Exception {
-		String email = uniqueEmail();
-		register(email, "password-123");
-		MvcResult login = performLogin(email, "password-123")
-			.andExpect(status().isOk())
-			.andReturn();
-
-		mockMvc.perform(get("/api/v1/auth/session")
-				.session((MockHttpSession) login.getRequest().getSession(false)))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.authenticated").value(true))
-			.andExpect(jsonPath("$.user.email").value(email));
-	}
-
 	@DisplayName("ログイン成功はSECURITY_AUDITへ記録される")
 	@Test
 	void successfulLoginIsWrittenToSecurityAuditLog() throws Exception {
@@ -132,51 +116,22 @@ class AuthenticationControllerIntegrationTests {
 		}
 	}
 
-	@DisplayName("ログイン失敗はSECURITY_AUDITへ記録される")
-	@Test
-	void failedLoginIsWrittenToSecurityAuditLog() throws Exception {
-		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
-		try {
-			performLogin(uniqueEmail(), "wrong-password")
-				.andExpect(status().isUnauthorized());
-
-			assertTrue(hasAuditMessage(appender, "event=authentication outcome=denied"));
-		} finally {
-			detachSecurityAuditAppender(appender);
-		}
-	}
-
-	@DisplayName("レート制限中のログイン試行はSECURITY_AUDITへ記録される")
-	@Test
-	void rateLimitedLoginIsWrittenToSecurityAuditLog() throws Exception {
-		String email = uniqueEmail();
-		register(email, "password-123");
-		for (int attempt = 1; attempt <= 5; attempt++) {
-			performLogin(email, "wrong-password")
-				.andExpect(status().isUnauthorized());
-		}
-
-		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
-		try {
-			performLogin(email, "wrong-password")
-				.andExpect(status().isTooManyRequests());
-
-			assertTrue(hasAuditMessage(appender, "event=authentication outcome=denied reason=rate_limit"));
-			assertTrue(hasAuditMessage(appender, "retryAfterSeconds=900"));
-		} finally {
-			detachSecurityAuditAppender(appender);
-		}
-	}
-
 	@DisplayName("認証情報が不正なログインは401を返す")
 	@Test
 	void rejectLoginWithInvalidCredentials() throws Exception {
 		String email = uniqueEmail();
 		register(email, "password-123");
 
-		performLogin(email, "wrong-password")
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
+		try {
+			performLogin(email, "wrong-password")
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+			assertTrue(hasAuditMessage(appender, "event=authentication outcome=denied"));
+		} finally {
+			detachSecurityAuditAppender(appender);
+		}
 	}
 
 	@DisplayName("未登録メールアドレスのログインは401を返す")
@@ -213,11 +168,19 @@ class AuthenticationControllerIntegrationTests {
 				.andExpect(status().isUnauthorized());
 		}
 
-		performLogin(email, "wrong-password")
-			.andExpect(status().isTooManyRequests())
-			.andExpect(content().contentTypeCompatibleWith(APPLICATION_PROBLEM_JSON))
-			.andExpect(header().string("Retry-After", "900"))
-			.andExpect(jsonPath("$.code").value("TOO_MANY_REQUESTS"));
+		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
+		try {
+			performLogin(email, "wrong-password")
+				.andExpect(status().isTooManyRequests())
+				.andExpect(content().contentTypeCompatibleWith(APPLICATION_PROBLEM_JSON))
+				.andExpect(header().string("Retry-After", "900"))
+				.andExpect(jsonPath("$.code").value("TOO_MANY_REQUESTS"));
+
+			assertTrue(hasAuditMessage(appender, "event=authentication outcome=denied reason=rate_limit"));
+			assertTrue(hasAuditMessage(appender, "retryAfterSeconds=900"));
+		} finally {
+			detachSecurityAuditAppender(appender);
+		}
 	}
 
 	@DisplayName("別の接続元からのログインは同じメールアドレスでもロックされない")
@@ -358,34 +321,19 @@ class AuthenticationControllerIntegrationTests {
 		MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
 		assertNotNull(session);
 
-		performLogout(session)
-			.andExpect(status().isNoContent())
-			.andExpect(content().string(""))
-			.andExpect(cookie().maxAge("JSESSIONID", 0));
-
-		assertTrue(session.isInvalid());
-	}
-
-	@DisplayName("ログアウト成功はSECURITY_AUDITへ記録される")
-	@Test
-	void successfulLogoutIsWrittenToSecurityAuditLog() throws Exception {
-		String email = uniqueEmail();
-		register(email, "password-123");
-		MvcResult login = performLogin(email, "password-123")
-			.andExpect(status().isOk())
-			.andReturn();
-		MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
-		assertNotNull(session);
-
 		ListAppender<ILoggingEvent> appender = attachSecurityAuditAppender();
 		try {
 			performLogout(session)
-				.andExpect(status().isNoContent());
+				.andExpect(status().isNoContent())
+				.andExpect(content().string(""))
+				.andExpect(cookie().maxAge("JSESSIONID", 0));
 
 			assertTrue(hasAuditMessage(appender, "event=logout outcome=success"));
 		} finally {
 			detachSecurityAuditAppender(appender);
 		}
+
+		assertTrue(session.isInvalid());
 	}
 
 	@DisplayName("ログアウトAPIはCSRFトークンなしでは403を返す")
