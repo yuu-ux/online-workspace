@@ -1,0 +1,123 @@
+package com.example.online_workspace.repositories;
+
+import java.time.Instant;
+import java.util.List;
+
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
+
+@Mapper
+public interface FriendRepository {
+
+	record FriendRow(
+		long friendUserId,
+		String friendName,
+		String friendIconUrl,
+		Instant createdAt
+	) {
+	}
+
+	@Select("""
+		SELECT f.friend_user_id,
+		       u.name AS friend_name,
+		       p.icon_url AS friend_icon_url,
+		       f.created_at
+		FROM friends f
+		JOIN friend_statuses fs ON fs.id = f.status_id
+		JOIN users u ON u.id = f.friend_user_id
+		JOIN account_statuses s ON s.id = u.account_status_id
+		LEFT JOIN profiles p ON p.user_id = u.id
+		WHERE f.user_id = #{userId}
+		  AND fs.code = 'ACTIVE'
+		  AND u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
+		ORDER BY f.created_at DESC, f.id DESC
+		LIMIT #{size} OFFSET #{offset}
+		""")
+	List<FriendRow> findActiveFriends(@Param("userId") long userId, @Param("size") int size, @Param("offset") long offset);
+
+	@Select("""
+		SELECT f.friend_user_id,
+		       u.name AS friend_name,
+		       p.icon_url AS friend_icon_url,
+		       f.created_at
+		FROM friends f
+		JOIN friend_statuses fs ON fs.id = f.status_id
+		JOIN users u ON u.id = f.friend_user_id
+		JOIN account_statuses s ON s.id = u.account_status_id
+		LEFT JOIN profiles p ON p.user_id = u.id
+		WHERE f.user_id = #{userId}
+		  AND f.friend_user_id = #{friendUserId}
+		  AND fs.code = 'ACTIVE'
+		  AND u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
+		""")
+	FriendRow findActiveFriend(@Param("userId") long userId, @Param("friendUserId") long friendUserId);
+
+	@Select("""
+		SELECT COUNT(*)
+		FROM friends f
+		JOIN friend_statuses fs ON fs.id = f.status_id
+		WHERE f.user_id = #{userId}
+		  AND fs.code = 'ACTIVE'
+		""")
+	long countActiveFriends(@Param("userId") long userId);
+
+	@Select("""
+		SELECT EXISTS (
+			SELECT 1
+			FROM users u
+			JOIN account_statuses s ON s.id = u.account_status_id
+			WHERE u.id = #{userId}
+			  AND u.deleted_at IS NULL
+			  AND s.code = 'ACTIVE'
+			  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
+		)
+		""")
+	boolean activeUserExists(@Param("userId") long userId);
+
+	@Select("""
+		SELECT EXISTS (
+			SELECT 1
+			FROM friends f
+			JOIN friend_statuses fs ON fs.id = f.status_id
+			WHERE f.user_id = #{userId}
+			  AND f.friend_user_id = #{friendUserId}
+			  AND fs.code = 'ACTIVE'
+		)
+		""")
+	boolean existsActive(@Param("userId") long userId, @Param("friendUserId") long friendUserId);
+
+	@Update("""
+		UPDATE friends
+		SET status_id = (SELECT id FROM friend_statuses WHERE code = 'ACTIVE'),
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = #{userId}
+		  AND friend_user_id = #{friendUserId}
+		""")
+	int reactivate(@Param("userId") long userId, @Param("friendUserId") long friendUserId);
+
+	@Insert("""
+		INSERT INTO friends (user_id, friend_user_id, status_id)
+		VALUES (
+			#{userId},
+			#{friendUserId},
+			(SELECT id FROM friend_statuses WHERE code = 'ACTIVE')
+		)
+		""")
+	int insertActive(@Param("userId") long userId, @Param("friendUserId") long friendUserId);
+
+	@Update("""
+		UPDATE friends
+		SET status_id = (SELECT id FROM friend_statuses WHERE code = 'REMOVED'),
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = #{userId}
+		  AND friend_user_id = #{friendUserId}
+		""")
+	int markRemoved(@Param("userId") long userId, @Param("friendUserId") long friendUserId);
+}

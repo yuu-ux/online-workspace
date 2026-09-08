@@ -21,9 +21,9 @@ pub type Msg {
 }
 
 pub fn init(session: Session, target_user_info: UserInfo, backroomid: RoomId) -> #(Model, effect.Effect(Msg)) {
-  let #(model, effect) = userinfo.init(session, target_user_info)
+  let #(model, user_effect) = userinfo.init(session, target_user_info)
 
-  #(Model(user_info_component: model, backroomid: backroomid), effect.none())
+  #(Model(user_info_component: model, backroomid: backroomid), user_effect |> effect.map(UserInfo))
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
