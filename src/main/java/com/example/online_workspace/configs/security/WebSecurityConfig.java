@@ -59,8 +59,8 @@ public class WebSecurityConfig {
 			.securityContext(securityContext -> securityContext
 				.securityContextRepository(securityContextRepository)
 			)
-			// React側のログイン画面が実装されるまでは、Swagger UIなどのWeb利用向けに
-			// Spring Securityのログイン画面を維持する。React画面統合時にformLoginを削除する。
+			// Gream側のログイン画面が実装されるまでは、Swagger UIなどのWeb利用向けに
+			// Spring Securityのログイン画面を維持する。Gream画面統合時にformLoginを削除する。
 			.formLogin(Customizer.withDefaults())
 			.sessionManagement(session -> session
 				.maximumSessions(-1)

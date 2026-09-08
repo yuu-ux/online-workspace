@@ -41,7 +41,7 @@ npx --yes openapi-typescript@7.13.0
 - `JSESSIONID` cookieは `HttpOnly=true`、`SameSite=Lax`、ローカル開発では `Secure=false` を既定値とする。本番では `SESSION_COOKIE_SECURE=true` を設定する。`SESSION_COOKIE_HTTP_ONLY`、`SESSION_COOKIE_SECURE`、`SESSION_COOKIE_SAME_SITE` で環境ごとに変更できる。
 - `JSESSIONID` cookieは永続CookieにせずセッションCookieとして発行する。ページリロード中は認証状態を維持するが、ブラウザ終了後のログイン状態維持（Remember Me）は対象外とする。
 
-### Reactからの認証API呼び出し
+### Greamからの認証API呼び出し
 
 1. `GET /api/v1/auth/csrf` を呼び出し、レスポンスの `XSRF-TOKEN` cookieを読み取る。
 2. `POST /api/v1/auth/login` に `{ "email": "user@example.com", "password": "..." }` をJSONで送信し、`X-CSRF-TOKEN` headerへCSRF tokenを設定する。成功時はレスポンスにユーザー情報が返り、`JSESSIONID` cookieが発行される。
