@@ -922,11 +922,10 @@ components:
         password:
           type: string
           format: password
-          description: UTF-8 エンコード時に72バイト以内
           minLength: 1
           maxLength: 72
           pattern: '^[\x21-\x7E]+$'
-          description: 半角の英字・数字・記号（空白を除く）
+          description: 半角の英字・数字・記号（空白を除く）。UTF-8エンコード時に72バイト以内
           writeOnly: true
 
     AuthenticatedUser:

@@ -1,9 +1,11 @@
 package com.example.online_workspace.controllers.auth;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
+import static org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -26,6 +28,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -40,6 +45,9 @@ class AuthenticationControllerIntegrationTests {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+
+	@Autowired
+	private SessionRegistry sessionRegistry;
 
 	@DisplayName("#16で登録したユーザーがログインでき、サーバーセッションとユーザー情報が返る")
 	@Test
@@ -57,6 +65,25 @@ class AuthenticationControllerIntegrationTests {
 			.andReturn();
 
 		assertNotNull(login.getRequest().getSession(false));
+	}
+
+	@DisplayName("APIログインのセッションはSpring SecurityのSessionRegistryへ登録される")
+	@Test
+	void apiLoginRegistersSession() throws Exception {
+		String email = uniqueEmail();
+		register(email, "password-123");
+
+		MvcResult login = performLogin(email, "password-123")
+			.andExpect(status().isOk())
+			.andReturn();
+		MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
+		assertNotNull(session);
+		SecurityContext context = (SecurityContext) session.getAttribute(SPRING_SECURITY_CONTEXT_KEY);
+		assertNotNull(context);
+		Authentication authentication = context.getAuthentication();
+
+		assertTrue(sessionRegistry.getAllSessions(authentication.getPrincipal(), false).stream()
+			.anyMatch(info -> info.getSessionId().equals(session.getId())));
 	}
 
 	@DisplayName("ログイン時のメールアドレスは前後の空白と大文字を正規化して照合される")
@@ -262,6 +289,64 @@ class AuthenticationControllerIntegrationTests {
 			.andExpect(jsonPath("$.user.email").value(email));
 	}
 
+	@DisplayName("認証状態APIはユーザー情報の変更後に最新情報を返す")
+	@Test
+	void sessionStatusReturnsUpdatedUserDetails() throws Exception {
+		String email = uniqueEmail();
+		register(email, "password-123");
+		MvcResult login = performLogin(email, "password-123")
+			.andExpect(status().isOk())
+			.andReturn();
+		MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
+		assertNotNull(session);
+
+		jdbcTemplate.update("UPDATE users SET name = ? WHERE email = ?", "変更後ユーザー", email);
+
+		mockMvc.perform(get("/api/v1/auth/session").session(session))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.authenticated").value(true))
+			.andExpect(jsonPath("$.user.name").value("変更後ユーザー"));
+	}
+
+	@DisplayName("認証済みセッションはアカウント停止後に利用できない")
+	@Test
+	void authenticatedSessionIsRejectedAfterAccountSuspension() throws Exception {
+		String email = uniqueEmail();
+		register(email, "password-123");
+		MvcResult login = performLogin(email, "password-123")
+			.andExpect(status().isOk())
+			.andReturn();
+		MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
+		assertNotNull(session);
+
+		jdbcTemplate.update("""
+			UPDATE users
+			SET account_status_id = (SELECT id FROM account_statuses WHERE code = 'SUSPENDED'),
+			    suspended_until = DATEADD('DAY', 1, CURRENT_TIMESTAMP)
+			WHERE email = ?
+			""", email);
+
+		mockMvc.perform(get("/api/v1/auth/session").session(session))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.authenticated").value(false))
+			.andExpect(jsonPath("$.user").value(nullValue()));
+	}
+
+	@DisplayName("X-Real-IPヘッダーの偽装ではログインレート制限を回避できない")
+	@Test
+	void spoofedRealIpHeaderDoesNotBypassRateLimit() throws Exception {
+		String email = uniqueEmail();
+		register(email, "password-123");
+
+		for (int attempt = 1; attempt <= 5; attempt++) {
+			performLoginWithSpoofedHeader(email, "wrong-password", "198.51.100." + attempt)
+				.andExpect(status().isUnauthorized());
+		}
+
+		performLoginWithSpoofedHeader(email, "wrong-password", "203.0.113.1")
+			.andExpect(status().isTooManyRequests());
+	}
+
 	@DisplayName("ログアウトするとサーバー側セッションが無効化される")
 	@Test
 	void logoutInvalidatesServerSession() throws Exception {
@@ -365,8 +450,30 @@ class AuthenticationControllerIntegrationTests {
 				.cookie(xsrfCookie)
 				.header("X-CSRF-TOKEN", xsrfCookie.getValue())
 				.header("X-Real-IP", clientAddress)
+				.with(request -> {
+					request.setRemoteAddr(clientAddress);
+					return request;
+				})
 				.contentType(APPLICATION_JSON)
 				.content(loginJson(email, password)));
+	}
+
+	private org.springframework.test.web.servlet.ResultActions performLoginWithSpoofedHeader(
+		String email,
+		String password,
+		String spoofedAddress
+	) throws Exception {
+		MvcResult csrfResponse = mockMvc.perform(get("/api/v1/auth/csrf"))
+			.andExpect(status().isNoContent())
+			.andReturn();
+		Cookie xsrfCookie = csrfCookie(csrfResponse);
+
+		return mockMvc.perform(post("/api/v1/auth/login")
+			.cookie(xsrfCookie)
+			.header("X-CSRF-TOKEN", xsrfCookie.getValue())
+			.header("X-Real-IP", spoofedAddress)
+			.contentType(APPLICATION_JSON)
+			.content(loginJson(email, password)));
 	}
 
 	private org.springframework.test.web.servlet.ResultActions performLogout(MockHttpSession session)
