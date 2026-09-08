@@ -6,6 +6,7 @@ import com.example.online_workspace.exceptions.TooManyLoginAttemptsException;
 import com.example.online_workspace.forms.auth.UserLoginForm;
 import com.example.online_workspace.models.users.AuthenticatedUser;
 import com.example.online_workspace.repositories.users.UserRepository;
+import com.example.online_workspace.repositories.users.UserRepository.MyProfileRow;
 import com.example.online_workspace.services.auth.LoginRateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -88,8 +89,11 @@ public class UserLoginController {
 		}
 
 		loginRateLimiter.reset(email, clientAddress);
-		AuthenticatedUser authenticatedUser = userRepository.findActiveAuthenticatedByEmail(authentication.getName())
-			.orElseThrow(InvalidLoginCredentialsException::new);
+		MyProfileRow user = userRepository.findMyProfileByEmail(authentication.getName());
+		if (user == null) {
+			throw new InvalidLoginCredentialsException();
+		}
+		AuthenticatedUser authenticatedUser = user.toAuthenticatedUser();
 		sessionAuthenticationStrategy.onAuthentication(authentication, request, response);
 
 		SecurityContext context = SecurityContextHolder.createEmptyContext();

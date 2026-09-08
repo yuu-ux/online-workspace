@@ -2,6 +2,7 @@ package com.example.online_workspace.controllers.auth;
 
 import com.example.online_workspace.models.users.AuthenticatedUser;
 import com.example.online_workspace.repositories.users.UserRepository;
+import com.example.online_workspace.repositories.users.UserRepository.MyProfileRow;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,7 +39,8 @@ public class SessionController {
 		if (!authenticated || !(authentication.getPrincipal() instanceof UserDetails)) {
 			return new SessionStatusResponse(false, null);
 		}
-		AuthenticatedUser user = userRepository.findActiveAuthenticatedByEmail(authentication.getName()).orElse(null);
+		MyProfileRow row = userRepository.findMyProfileByEmail(authentication.getName());
+		AuthenticatedUser user = row == null ? null : row.toAuthenticatedUser();
 		return new SessionStatusResponse(user != null, user);
 	}
 }
