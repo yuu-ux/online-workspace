@@ -1,31 +1,26 @@
-import lustre/effect
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
-import gleam/result
+import lustre/effect
 import types/room.{
-  type CategoryType,
-  type WorkStyleType,
-  type VisibilityType,
-  type RoomId,
-  type RoomNameType,
-  type DescriptionType,
-  type RoomInfo,
-  RoomNameType,
-  DescriptionType,
-  RoomId,
   Cat1,
   Cat2,
   Cat3,
   CasualChat,
-  Quiet,
+  DescriptionType,
   Public,
-  Invite,
-  Friend,
-  RoomInfo
+  Quiet,
+  RoomId,
+  RoomInfo,
+  RoomNameType,
+  type CategoryType,
+  type DescriptionType,
+  type RoomId,
+  type RoomInfo,
+  type RoomNameType,
+  type WorkStyleType,
 }
-
-import types/user.{type UserId}
-import types/session.{type Session,type Token, Guest, Authenticated}
+import types/user.{UserId, UserInfo, type UserInfo}
 import wrap/api.{type ApiError}
 
 pub fn create_room(
@@ -103,6 +98,87 @@ fn room_id_decoder() -> decode.Decoder(RoomId) {
   decode.success(RoomId(id))
 }
 
+pub fn join_room(
+  room_id: RoomId,
+  to_msg: fn(Result(Nil, ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.empty_request(
+    "POST",
+    "/api/v1/rooms/" <> room_path(room_id) <> "/members/me",
+    "",
+    to_msg,
+  )
+}
+
+pub fn get_room_members(
+  room_id: RoomId,
+  to_msg: fn(Result(List(UserInfo), ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.json_request(
+    "GET",
+    "/api/v1/rooms/" <> room_path(room_id) <> "/members",
+    "",
+    decode.list(room_member_decoder()),
+    to_msg,
+  )
+}
+
+pub fn get_messages(
+  room_id: RoomId,
+  to_msg: fn(Result(List(Chat), ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.json_request(
+    "GET",
+    "/api/v1/rooms/" <> room_path(room_id) <> "/messages?page=0&size=50",
+    "",
+    message_list_decoder(),
+    to_msg,
+  )
+}
+
+pub fn create_message(
+  room_id: RoomId,
+  message: String,
+  to_msg: fn(Result(Nil, ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.empty_request(
+    "POST",
+    "/api/v1/rooms/" <> room_path(room_id) <> "/messages",
+    json.object([#("content", json.string(message))]) |> json.to_string,
+    to_msg,
+  )
+}
+
+fn room_path(room_id: RoomId) -> String {
+  let RoomId(id) = room_id
+  int.to_string(id)
+}
+
+fn room_member_decoder() -> decode.Decoder(UserInfo) {
+  use id <- decode.field("user", decode.field("id", decode.int))
+  use name <- decode.field("user", decode.field("name", decode.string))
+  decode.success(UserInfo(name: name, user_id: UserId(int.to_string(id))))
+}
+
+fn message_list_decoder() -> decode.Decoder(List(Chat)) {
+  use messages <- decode.field("items", decode.list(message_decoder()))
+  decode.success(messages)
+}
+
+fn message_decoder() -> decode.Decoder(Chat) {
+  use room_id <- decode.field("roomId", decode.int)
+  use user <- decode.field("sender", decode.field("name", decode.string))
+  use message <- decode.field("content", decode.string)
+  decode.success(
+    Chat(
+      msg_type: "msg",
+      room_id: RoomId(room_id),
+      user: user,
+      message: message,
+    ),
+  )
+}
+
 fn category_id(category: CategoryType) -> Int {
   case category {
     Cat1 -> 1
@@ -126,18 +202,10 @@ fn work_style_code(work_style: WorkStyleType) -> String {
   }
 }
 
-pub type RoomErr {
-  RoomDummyError
-}
-
 pub type Chat {
   Chat(
-    // from: String, // 誰から
-    // timestamp: String,
-    // comment: String, 
-
     msg_type: String,
-    room_id: RoomId, 
+    room_id: RoomId,
     user: String,
     message: String,
   )
@@ -149,7 +217,7 @@ pub type Chat {
 
 /// 接続する
 @external(javascript, "./../ffi/ws.js", "connect_ws")
-fn do_connect(url: String, dispatch: fn(String) -> Nil) -> Nil
+fn do_connect(room_id: Int, dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
@@ -159,50 +227,23 @@ fn do_send(message: String) -> Bool
 pub fn close_ws() -> Nil
 
 /// チャット画面に入ったタイミングで接続を開始する
-pub fn connect_to_server(m: fn(String) -> msg) -> effect.Effect(msg) {
+pub fn connect_to_server(room_id: RoomId, m: fn(String) -> msg) -> effect.Effect(msg) {
+  let RoomId(id) = room_id
   effect.from(fn(dispatch) {
     let js_callback = fn(received_text: String) {
       dispatch(m(received_text))
     }
 
     // JS側の接続関数を呼び出す
-    do_connect("/ws-test", js_callback)
+    do_connect(id, js_callback)
   })
 }
 
-pub fn room_send_msg_proc(
-  user_name: String,
-  room_id: RoomId,
-  send_msg: String
-) -> Result(Nil, RoomErr) {
-  // TODO SERVER API
-  let message = chat_to_json(
-    Chat(
-      msg_type: "msg",
-      room_id: room_id,
-      user: user_name,
-      message: send_msg
-    )
-  )
-
+pub fn send_ws_message(message: String) -> Bool {
   case do_send(message) {
-    True -> Ok(Nil)
-    False -> Error(RoomDummyError)
+    True -> True
+    False -> False
   }
-}
-
-// TODO テストデータ用構造体
-
-// https://gleam-json.hexdocs.pm/
-
-pub fn chat_to_json(chat: Chat) -> String {
-  json.object([
-    #("type", json.string(chat.msg_type)),
-    #("room_id", json.int(case chat.room_id { RoomId(i) -> i })),
-    #("user", json.string(chat.user)),
-    #("message", json.string(chat.message)),
-  ])
-  |> json.to_string
 }
 
 pub fn chat_from_json(json_string: String) -> Result(Chat, json.DecodeError) {
