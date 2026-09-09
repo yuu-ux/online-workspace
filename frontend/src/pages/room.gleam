@@ -51,7 +51,7 @@ pub type Msg {
   MembersLoaded(Result(List(UserInfo), ApiError))
   MessagesLoaded(Result(List(Chat), ApiError))
   MessagePosted(Result(Nil, ApiError))
-  RoomClosed(Result(Nil, ApiError))
+  RoomLeft(Result(Nil, ApiError))
   WsMessageReceived(String)
 }
 
@@ -90,7 +90,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     ToHome -> {
       close_ws()
-      #(model, leave_room(model.room_id, RoomClosed))
+      #(model, leave_room(model.room_id, RoomLeft))
     }
 
     ToUserInfo(_user_info) -> {
@@ -155,7 +155,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, messages: [message]), effect.none())
     }
 
-    RoomClosed(_) -> {
+    RoomLeft(_) -> {
       #(model, effect.none())
     }
 
