@@ -55,7 +55,7 @@ public interface RoomRepository {
 		       EXISTS (
 		       	SELECT 1 FROM room_members self_rm
 		       	WHERE self_rm.room_id = r.id AND self_rm.user_id = #{viewerId} AND self_rm.left_at IS NULL
-		       ) AS member,
+		       ) AS is_member,
 		       r.created_at, r.updated_at
 		FROM rooms r
 		JOIN room_categories rc ON rc.id = r.category_id
@@ -129,7 +129,7 @@ public interface RoomRepository {
 		String creatorName,
 		String creatorIconUrl,
 		int currentMembers,
-		boolean member,
+		boolean isMember,
 		Instant createdAt,
 		Instant updatedAt
 	) {

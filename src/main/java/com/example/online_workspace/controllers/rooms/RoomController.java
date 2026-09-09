@@ -143,7 +143,7 @@ public class RoomController {
 				new UserSummaryResponse(room.creatorId(), room.creatorName(), room.creatorIconUrl()),
 				restriction == null,
 				restriction,
-				room.member(),
+				room.isMember(),
 				room.createdAt(),
 				room.updatedAt()
 			);
