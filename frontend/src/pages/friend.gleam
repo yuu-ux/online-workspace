@@ -1,18 +1,19 @@
 // フレンド編集画面
 import components/btn
+import gleam/int
 import gleam/list
 import lustre/event.{on_click}
 import lustre/attribute
 import lustre/element
 import lustre/effect
-import lustre/element/html.{button, div, text}
+import gleam/io
+import lustre/element/html.{button, div, h1, h3, hr, span, style, text}
 
-import types/user.{type UserInfo} as user_t
-import types/session.{type Session, Guest, Authenticated}
+import types/user.{type UserId, type UserInfo} as user_t
+import types/session.{type Session,type Token, Guest, Authenticated}
 
 import components/userlist.{user_list_component}
 
-import wrap/api.{type ApiError, ApiError}
 import wrap/user.{get_friends}
 
 pub type Model {
@@ -27,25 +28,26 @@ pub type Msg {
   ToHome
   ToMyPage
   ToUserInfo(UserInfo)
-  FriendsLoaded(Result(List(UserInfo), ApiError))
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
-  case session {
-    Guest ->
+  case get_friends(session) {
+    Ok(friends) -> {
       #(Model(
           session: session,
-          friends: [],
-          messages: ["ログインしてください"]),
+          friends: friends,
+          messages: []),
         effect.none()
       )
-    Authenticated(..) ->
+    }
+    Error(err_type) -> {
       #(Model(
           session: session,
           friends: [],
-          messages: []),
-        get_friends(FriendsLoaded)
+          messages: ["フレンドの取得に失敗しました"]),
+        effect.none()
       )
+    }
   }
 }
 
@@ -60,15 +62,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(model, effect.none())
     }
 
-    ToUserInfo(_user_info) -> {
+    ToUserInfo(user_info) -> {
       #(model, effect.none())
-    }
-
-    FriendsLoaded(Ok(friends)) -> {
-      #(Model(..model, friends: friends, messages: []), effect.none())
-    }
-    FriendsLoaded(Error(ApiError(message))) -> {
-      #(Model(..model, friends: [], messages: [message]), effect.none())
     }
   }
 }
@@ -86,7 +81,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ])
     }
 
-    session.Authenticated(_, _) -> {
+    session.Authenticated(jwt, user_id) -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],

@@ -20,9 +20,9 @@ pub type Msg {
 }
 
 pub fn init(session: Session, target_user_info: UserInfo, search_word: String) -> #(Model, effect.Effect(Msg)) {
-  let #(model, user_effect) = userinfo.init(session, target_user_info)
+  let #(model, effect) = userinfo.init(session, target_user_info)
 
-  #(Model(user_info_component: model, search_word: search_word), user_effect |> effect.map(UserInfo))
+  #(Model(user_info_component: model, search_word: search_word), effect.none())
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {

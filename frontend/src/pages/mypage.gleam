@@ -1,16 +1,17 @@
 // マイページ
 import components/input
 import components/btn
+import gleam/int
 import lustre/event.{on_click, on_input}
 import lustre/attribute
 import lustre/element
 import lustre/effect
+import gleam/io
 import gleam/list
-import lustre/element/html.{div, text}
+import lustre/element/html.{button, div, text, input, textarea, select, option}
 
 import types/session.{type Session}
-import wrap/api.{type ApiError, ApiError}
-import wrap/user.{type MyProfile, get_my_profile}
+import types/user.{type UserInfo}
 
 pub type InputType {
   UserName
@@ -19,7 +20,6 @@ pub type InputType {
 pub type Model {
   Model(
     session: Session,
-    display_name: String,
     current_user_name: String,
     messages: List(String)
   )
@@ -32,32 +32,16 @@ pub type Msg {
   ToHistory
   InputUpdated(target: InputType, str: String)
   SubmitClicked
-  MyProfileLoaded(Result(MyProfile, ApiError))
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
-  case session {
-    session.Guest ->
-      #(
-        Model(
-          session: session,
-          display_name: "",
-          current_user_name: "",
-          messages: [],
-        ),
-        effect.none(),
-      )
-    session.Authenticated(..) ->
-      #(
-        Model(
-          session: session,
-          display_name: "",
-          current_user_name: "",
-          messages: [],
-        ),
-        get_my_profile(MyProfileLoaded),
-      )
-  }
+  #(
+    Model(
+      session: session,
+      current_user_name: "",
+      messages: []),
+    effect.none()
+  )
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
@@ -92,16 +76,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     SubmitClicked -> {
       #(model, effect.none())
     }
-
-    MyProfileLoaded(Ok(profile)) -> {
-      #(
-        Model(..model, display_name: profile.name),
-        effect.none(),
-      )
-    }
-    MyProfileLoaded(Error(ApiError(message))) -> {
-      #(Model(..model, messages: [message]), effect.none())
-    }
   }
 }
 
@@ -118,13 +92,12 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ])
     }
 
-    session.Authenticated(_, _) -> {
+    session.Authenticated(jwt, user_id) -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
       [
         text("MyPage"),
-        div([], [text("ようこそ " <> model.display_name)]),
 
         btn.to_home_btn_component(ToHome),
         btn.to_friend_btn_component(ToFriend),

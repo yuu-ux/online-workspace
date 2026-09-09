@@ -32,7 +32,7 @@ class MyProfileControllerIntegrationTests {
 	void returnsTheAuthenticatedUsersProfile() throws Exception {
 		when(repository.findMyProfileByEmail("me@example.com")).thenReturn(new MyProfileRow(
 			10L, "自分", "https://example.com/me.png", true, "朝に集中して作業します",
-			20L, "開発", "プログラミング", 1, "me@example.com", "ACTIVE",
+			20L, "開発", "プログラミング", 1, "me@example.com", "USER", "ACTIVE",
 			Instant.parse("2026-08-01T00:00:00Z")
 		));
 
@@ -46,6 +46,7 @@ class MyProfileControllerIntegrationTests {
 			.andExpect(jsonPath("$.friendship").value("NONE"))
 			.andExpect(jsonPath("$.blocked").value(false))
 			.andExpect(jsonPath("$.email").value("me@example.com"))
+			.andExpect(jsonPath("$.role").value("USER"))
 			.andExpect(jsonPath("$.accountStatus").value("ACTIVE"));
 	}
 

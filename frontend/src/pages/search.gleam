@@ -1,17 +1,18 @@
 // ユーザー検索結果
 import components/btn
+import gleam/int
 import gleam/list
 import lustre/event.{on_click}
 import lustre/attribute
 import lustre/element
 import lustre/effect
-import lustre/element/html.{button, div, text}
+import gleam/io
+import lustre/element/html.{button, div, h1, h3, hr, span, style, text}
 
-import types/user.{type UserInfo} as user_t
-import types/session.{type Session, Guest, Authenticated}
+import types/user.{type UserId, type UserInfo} as user_t
+import types/session.{type Session,type Token, Guest, Authenticated}
 
 import wrap/user.{search_user}
-import wrap/api.{type ApiError, ApiError}
 
 import components/userlist.{user_list_component}
 
@@ -28,29 +29,30 @@ pub type Msg {
   ToHome
   ToMyPage
   ToUserInfo(UserInfo)
-  SearchLoaded(Result(List(UserInfo), ApiError))
 }
 
 pub fn init(session: Session, search_word: String) -> #(Model, effect.Effect(Msg)) {
-  case session {
-    Guest ->
+  case search_user(search_word) {
+    Ok(search_result) -> {
       #(
         Model(
           session: session,
           search_word: search_word,
-          search_result: [],
-          messages: ["ログインしてください"]),
-        effect.none(),
-      )
-    Authenticated(..) ->
-      #(
-        Model(
-          session: session,
-          search_word: search_word,
-          search_result: [],
+          search_result: search_result,
           messages: []),
-        search_user(search_word, SearchLoaded),
+        effect.none()
       )
+    }
+    Error(err_type) -> {
+      #(
+        Model(
+          session: session,
+          search_word: search_word,
+          search_result: [],
+          messages: ["検索に失敗しました"]),
+        effect.none()
+      )
+    }
   }
 }
 
@@ -64,15 +66,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(model, effect.none())
     }
 
-    ToUserInfo(_user_info) -> {
+    ToUserInfo(user_info) -> {
       #(model, effect.none())
-    }
-
-    SearchLoaded(Ok(search_result)) -> {
-      #(Model(..model, search_result: search_result, messages: []), effect.none())
-    }
-    SearchLoaded(Error(ApiError(message))) -> {
-      #(Model(..model, search_result: [], messages: [message]), effect.none())
     }
   }
 }
@@ -90,7 +85,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ])
     }
 
-    session.Authenticated(_, _) -> {
+    session.Authenticated(jwt, user_id) -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
