@@ -2,11 +2,13 @@
 import lustre/event.{on_check}
 import lustre/element
 import lustre/attribute
+import gleam/list
 import types/user.{type UserInfo} as user_t
 import types/session.{type Session, Authenticated, Guest} as session_t
 import lustre/element/html.{div, text, input}
 import lustre/effect
-import wrap/user.{is_friend, is_blocked}
+import wrap/api.{ApiError, type ApiError}
+import wrap/user.{add_friend, get_user_profile, remove_friend, type UserProfile}
 
 pub type Model {
   Model(
@@ -22,6 +24,8 @@ pub type Model {
 pub type Msg {
   BlockOnChecked(Bool)
   FriendOnChecked(Bool)
+  ProfileLoaded(Result(UserProfile, ApiError))
+  FriendUpdated(Result(Nil, ApiError))
 }
 
 pub fn init(session: Session, target_user_info:UserInfo) -> #(Model, effect.Effect(Msg)) {
@@ -37,15 +41,15 @@ pub fn init(session: Session, target_user_info:UserInfo) -> #(Model, effect.Effe
         effect.none()
       )
     }
-    Authenticated(token, user_info) -> {
+    Authenticated(_, _) -> {
       #(
         Model(
           session: session,
           user_info: target_user_info,
-          is_friend: is_friend(user_info.user_id, target_user_info.user_id),
-          is_blocked: is_blocked(user_info.user_id, target_user_info.user_id),
+          is_friend: False,
+          is_blocked: False,
           messages: []),
-        effect.none()
+        get_user_profile(target_user_info.user_id, ProfileLoaded)
       )
     }
   }
@@ -57,8 +61,26 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, is_blocked: s), effect.none())
     }
     FriendOnChecked(s) -> {
-      #(Model(..model, is_friend: s), effect.none())
+      let friend_effect = case s {
+        True -> add_friend(model.user_info.user_id, FriendUpdated)
+        False -> remove_friend(model.user_info.user_id, FriendUpdated)
+      }
+      #(
+        Model(..model, is_friend: s, messages: []),
+        friend_effect,
+      )
     }
+    ProfileLoaded(Ok(profile)) -> {
+      #(
+        Model(..model, is_friend: profile.is_friend),
+        effect.none(),
+      )
+    }
+    ProfileLoaded(Error(ApiError(message))) ->
+      #(Model(..model, messages: [message]), effect.none())
+    FriendUpdated(Ok(_)) -> #(model, effect.none())
+    FriendUpdated(Error(ApiError(message))) ->
+      #(Model(..model, messages: [message]), effect.none())
   }
 }
 
@@ -74,7 +96,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       )
     }
 
-    session_t.Authenticated(jwt, user_id) -> {
+    session_t.Authenticated(_, _) -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
@@ -84,6 +106,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
           [],
           [
             div([], [
+              div([], [text(model.user_info.name)]),
               input(
                 [
                   attribute.type_("checkbox"), 
@@ -99,6 +122,8 @@ pub fn view (model: Model) -> element.Element(Msg) {
                 ]
               ),
             ])
+            ,
+            div([], list.map(model.messages, fn(message) { div([], [text(message)]) }))
           ]
         )
       ])
