@@ -17,13 +17,16 @@ pub type Model {
 
 pub type Msg {
   ToRoom(RoomId)
+  ToFriend
+  ToBlock
+  ToReport
   UserInfo(userinfo.Msg)
 }
 
 pub fn init(session: Session, target_user_info: UserInfo, backroomid: RoomId) -> #(Model, effect.Effect(Msg)) {
   let #(model, effect) = userinfo.init(session, target_user_info)
 
-  #(Model(user_info_component: model, backroomid: backroomid), effect.none())
+  #(Model(user_info_component: model, backroomid: backroomid), effect |> effect.map(UserInfo))
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
@@ -31,10 +34,29 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     ToRoom(room_id) -> {
       #(model, effect.none())
     }
+    ToFriend -> {
+      #(model, effect.none())
+    }
+    ToBlock -> {
+      #(model, effect.none())
+    }
+    ToReport -> {
+      #(model, effect.none())
+    }
 
     UserInfo(user_info_msg) -> {
-      let #(update_user_info_model, update_effect) = userinfo.update(model.user_info_component, user_info_msg)
-      #(Model(..model, user_info_component: update_user_info_model), update_effect |> effect.map(UserInfo))
+      case user_info_msg {
+        userinfo.MoveToFriend ->
+          #(model, effect.from(fn(dispatch) { dispatch(ToFriend) }))
+        userinfo.MoveToBlock ->
+          #(model, effect.from(fn(dispatch) { dispatch(ToBlock) }))
+        userinfo.MoveToReport ->
+          #(model, effect.from(fn(dispatch) { dispatch(ToReport) }))
+        _ -> {
+          let #(update_user_info_model, update_effect) = userinfo.update(model.user_info_component, user_info_msg)
+          #(Model(..model, user_info_component: update_user_info_model), update_effect |> effect.map(UserInfo))
+        }
+      }
     }
   }
 }

@@ -18,6 +18,8 @@ import pages/friend
 import pages/profile
 import pages/history
 import pages/search
+import pages/block_user
+import pages/report_user
 
 import pages/userinfofromfriend
 import pages/userinfofromroom
@@ -40,6 +42,8 @@ pub type Page {
   UserInfoFromFriend(userinfofromfriend.Model)
   UserInfoFromRoom(userinfofromroom.Model)
   UserInfoFromSearch(userinfofromsearch.Model)
+  BlockUser(block_user.Model)
+  ReportUser(report_user.Model)
 }
 
 pub type Model {
@@ -64,6 +68,8 @@ pub type Msg {
   SearchMsg(search.Msg)
   UserInfoFromFriendMsg(userinfofromfriend.Msg)
   UserInfoFromRoomMsg(userinfofromroom.Msg)
+  BlockUserMsg(block_user.Msg)
+  ReportUserMsg(report_user.Msg)
   SessionLoaded(Result(session.Session, api.ApiError))
   UserInfoFromSearchMsg(userinfofromsearch.Msg)
 }
@@ -152,8 +158,11 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     Friend(friend_model), FriendMsg(friend.ToUserInfo(user_info)) -> {
-      let #(update_user_info_model, _) = userinfofromfriend.init(friend_model.session, user_info)
-      #(Model(..model, current_page: UserInfoFromFriend(update_user_info_model)), effect.none())
+      let #(update_user_info_model, update_effect) = userinfofromfriend.init(friend_model.session, user_info)
+      #(
+        Model(..model, current_page: UserInfoFromFriend(update_user_info_model)),
+        update_effect |> effect.map(UserInfoFromFriendMsg),
+      )
     }
 
     // friend other
@@ -336,8 +345,15 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     Room(room_model), RoomMsg(room.ToUserInfo(user_info)) -> {
-      let #(update_user_info_model, _) = userinfofromroom.init(room_model.session, user_info, room_model.room_id)
-      #(Model(..model, current_page: UserInfoFromRoom(update_user_info_model)), effect.none())
+      let #(update_user_info_model, update_effect) = userinfofromroom.init(
+        room_model.session,
+        user_info,
+        room_model.room_id,
+      )
+      #(
+        Model(..model, current_page: UserInfoFromRoom(update_user_info_model)),
+        update_effect |> effect.map(UserInfoFromRoomMsg),
+      )
     }
 
     // room other
@@ -354,6 +370,22 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, current_page: Friend(init_friend_model)), effect.none())
     }
 
+    UserInfoFromFriend(userinfofromfriend_model), UserInfoFromFriendMsg(userinfofromfriend.ToBlock) -> {
+      let #(init_block_model, _) = block_user.init(
+        userinfofromfriend_model.user_info_component.session,
+        userinfofromfriend_model.user_info_component.user_info,
+      )
+      #(Model(..model, current_page: BlockUser(init_block_model)), effect.none())
+    }
+
+    UserInfoFromFriend(userinfofromfriend_model), UserInfoFromFriendMsg(userinfofromfriend.ToReport) -> {
+      let #(init_report_model, _) = report_user.init(
+        userinfofromfriend_model.user_info_component.session,
+        userinfofromfriend_model.user_info_component.user_info,
+      )
+      #(Model(..model, current_page: ReportUser(init_report_model)), effect.none())
+    }
+
     // userinfofromfriend other
 
     UserInfoFromFriend(userinfofromfriend_model), UserInfoFromFriendMsg(other) -> {
@@ -367,6 +399,27 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     UserInfoFromRoom(userinfofromroom_model), UserInfoFromRoomMsg(userinfofromroom.ToRoom(room_id)) -> {
       let #(init_room_model, init_effect) = room.init(userinfofromroom_model.user_info_component.session, room_id)
       #(Model(..model, current_page: Room(init_room_model)), init_effect |> effect.map(RoomMsg))
+    }
+
+    UserInfoFromRoom(userinfofromroom_model), UserInfoFromRoomMsg(userinfofromroom.ToFriend) -> {
+      let #(init_friend_model, _) = friend.init(userinfofromroom_model.user_info_component.session)
+      #(Model(..model, current_page: Friend(init_friend_model)), effect.none())
+    }
+
+    UserInfoFromRoom(userinfofromroom_model), UserInfoFromRoomMsg(userinfofromroom.ToBlock) -> {
+      let #(init_block_model, _) = block_user.init(
+        userinfofromroom_model.user_info_component.session,
+        userinfofromroom_model.user_info_component.user_info,
+      )
+      #(Model(..model, current_page: BlockUser(init_block_model)), effect.none())
+    }
+
+    UserInfoFromRoom(userinfofromroom_model), UserInfoFromRoomMsg(userinfofromroom.ToReport) -> {
+      let #(init_report_model, _) = report_user.init(
+        userinfofromroom_model.user_info_component.session,
+        userinfofromroom_model.user_info_component.user_info,
+      )
+      #(Model(..model, current_page: ReportUser(init_report_model)), effect.none())
     }
 
     // userinfofromroom other
@@ -401,12 +454,15 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     Search(search_model), SearchMsg(search.ToUserInfo(user_info)) -> {
-      let #(init_user_info_model, _) = userinfofromsearch.init(
+      let #(init_user_info_model, init_effect) = userinfofromsearch.init(
         search_model.session,
         user_info,
         search_model.search_word,
       )
-      #(Model(..model, current_page: UserInfoFromSearch(init_user_info_model)), effect.none())
+      #(
+        Model(..model, current_page: UserInfoFromSearch(init_user_info_model)),
+        init_effect |> effect.map(UserInfoFromSearchMsg),
+      )
     }
 
     Search(search_model), SearchMsg(other) -> {
@@ -430,11 +486,48 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       )
     }
 
+    UserInfoFromSearch(userinfo_model), UserInfoFromSearchMsg(userinfofromsearch.ToFriend) -> {
+      let #(init_friend_model, _) = friend.init(userinfo_model.user_info_component.session)
+      #(Model(..model, current_page: Friend(init_friend_model)), effect.none())
+    }
+
+    UserInfoFromSearch(userinfo_model), UserInfoFromSearchMsg(userinfofromsearch.ToBlock) -> {
+      let #(init_block_model, _) = block_user.init(
+        userinfo_model.user_info_component.session,
+        userinfo_model.user_info_component.user_info,
+      )
+      #(Model(..model, current_page: BlockUser(init_block_model)), effect.none())
+    }
+
+    UserInfoFromSearch(userinfo_model), UserInfoFromSearchMsg(userinfofromsearch.ToReport) -> {
+      let #(init_report_model, _) = report_user.init(
+        userinfo_model.user_info_component.session,
+        userinfo_model.user_info_component.user_info,
+      )
+      #(Model(..model, current_page: ReportUser(init_report_model)), effect.none())
+    }
+
     UserInfoFromSearch(userinfo_model), UserInfoFromSearchMsg(other) -> {
       let #(updated_userinfo_model, update_effect) = userinfofromsearch.update(userinfo_model, other)
       #(
         Model(..model, current_page: UserInfoFromSearch(updated_userinfo_model)),
         update_effect |> effect.map(UserInfoFromSearchMsg),
+      )
+    }
+
+    BlockUser(_), BlockUserMsg(block_user.ToHome) -> {
+      let #(init_home_model, home_effect) = home.init(model.session)
+      #(
+        Model(..model, current_page: Home(init_home_model)),
+        home_effect |> effect.map(HomeMsg),
+      )
+    }
+
+    ReportUser(_), ReportUserMsg(report_user.ToHome) -> {
+      let #(init_home_model, home_effect) = home.init(model.session)
+      #(
+        Model(..model, current_page: Home(init_home_model)),
+        home_effect |> effect.map(HomeMsg),
       )
     }
 
@@ -487,6 +580,12 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     _, UserInfoFromSearchMsg(_) -> {
+      #(model, effect.none())
+    }
+    _, BlockUserMsg(_) -> {
+      #(model, effect.none())
+    }
+    _, ReportUserMsg(_) -> {
       #(model, effect.none())
     }
 
@@ -542,6 +641,12 @@ fn view (model: Model) -> element.Element(Msg) {
     }
     UserInfoFromSearch(userinfofromsearch_model) -> {
       userinfofromsearch.view(userinfofromsearch_model) |> element.map(UserInfoFromSearchMsg)
+    }
+    BlockUser(block_model) -> {
+      block_user.view(block_model) |> element.map(BlockUserMsg)
+    }
+    ReportUser(report_model) -> {
+      report_user.view(report_model) |> element.map(ReportUserMsg)
     }
   }
 }

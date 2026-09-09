@@ -17,6 +17,20 @@ public interface UserRepository {
 	record UserSummaryRow(long id, String name, String iconUrl) {
 	}
 
+	record UserProfileRow(
+		long id,
+		String name,
+		String iconUrl,
+		boolean isPublic,
+		String bio,
+		Long workCategoryId,
+		String workCategoryName,
+		String workCategoryDescription,
+		Integer workCategorySortOrder,
+		String friendship
+	) {
+	}
+
 	record MyProfileRow(
 		long id,
 		String name,
@@ -152,10 +166,16 @@ public interface UserRepository {
 		WHERE u.deleted_at IS NULL
 		  AND s.code = 'ACTIVE'
 		  AND (u.suspended_until IS NULL OR u.suspended_until &lt;= CURRENT_TIMESTAMP)
+		  AND u.id &lt;&gt; #{viewerId}
+		  AND NOT EXISTS (
+		  	SELECT 1 FROM blocks b
+		  	WHERE (b.blocker_user_id = #{viewerId} AND b.blocked_user_id = u.id)
+		  	   OR (b.blocker_user_id = u.id AND b.blocked_user_id = #{viewerId})
+		  )
 		  AND LOWER(u.name) LIKE CONCAT('%', LOWER(#{query}), '%')
 		</script>
 		""")
-	long countByNameLike(@Param("query") String query);
+	long countByNameLike(@Param("viewerId") long viewerId, @Param("query") String query);
 
 	@Select("""
 		<script>
@@ -166,15 +186,60 @@ public interface UserRepository {
 		WHERE u.deleted_at IS NULL
 		  AND s.code = 'ACTIVE'
 		  AND (u.suspended_until IS NULL OR u.suspended_until &lt;= CURRENT_TIMESTAMP)
+		  AND u.id &lt;&gt; #{viewerId}
+		  AND NOT EXISTS (
+		  	SELECT 1 FROM blocks b
+		  	WHERE (b.blocker_user_id = #{viewerId} AND b.blocked_user_id = u.id)
+		  	   OR (b.blocker_user_id = u.id AND b.blocked_user_id = #{viewerId})
+		  )
 		  AND LOWER(u.name) LIKE CONCAT('%', LOWER(#{query}), '%')
 		ORDER BY u.name ASC, u.id ASC
 		LIMIT #{size} OFFSET #{offset}
 		</script>
 		""")
 	java.util.List<UserSummaryRow> findByNameLike(
+		@Param("viewerId") long viewerId,
 		@Param("query") String query,
 		@Param("size") int size,
 		@Param("offset") long offset
 	);
+
+	@Select("""
+		SELECT EXISTS (
+			SELECT 1 FROM blocks b
+			WHERE (b.blocker_user_id = #{viewerId} AND b.blocked_user_id = #{targetId})
+			   OR (b.blocker_user_id = #{targetId} AND b.blocked_user_id = #{viewerId})
+		)
+		""")
+	boolean existsBlockedRelation(@Param("viewerId") long viewerId, @Param("targetId") long targetId);
+
+	@Select("""
+		SELECT
+			u.id,
+			u.name,
+			p.icon_url,
+			COALESCE(p.is_public, TRUE) AS is_public,
+			COALESCE(p.bio, '') AS bio,
+			c.id AS work_category_id,
+			c.name AS work_category_name,
+			c.description AS work_category_description,
+			c.sort_order AS work_category_sort_order,
+			CASE WHEN EXISTS (
+				SELECT 1 FROM friends f
+				JOIN friend_statuses fs ON fs.id = f.status_id
+				WHERE f.user_id = #{viewerId}
+				  AND f.friend_user_id = u.id
+				  AND fs.code = 'ACTIVE'
+			) THEN 'FRIEND' ELSE 'NONE' END AS friendship
+		FROM users u
+		JOIN account_statuses s ON s.id = u.account_status_id
+		LEFT JOIN profiles p ON p.user_id = u.id
+		LEFT JOIN room_categories c ON c.id = p.work_category_id
+		WHERE u.id = #{targetId}
+		  AND u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
+		""")
+	UserProfileRow findUserProfileById(@Param("viewerId") long viewerId, @Param("targetId") long targetId);
 
 }

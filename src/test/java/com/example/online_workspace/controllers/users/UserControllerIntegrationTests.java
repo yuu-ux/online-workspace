@@ -29,14 +29,25 @@ class UserControllerIntegrationTests {
 				.param("query", "tom")
 				.with(user("tom@example.com")))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.items", hasSize(2)))
-			.andExpect(jsonPath("$.items[0].name").value("Tom"))
-			.andExpect(jsonPath("$.items[0].iconUrl").value("https://example.com/tom.png"))
-			.andExpect(jsonPath("$.items[1].name").value("Tomoko"))
-			.andExpect(jsonPath("$.page.totalElements").value(2))
+			.andExpect(jsonPath("$.items", hasSize(1)))
+			.andExpect(jsonPath("$.items[0].name").value("Tomoko"))
+			.andExpect(jsonPath("$.items[0].iconUrl").value("https://example.com/tomoko.png"))
+			.andExpect(jsonPath("$.page.totalElements").value(1))
 			.andExpect(jsonPath("$.page.totalPages").value(1))
 			.andExpect(jsonPath("$.page.first").value(true))
 			.andExpect(jsonPath("$.page.last").value(true));
+	}
+
+	@DisplayName("ブロック関係にあるユーザーは検索結果から除外される")
+	@Test
+	void excludesBlockedUsers() throws Exception {
+		mockMvc.perform(get("/api/v1/users")
+				.param("query", "tomo")
+				.with(user("tom@example.com")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items", hasSize(1)))
+			.andExpect(jsonPath("$.items[0].name").value("Tomoko"))
+			.andExpect(jsonPath("$.page.totalElements").value(1));
 	}
 
 	@DisplayName("page/sizeでページングできる")
@@ -46,14 +57,14 @@ class UserControllerIntegrationTests {
 				.param("query", "tom")
 				.param("page", "1")
 				.param("size", "1")
-				.with(user("tom@example.com")))
+				.with(user("alice@example.com")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.items", hasSize(1)))
-			.andExpect(jsonPath("$.items[0].name").value("Tomoko"))
-			.andExpect(jsonPath("$.page.totalElements").value(2))
-			.andExpect(jsonPath("$.page.totalPages").value(2))
+			.andExpect(jsonPath("$.items[0].name").value("Tomoaki"))
+			.andExpect(jsonPath("$.page.totalElements").value(3))
+			.andExpect(jsonPath("$.page.totalPages").value(3))
 			.andExpect(jsonPath("$.page.first").value(false))
-			.andExpect(jsonPath("$.page.last").value(true));
+			.andExpect(jsonPath("$.page.last").value(false));
 	}
 
 	@DisplayName("query未指定は400を返す")
@@ -70,5 +81,38 @@ class UserControllerIntegrationTests {
 				.param("query", "tom")
 				.with(user("unknown@example.com")))
 			.andExpect(status().isUnauthorized());
+	}
+
+	@DisplayName("公開プロフィールを取得できる")
+	@Test
+	void getsPublicProfile() throws Exception {
+		mockMvc.perform(get("/api/v1/users/{userId}", 3L)
+				.with(user("tom@example.com")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id").value(3))
+			.andExpect(jsonPath("$.name").value("Alice"))
+			.andExpect(jsonPath("$.isPublic").value(true))
+			.andExpect(jsonPath("$.bio").value("alice bio"))
+			.andExpect(jsonPath("$.friendship").value("FRIEND"));
+	}
+
+	@DisplayName("非公開プロフィールは名前とアイコンのみ返す")
+	@Test
+	void getsHiddenProfile() throws Exception {
+		mockMvc.perform(get("/api/v1/users/{userId}", 2L)
+				.with(user("alice@example.com")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("Tomoko"))
+			.andExpect(jsonPath("$.isPublic").value(false))
+			.andExpect(jsonPath("$.bio").doesNotExist())
+			.andExpect(jsonPath("$.friendship").doesNotExist());
+	}
+
+	@DisplayName("ブロック関係ユーザーのプロフィール取得は403を返す")
+	@Test
+	void rejectsBlockedProfile() throws Exception {
+		mockMvc.perform(get("/api/v1/users/{userId}", 6L)
+				.with(user("tom@example.com")))
+			.andExpect(status().isForbidden());
 	}
 }
