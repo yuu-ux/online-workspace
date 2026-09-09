@@ -15,6 +15,9 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface UserRepository {
 
+	record UserSummaryRow(long id, String name, String iconUrl) {
+	}
+
 	record MyProfileRow(
 		long id,
 		String name,
@@ -108,5 +111,48 @@ public interface UserRepository {
 		)
 		""")
 	boolean lockById(@Param("userId") long userId);
+
+	@Select("""
+		SELECT u.id FROM users u
+		JOIN account_statuses s ON s.id = u.account_status_id
+		WHERE u.email = #{email}
+		  AND u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
+		""")
+	Long findActiveUserIdByEmail(@Param("email") String email);
+
+	@Select("""
+		<script>
+		SELECT COUNT(*)
+		FROM users u
+		JOIN account_statuses s ON s.id = u.account_status_id
+		WHERE u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until &lt;= CURRENT_TIMESTAMP)
+		  AND LOWER(u.name) LIKE CONCAT('%', LOWER(#{query}), '%')
+		</script>
+		""")
+	long countByNameLike(@Param("query") String query);
+
+	@Select("""
+		<script>
+		SELECT u.id, u.name, p.icon_url
+		FROM users u
+		JOIN account_statuses s ON s.id = u.account_status_id
+		LEFT JOIN profiles p ON p.user_id = u.id
+		WHERE u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until &lt;= CURRENT_TIMESTAMP)
+		  AND LOWER(u.name) LIKE CONCAT('%', LOWER(#{query}), '%')
+		ORDER BY u.name ASC, u.id ASC
+		LIMIT #{size} OFFSET #{offset}
+		</script>
+		""")
+	java.util.List<UserSummaryRow> findByNameLike(
+		@Param("query") String query,
+		@Param("size") int size,
+		@Param("offset") long offset
+	);
 
 }

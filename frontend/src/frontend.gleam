@@ -121,8 +121,14 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     MyPage(mypage_model), MyPageMsg(mypage.SubmitClicked) -> {
-      let #(init_search_model, _) = search.init(mypage_model.session, mypage_model.current_user_name)
-      #(Model(..model, current_page: Search(init_search_model)), effect.none())
+      let #(init_search_model, init_effect) = search.init(
+        mypage_model.session,
+        mypage_model.current_user_name,
+      )
+      #(
+        Model(..model, current_page: Search(init_search_model)),
+        init_effect |> effect.map(SearchMsg),
+      )
     }
 
     // mypage other
@@ -403,11 +409,25 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, current_page: UserInfoFromSearch(init_user_info_model)), effect.none())
     }
 
+    Search(search_model), SearchMsg(other) -> {
+      let #(updated_search_model, update_effect) = search.update(search_model, other)
+      #(
+        Model(..model, current_page: Search(updated_search_model)),
+        update_effect |> effect.map(SearchMsg),
+      )
+    }
+
     // -- userinfofromsearch --
 
     UserInfoFromSearch(userinfo_model), UserInfoFromSearchMsg(userinfofromsearch.ToSearch(search_word)) -> {
-      let #(init_search_model, _) = search.init(userinfo_model.user_info_component.session, search_word)
-      #(Model(..model, current_page: Search(init_search_model)), effect.none())
+      let #(init_search_model, init_effect) = search.init(
+        userinfo_model.user_info_component.session,
+        search_word,
+      )
+      #(
+        Model(..model, current_page: Search(init_search_model)),
+        init_effect |> effect.map(SearchMsg),
+      )
     }
 
     UserInfoFromSearch(userinfo_model), UserInfoFromSearchMsg(other) -> {
