@@ -40,7 +40,7 @@ public class MyProfileService {
 		);
 		return new MyProfile(
 			row.id(), row.name(), row.iconUrl(), row.isPublic(), row.bio(), category,
-			"NONE", false, row.email(), row.role(), row.accountStatus(), row.createdAt()
+			"NONE", row.email(), row.role(), row.accountStatus(), row.createdAt()
 		);
 	}
 
@@ -52,7 +52,6 @@ public class MyProfileService {
 		String bio,
 		RoomCategory workCategory,
 		String friendship,
-		boolean blocked,
 		String email,
 		String role,
 		String accountStatus,
