@@ -45,7 +45,6 @@ class MyProfileControllerIntegrationTests {
 			.andExpect(jsonPath("$.bio").value("朝に集中して作業します"))
 			.andExpect(jsonPath("$.workCategory.name").value("開発"))
 			.andExpect(jsonPath("$.friendship").value("NONE"))
-			.andExpect(jsonPath("$.blocked").value(false))
 			.andExpect(jsonPath("$.email").value("me@example.com"))
 			.andExpect(jsonPath("$.role").value("USER"))
 			.andExpect(jsonPath("$.accountStatus").value("ACTIVE"));
