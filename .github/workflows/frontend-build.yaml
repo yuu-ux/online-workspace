@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker build --file frontend/Dockerfile.dev --tag online-workspace-frontend frontend
       - run: docker run --rm online-workspace-frontend npm test
+
+# 変更点: npm run build ではなく、Lustre のビルドコマンドを実行
       - run: >-
           docker run --rm online-workspace-frontend sh -c
-          'npm run build >/tmp/build.log 2>&1 || { tail -n 250 /tmp/build.log; exit 1; }'
+          'gleam run -m lustre/dev build app >/tmp/build.log 2>&1 || { tail -n 250 /tmp/build.log; exit 1; }'

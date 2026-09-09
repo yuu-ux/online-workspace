@@ -1,20 +1,12 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
     "test": "node --test src/ffi/ws.test.js",
-    "preview": "vite preview --host 0.0.0.0",
     "build:css": "npx @tailwindcss/cli -i ./src/input.css -o ./priv/static/tailwind.css --minify",
     "watch:css": "npx @tailwindcss/cli -i ./src/input.css -o ./priv/static/tailwind.css --watch"
   },
-  "dependencies": {
-    "typescript": "^5.8.0"
-  },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
-    "tailwindcss": "^4.3.3",
-    "vite": "^8.2.1",
-    "vite-plugin-gleam": "^0.1.0"
+    "tailwindcss": "^4.3.3"
   }
 }
