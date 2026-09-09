@@ -23,7 +23,13 @@ services:
     container_name: online-workspace-frontend
     working_dir: /app
     user: "0:0"
-    command: gleam run -m lustre/dev start --host=0.0.0.0 --port=5173
+    # command: gleam run -m lustre/dev start --host=0.0.0.0 --port=5173
+    command: >
+      sh -c "
+        npm run build:css &&
+        npm run watch:css &
+        gleam run -m lustre/dev start --host=0.0.0.0 --port=5173
+      "
     volumes:
       - ./frontend:/app
       - frontend_build:/app/build
