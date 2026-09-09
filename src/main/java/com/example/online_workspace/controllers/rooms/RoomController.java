@@ -11,7 +11,11 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.online_workspace.repositories.RoomRepository.RoomView;
 import com.example.online_workspace.services.RoomService;
 import com.example.online_workspace.services.RoomService.CreateRoomCommand;
+import com.example.online_workspace.services.RoomService.UpdateRoomCommand;
 
 @RestController
 @RequestMapping("/api/v1/rooms")
@@ -40,6 +45,26 @@ public class RoomController {
 		return RoomDetailResponse.from(service.create(authentication.getName(), request.toCommand()));
 	}
 
+	@GetMapping("/{roomId}")
+	public RoomDetailResponse get(@PathVariable @Positive long roomId, Authentication authentication) {
+		return RoomDetailResponse.from(service.get(authentication.getName(), roomId));
+	}
+
+	@PutMapping("/{roomId}")
+	public RoomDetailResponse update(
+		@PathVariable @Positive long roomId,
+		@Valid @RequestBody UpdateRoomRequest request,
+		Authentication authentication
+	) {
+		return RoomDetailResponse.from(service.update(authentication.getName(), roomId, request.toCommand()));
+	}
+
+	@DeleteMapping("/{roomId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void close(@PathVariable @Positive long roomId, Authentication authentication) {
+		service.close(authentication.getName(), roomId);
+	}
+
 	public record CreateRoomRequest(
 		@NotBlank @Size(max = 100) String name,
 		@NotNull @Size(max = 500) String description,
@@ -47,8 +72,26 @@ public class RoomController {
 		@NotNull WorkStyle workStyle,
 		@NotNull @Min(2) @Max(12) Integer maxMembers
 	) {
-		CreateRoomCommand toCommand() {
+		private CreateRoomCommand toCommand() {
 			return new CreateRoomCommand(
+				name,
+				description,
+				categoryId,
+				workStyle.name(),
+				maxMembers
+			);
+		}
+	}
+
+	public record UpdateRoomRequest(
+		@NotBlank @Size(max = 100) String name,
+		@NotNull @Size(max = 500) String description,
+		@NotNull @Positive Long categoryId,
+		@NotNull WorkStyle workStyle,
+		@NotNull @Min(2) @Max(12) Integer maxMembers
+	) {
+		private UpdateRoomCommand toCommand() {
+			return new UpdateRoomCommand(
 				name,
 				description,
 				categoryId,
@@ -80,6 +123,9 @@ public class RoomController {
 		Instant updatedAt
 	) {
 		static RoomDetailResponse from(RoomView room) {
+			String restriction = "OPEN".equals(room.status())
+				? (room.currentMembers() >= room.maxMembers() ? "FULL" : null)
+				: "CLOSED";
 			return new RoomDetailResponse(
 				room.id(),
 				room.name(),
@@ -92,12 +138,12 @@ public class RoomController {
 				),
 				room.workStyle(),
 				room.maxMembers(),
-				1,
+				room.currentMembers(),
 				room.status(),
 				new UserSummaryResponse(room.creatorId(), room.creatorName(), room.creatorIconUrl()),
-				false,
-				null,
-				true,
+				restriction == null,
+				restriction,
+				room.member(),
 				room.createdAt(),
 				room.updatedAt()
 			);
