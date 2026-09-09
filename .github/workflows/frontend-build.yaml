@@ -21,4 +21,4 @@ jobs:
 # 変更点: npm run build ではなく、Lustre のビルドコマンドを実行
       - run: >-
           docker run --rm online-workspace-frontend sh -c
-          'gleam run -m lustre/dev build app >/tmp/build.log 2>&1 || { tail -n 250 /tmp/build.log; exit 1; }'
+          'gleam run -m lustre/dev build frontend >/tmp/build.log 2>&1 || { tail -n 250 /tmp/build.log; exit 1; }'
