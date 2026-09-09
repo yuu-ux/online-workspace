@@ -21,6 +21,7 @@ import types/room.{
   type WorkStyleType,
 }
 import types/user.{UserId, UserInfo, type UserInfo}
+import wrap/api as api
 import wrap/api.{type ApiError}
 
 pub fn create_room(
@@ -155,8 +156,8 @@ fn room_path(room_id: RoomId) -> String {
 }
 
 fn room_member_decoder() -> decode.Decoder(UserInfo) {
-  use id <- decode.field("user", decode.field("id", decode.int))
-  use name <- decode.field("user", decode.field("name", decode.string))
+  use id <- decode.subfield(["user", "id"], decode.int)
+  use name <- decode.subfield(["user", "name"], decode.string)
   decode.success(UserInfo(name: name, user_id: UserId(int.to_string(id))))
 }
 
@@ -167,7 +168,7 @@ fn message_list_decoder() -> decode.Decoder(List(Chat)) {
 
 fn message_decoder() -> decode.Decoder(Chat) {
   use room_id <- decode.field("roomId", decode.int)
-  use user <- decode.field("sender", decode.field("name", decode.string))
+  use user <- decode.subfield(["sender", "name"], decode.string)
   use message <- decode.field("content", decode.string)
   decode.success(
     Chat(
