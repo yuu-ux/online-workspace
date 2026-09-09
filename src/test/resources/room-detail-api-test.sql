@@ -15,10 +15,17 @@ CREATE TABLE room_statuses (
     code VARCHAR(50) NOT NULL UNIQUE
 );
 
+CREATE TABLE account_statuses (
+    id SMALLINT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE
+);
+
 CREATE TABLE users (
     id BIGINT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
+    account_status_id SMALLINT NOT NULL,
+    suspended_until TIMESTAMP WITH TIME ZONE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
@@ -61,11 +68,12 @@ CREATE TABLE room_members (
 INSERT INTO room_category_statuses (id, code) VALUES (1, 'ACTIVE'), (2, 'INACTIVE');
 INSERT INTO work_styles (id, code) VALUES (1, 'FOCUS'), (2, 'CHAT_OK');
 INSERT INTO room_statuses (id, code) VALUES (1, 'OPEN'), (2, 'CLOSED');
+INSERT INTO account_statuses (id, code) VALUES (1, 'ACTIVE'), (2, 'SUSPENDED');
 
-INSERT INTO users (id, name, email) VALUES
-    (1, '作成者', 'creator@example.com'),
-    (2, '参加者', 'member@example.com'),
-    (3, '閲覧者', 'viewer@example.com');
+INSERT INTO users (id, name, email, account_status_id, suspended_until, deleted_at) VALUES
+    (1, '作成者', 'creator@example.com', 1, NULL, NULL),
+    (2, '参加者', 'member@example.com', 1, NULL, NULL),
+    (3, '閲覧者', 'viewer@example.com', 1, NULL, NULL);
 
 INSERT INTO profiles (user_id, icon_url) VALUES
     (1, 'https://example.com/creator.png'),
