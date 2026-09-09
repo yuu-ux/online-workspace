@@ -44,7 +44,7 @@ class RoomMembershipServiceTests {
 	}
 
 	@Test
-	void listsOnlineMembersOnlyForRoomParticipants() {
+	void listsOnlineMembersForAnyAuthenticatedUser() {
 		service.join(10L, "member@example.com");
 		Message<byte[]> firstTab = connected("member-1", "member@example.com");
 		Message<byte[]> secondTab = connected("member-2", "member@example.com");
@@ -60,9 +60,9 @@ class RoomMembershipServiceTests {
 		presence.disconnected(new SessionDisconnectEvent(this, secondTab, "member-2", CloseStatus.NORMAL));
 		assertThat(presence.isOnline("member@example.com")).isFalse();
 
-		assertThatThrownBy(() -> service.list(10L, "other@example.com"))
-			.isInstanceOfSatisfying(ResponseStatusException.class,
-				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
+		assertThat(service.list(10L, "other@example.com"))
+			.extracting(member -> member.member().userId())
+			.contains(1L, 2L);
 	}
 
 	@Test
@@ -108,6 +108,24 @@ class RoomMembershipServiceTests {
 		assertThat(membershipRepository.hasActiveMembership(2L)).isFalse();
 		assertThat(jdbcTemplate.queryForObject(
 			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NOT NULL",
+			Integer.class
+		)).isOne();
+	}
+
+	@Test
+	void canListAndRejoinPublicRoomAfterLeaving() {
+		service.join(10L, "member@example.com");
+		service.leave(10L, "member@example.com");
+
+		assertThat(service.list(10L, "member@example.com"))
+			.extracting(member -> member.member().userId())
+			.doesNotContain(2L);
+
+		RoomMember rejoined = service.join(10L, "member@example.com");
+
+		assertThat(rejoined.userId()).isEqualTo(2L);
+		assertThat(jdbcTemplate.queryForObject(
+			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NULL",
 			Integer.class
 		)).isOne();
 	}
