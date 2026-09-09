@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatus;
  */
 public class InvalidLoginCredentialsException extends ApiException {
 
+	/**
+	 * 認証情報不正の例外を生成する。
+	 */
 	public InvalidLoginCredentialsException() {
 		super(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "メールアドレスまたはパスワードが正しくありません。");
 	}

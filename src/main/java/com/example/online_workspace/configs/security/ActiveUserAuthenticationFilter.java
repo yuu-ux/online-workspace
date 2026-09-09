@@ -1,6 +1,5 @@
 package com.example.online_workspace.configs.security;
 
-import com.example.online_workspace.models.users.AuthenticatedUserPrincipal;
 import com.example.online_workspace.repositories.users.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -8,18 +7,29 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * 既存セッションのユーザーが現在も認証可能かを確認する。
+ * DB上で無効になったユーザーの既存セッションを継続させない。
+ *
+ * <p>Spring Securityの認証済みセッションは、認証成功後にユーザーDBを自動再確認しないため、
+ * アカウント状態を変更できるアプリケーションではリクエストごとの再検証が必要になる。</p>
  */
 final class ActiveUserAuthenticationFilter extends OncePerRequestFilter {
 
 	private final UserRepository userRepository;
+	private final SecurityContextRepository securityContextRepository;
 
-	ActiveUserAuthenticationFilter(UserRepository userRepository) {
+	ActiveUserAuthenticationFilter(
+		UserRepository userRepository,
+		SecurityContextRepository securityContextRepository
+	) {
 		this.userRepository = userRepository;
+		this.securityContextRepository = securityContextRepository;
 	}
 
 	@Override
@@ -29,17 +39,19 @@ final class ActiveUserAuthenticationFilter extends OncePerRequestFilter {
 		FilterChain filterChain
 	) throws ServletException, IOException {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (isApplicationSessionAuthentication(authentication)
+		if (isAuthenticatedUser(authentication)
 			&& !userRepository.isActiveByEmail(authentication.getName())) {
-			SecurityContextHolder.clearContext();
+			SecurityContext emptyContext = SecurityContextHolder.createEmptyContext();
+			SecurityContextHolder.setContext(emptyContext);
+			securityContextRepository.saveContext(emptyContext, request, response);
 		}
 
 		filterChain.doFilter(request, response);
 	}
 
-	private boolean isApplicationSessionAuthentication(Authentication authentication) {
+	private boolean isAuthenticatedUser(Authentication authentication) {
 		return authentication != null
 			&& authentication.isAuthenticated()
-			&& authentication.getPrincipal() instanceof AuthenticatedUserPrincipal;
+			&& authentication.getPrincipal() instanceof UserDetails;
 	}
 }

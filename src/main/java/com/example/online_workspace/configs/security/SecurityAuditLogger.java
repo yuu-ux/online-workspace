@@ -9,6 +9,9 @@ import org.springframework.security.authentication.event.AuthenticationSuccessEv
 import org.springframework.security.authentication.event.LogoutSuccessEvent;
 import org.springframework.stereotype.Component;
 
+/**
+ * 認証・ログアウトの重要操作を監査ログへ記録する。
+ */
 @Component
 final class SecurityAuditLogger {
 

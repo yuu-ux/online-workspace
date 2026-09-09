@@ -2,9 +2,7 @@ package com.example.online_workspace.repositories.users;
 
 import com.example.online_workspace.models.users.AuthenticatedUser;
 import com.example.online_workspace.models.users.UserAccount;
-import com.example.online_workspace.models.users.UserAuthentication;
 import java.time.Instant;
-import java.util.Optional;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -29,8 +27,12 @@ public interface UserRepository {
 		String email,
 		String role,
 		String accountStatus,
-		Instant createdAt
+		Instant createdAt,
+		Instant suspendedUntil
 	) {
+		public AuthenticatedUser toAuthenticatedUser() {
+			return new AuthenticatedUser(id, name, email, accountStatus, suspendedUntil);
+		}
 	}
 
 	/**
@@ -42,53 +44,24 @@ public interface UserRepository {
 	@Select("SELECT EXISTS (SELECT 1 FROM users WHERE email = #{email})")
 	boolean existsByEmail(@Param("email") String email);
 
+	/**
+	 * ユーザーが現在も利用可能か確認する。
+	 *
+	 * @param email 正規化済みのメールアドレス
+	 * @return 利用可能な場合はtrue
+	 */
 	@Select("""
 		SELECT EXISTS (
 			SELECT 1
-			FROM users
-			INNER JOIN account_statuses ON account_statuses.id = users.account_status_id
-			WHERE users.email = #{email}
-			  AND users.deleted_at IS NULL
-			  AND account_statuses.code = 'ACTIVE'
-			  AND (users.suspended_until IS NULL OR users.suspended_until <= CURRENT_TIMESTAMP)
+			FROM users u
+			JOIN account_statuses s ON s.id = u.account_status_id
+			WHERE u.email = #{email}
+			  AND u.deleted_at IS NULL
+			  AND s.code = 'ACTIVE'
+			  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
 		)
 		""")
 	boolean isActiveByEmail(@Param("email") String email);
-
-	@Select("""
-		SELECT u.id,
-		       u.name,
-		       u.email,
-		       s.code AS account_status,
-		       u.suspended_until
-		FROM users u
-		JOIN account_statuses s ON s.id = u.account_status_id
-		WHERE u.email = #{email}
-		  AND u.deleted_at IS NULL
-		  AND s.code = 'ACTIVE'
-		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
-		""")
-	Optional<AuthenticatedUser> findActiveAuthenticatedByEmail(@Param("email") String email);
-
-	/**
-	 * ログインに必要なユーザー情報を取得する。
-	 *
-	 * @param email 正規化済みのメールアドレス
-	 * @return ユーザー情報。未登録の場合はnull
-	 */
-	@Select("""
-		SELECT u.id,
-		       u.name,
-		       u.email,
-		       u.password_hash,
-		       s.code AS account_status,
-		       u.suspended_until
-		FROM users u
-		JOIN account_statuses s ON s.id = u.account_status_id
-		WHERE u.email = #{email}
-		  AND u.deleted_at IS NULL
-		""")
-	UserAuthentication findAuthenticationByEmail(@Param("email") String email);
 
 	/**
 	 * ユーザーの認証情報を登録する。
@@ -116,7 +89,8 @@ public interface UserRepository {
 			u.email,
 			r.code AS role,
 			s.code AS account_status,
-			u.created_at
+			u.created_at,
+			u.suspended_until
 		FROM users u
 		JOIN roles r ON r.id = u.role_id
 		JOIN account_statuses s ON s.id = u.account_status_id

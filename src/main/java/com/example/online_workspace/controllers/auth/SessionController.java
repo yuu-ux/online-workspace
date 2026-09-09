@@ -2,9 +2,11 @@ package com.example.online_workspace.controllers.auth;
 
 import com.example.online_workspace.models.users.AuthenticatedUser;
 import com.example.online_workspace.repositories.users.UserRepository;
+import com.example.online_workspace.repositories.users.UserRepository.MyProfileRow;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class SessionController {
+
 	private final UserRepository userRepository;
 
 	public SessionController(UserRepository userRepository) {
@@ -24,7 +27,7 @@ public class SessionController {
 	/**
 	 * 現在のリクエストが認証済みセッションを持つかどうかを返す。
 	 *
-	 * @return 現在のセッション状態。認証済みの場合はユーザー情報を含む
+	 * @return 現在のセッション状態とDBから取得した最新のユーザー情報
 	 */
 	@GetMapping("/session")
 	public SessionStatusResponse getSessionStatus() {
@@ -33,9 +36,11 @@ public class SessionController {
 			&& authentication.isAuthenticated()
 			&& !(authentication instanceof AnonymousAuthenticationToken);
 
-		AuthenticatedUser user = authenticated
-			? userRepository.findActiveAuthenticatedByEmail(authentication.getName()).orElse(null)
-			: null;
-		return new SessionStatusResponse(authenticated && user != null, user);
+		if (!authenticated || !(authentication.getPrincipal() instanceof UserDetails)) {
+			return new SessionStatusResponse(false, null);
+		}
+		MyProfileRow row = userRepository.findMyProfileByEmail(authentication.getName());
+		AuthenticatedUser user = row == null ? null : row.toAuthenticatedUser();
+		return new SessionStatusResponse(user != null, user);
 	}
 }

@@ -27,6 +27,8 @@ public class WebSecurityConfig {
 	 * Web用のSecurityFilterChainを生成する。
 	 *
 	 * @param http HTTPセキュリティの設定オブジェクト
+	 * @param securityContextRepository セキュリティコンテキストの保存先
+	 * @param sessionRegistry セッション一覧の管理先
 	 * @return Web用のSecurityFilterChain
 	 * @throws Exception セキュリティ設定に失敗した場合
 	 */
@@ -35,11 +37,11 @@ public class WebSecurityConfig {
 	public SecurityFilterChain webSecurityFilterChain(
 		HttpSecurity http,
 		SecurityContextRepository securityContextRepository,
-		UserRepository userRepository,
-		SessionRegistry sessionRegistry
+		SessionRegistry sessionRegistry,
+		UserRepository userRepository
 	) throws Exception {
 		ActiveUserAuthenticationFilter activeUserAuthenticationFilter =
-			new ActiveUserAuthenticationFilter(userRepository);
+			new ActiveUserAuthenticationFilter(userRepository, securityContextRepository);
 		http
 			.csrf(csrf -> csrf.ignoringRequestMatchers("/ws/**"))
 			.authorizeHttpRequests((authorize) -> authorize
@@ -57,8 +59,8 @@ public class WebSecurityConfig {
 			.securityContext(securityContext -> securityContext
 				.securityContextRepository(securityContextRepository)
 			)
-			// フロントエンドのログイン画面が実装されるまでは、Swagger UIなどの
-			// Web利用向けにSpring Securityのログイン画面を維持する。
+			// Gream側のログイン画面が実装されるまでは、Swagger UIなどのWeb利用向けに
+			// Spring Securityのログイン画面を維持する。Gream画面統合時にformLoginを削除する。
 			.formLogin(Customizer.withDefaults())
 			.sessionManagement(session -> session
 				.maximumSessions(-1)

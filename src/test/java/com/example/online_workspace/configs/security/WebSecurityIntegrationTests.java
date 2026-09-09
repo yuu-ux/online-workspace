@@ -5,8 +5,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.example.online_workspace.models.users.AuthenticatedUser;
-import com.example.online_workspace.models.users.AuthenticatedUserPrincipal;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -61,10 +61,13 @@ class WebSecurityIntegrationTests {
 			passwordEncoder.encode("password-123")
 		);
 
-		AuthenticatedUser user = new AuthenticatedUser(1L, "停止ユーザー", email, "ACTIVE", null);
+		UserDetails user = User.withUsername(email)
+			.password("")
+			.authorities(new String[0])
+			.build();
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
 		context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
-			new AuthenticatedUserPrincipal(user),
+			user,
 			null,
 			List.of()
 		));

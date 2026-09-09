@@ -55,8 +55,13 @@ public class GlobalApiExceptionHandler {
 		if (!exception.getFieldErrors().isEmpty()) {
 			return validationProblem(request, exception.getStatus(), exception.getFieldErrors());
 		}
+		HttpHeaders headers = new HttpHeaders();
+		if (exception instanceof TooManyLoginAttemptsException tooManyAttempts) {
+			headers.set("Retry-After", String.valueOf(tooManyAttempts.retryAfterSeconds()));
+		}
 		return problem(
 			exception.getStatus(),
+			headers,
 			ApiErrorResponseFactory.create(
 				request,
 				exception.getStatus(),

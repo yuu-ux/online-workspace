@@ -6,40 +6,42 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 
 class LoginRateLimiterTests {
 
 	@Test
-	void blocksAfterFiveFailuresAndExpiresAfterFifteenMinutes() {
+	void failureCountExpiresAfterTheConsecutiveFailureWindow() {
 		MutableClock clock = new MutableClock(Instant.parse("2026-01-01T00:00:00Z"));
 		LoginRateLimiter limiter = new LoginRateLimiter(clock);
 
-		for (int attempt = 0; attempt < LoginRateLimiter.MAX_FAILURES; attempt++) {
+		for (int attempt = 1; attempt <= 5; attempt++) {
 			limiter.recordFailure("user@example.com", "198.51.100.10");
 		}
 		assertTrue(limiter.isBlocked("user@example.com", "198.51.100.10"));
 
-		clock.advance(Duration.ofMinutes(15));
+		clock.advance(Duration.ofMinutes(15).plusSeconds(1));
+
 		assertFalse(limiter.isBlocked("user@example.com", "198.51.100.10"));
 	}
 
 	@Test
-	void successfulLoginResetsFailures() {
-		LoginRateLimiter limiter = new LoginRateLimiter();
-		for (int attempt = 1; attempt < LoginRateLimiter.MAX_FAILURES; attempt++) {
+	void failuresBeforeTheWindowDoNotCountAsConsecutive() {
+		MutableClock clock = new MutableClock(Instant.parse("2026-01-01T00:00:00Z"));
+		LoginRateLimiter limiter = new LoginRateLimiter(clock);
+
+		for (int attempt = 1; attempt <= 4; attempt++) {
 			limiter.recordFailure("user@example.com", "198.51.100.10");
 		}
-
-		limiter.reset("user@example.com", "198.51.100.10");
+		clock.advance(Duration.ofMinutes(15).plusSeconds(1));
 		limiter.recordFailure("user@example.com", "198.51.100.10");
 
 		assertFalse(limiter.isBlocked("user@example.com", "198.51.100.10"));
 	}
 
 	private static final class MutableClock extends Clock {
+
 		private Instant current;
 
 		private MutableClock(Instant current) {
@@ -47,12 +49,12 @@ class LoginRateLimiterTests {
 		}
 
 		@Override
-		public ZoneId getZone() {
+		public ZoneOffset getZone() {
 			return ZoneOffset.UTC;
 		}
 
 		@Override
-		public Clock withZone(ZoneId zone) {
+		public Clock withZone(java.time.ZoneId zone) {
 			return this;
 		}
 

@@ -5,16 +5,14 @@ import com.example.online_workspace.exceptions.InvalidLoginCredentialsException;
 import com.example.online_workspace.exceptions.TooManyLoginAttemptsException;
 import com.example.online_workspace.forms.auth.UserLoginForm;
 import com.example.online_workspace.models.users.AuthenticatedUser;
-import com.example.online_workspace.models.users.AuthenticatedUserPrincipal;
-import com.example.online_workspace.models.users.UserAuthentication;
+import com.example.online_workspace.repositories.users.UserRepository;
+import com.example.online_workspace.repositories.users.UserRepository.MyProfileRow;
 import com.example.online_workspace.services.auth.LoginRateLimiter;
-import com.example.online_workspace.services.auth.UserLoginService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.authentication.AuthenticationEventPublisher;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,35 +26,43 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * セッション認証を開始するログインAPI。
+ * Gream向けのログインAPI。
  */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class UserLoginController {
 
-	private final UserLoginService userLoginService;
+	private final AuthenticationManager authenticationManager;
 	private final LoginRateLimiter loginRateLimiter;
+	private final UserRepository userRepository;
 	private final SecurityContextRepository securityContextRepository;
 	private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
-	private final AuthenticationEventPublisher authenticationEventPublisher;
 	private final ApplicationEventPublisher applicationEventPublisher;
 
 	public UserLoginController(
-		UserLoginService userLoginService,
+		AuthenticationManager authenticationManager,
 		LoginRateLimiter loginRateLimiter,
+		UserRepository userRepository,
 		SecurityContextRepository securityContextRepository,
 		SessionAuthenticationStrategy sessionAuthenticationStrategy,
-		AuthenticationEventPublisher authenticationEventPublisher,
 		ApplicationEventPublisher applicationEventPublisher
 	) {
-		this.userLoginService = userLoginService;
+		this.authenticationManager = authenticationManager;
 		this.loginRateLimiter = loginRateLimiter;
+		this.userRepository = userRepository;
 		this.securityContextRepository = securityContextRepository;
 		this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
-		this.authenticationEventPublisher = authenticationEventPublisher;
 		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
+	/**
+	 * メールアドレスとパスワードでログインする。
+	 *
+	 * @param form ログイン入力値
+	 * @param request HTTPリクエスト
+	 * @param response HTTPレスポンス
+	 * @return 認証済みユーザー情報
+	 */
 	@PostMapping("/login")
 	public AuthenticatedUser login(
 		@Valid @RequestBody UserLoginForm form,
@@ -64,44 +70,40 @@ public class UserLoginController {
 		HttpServletResponse response
 	) {
 		String email = form.email();
-		String clientAddress = request.getRemoteAddr();
+		String clientAddress = clientAddress(request);
 		if (loginRateLimiter.isBlocked(email, clientAddress)) {
 			applicationEventPublisher.publishEvent(
-				new LoginRateLimitExceededEvent(LoginRateLimiter.RETRY_AFTER_SECONDS)
+				new LoginRateLimitExceededEvent(LoginRateLimiter.BLOCK_DURATION_SECONDS)
 			);
-			throw new TooManyLoginAttemptsException(LoginRateLimiter.RETRY_AFTER_SECONDS);
+			throw new TooManyLoginAttemptsException(LoginRateLimiter.BLOCK_DURATION_SECONDS);
 		}
 
-		Authentication attemptedAuthentication = UsernamePasswordAuthenticationToken.unauthenticated(
-			email,
-			null
-		);
-		UserAuthentication user;
+		Authentication authentication;
 		try {
-			user = userLoginService.authenticate(email, form.password());
-		} catch (InvalidLoginCredentialsException exception) {
-			loginRateLimiter.recordFailure(email, clientAddress);
-			authenticationEventPublisher.publishAuthenticationFailure(
-				new BadCredentialsException("Invalid login credentials"),
-				attemptedAuthentication
+			authentication = authenticationManager.authenticate(
+				UsernamePasswordAuthenticationToken.unauthenticated(email, form.password())
 			);
-			throw exception;
+		} catch (BadCredentialsException exception) {
+			loginRateLimiter.recordFailure(email, clientAddress);
+			throw new InvalidLoginCredentialsException();
 		}
 
 		loginRateLimiter.reset(email, clientAddress);
-		AuthenticatedUser responseUser = user.toAuthenticatedUser();
-		Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(
-			new AuthenticatedUserPrincipal(responseUser),
-			null,
-			List.of()
-		);
+		MyProfileRow user = userRepository.findMyProfileByEmail(authentication.getName());
+		if (user == null) {
+			throw new InvalidLoginCredentialsException();
+		}
+		AuthenticatedUser authenticatedUser = user.toAuthenticatedUser();
 		sessionAuthenticationStrategy.onAuthentication(authentication, request, response);
 
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
 		context.setAuthentication(authentication);
 		SecurityContextHolder.setContext(context);
 		securityContextRepository.saveContext(context, request, response);
-		authenticationEventPublisher.publishAuthenticationSuccess(authentication);
-		return responseUser;
+		return authenticatedUser;
+	}
+
+	private String clientAddress(HttpServletRequest request) {
+		return request.getRemoteAddr();
 	}
 }

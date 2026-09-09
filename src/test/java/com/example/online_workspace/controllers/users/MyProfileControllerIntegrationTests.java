@@ -30,10 +30,11 @@ class MyProfileControllerIntegrationTests {
 
 	@Test
 	void returnsTheAuthenticatedUsersProfile() throws Exception {
+		when(repository.isActiveByEmail("me@example.com")).thenReturn(true);
 		when(repository.findMyProfileByEmail("me@example.com")).thenReturn(new MyProfileRow(
 			10L, "自分", "https://example.com/me.png", true, "朝に集中して作業します",
 			20L, "開発", "プログラミング", 1, "me@example.com", "USER", "ACTIVE",
-			Instant.parse("2026-08-01T00:00:00Z")
+			Instant.parse("2026-08-01T00:00:00Z"), null
 		));
 
 		mockMvc.perform(get("/api/v1/users/me/profile").with(user("me@example.com")))
