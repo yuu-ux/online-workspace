@@ -1,6 +1,7 @@
 package com.example.online_workspace.controllers.rooms;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -15,9 +16,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -31,9 +33,9 @@ class RoomControllerIntegrationTests {
 	private JdbcTemplate jdbcTemplate;
 
 	@Test
-	@WithMockUser(username = "creator@example.com")
 	void createsRoomAndJoinsCreator() throws Exception {
 		mockMvc.perform(post("/api/v1/rooms")
+				.with(authenticatedAs("creator@example.com"))
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(requestBody(12)))
@@ -59,9 +61,9 @@ class RoomControllerIntegrationTests {
 
 	@ParameterizedTest
 	@ValueSource(ints = {1, 13})
-	@WithMockUser(username = "creator@example.com")
 	void rejectsMemberLimitOutsideTwoThroughTwelve(int maxMembers) throws Exception {
 		mockMvc.perform(post("/api/v1/rooms")
+				.with(authenticatedAs("creator@example.com"))
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(requestBody(maxMembers)))
@@ -73,9 +75,9 @@ class RoomControllerIntegrationTests {
 	}
 
 	@Test
-	@WithMockUser(username = "creator@example.com")
 	void rejectsInactiveCategoryWithoutCreatingRoom() throws Exception {
 		mockMvc.perform(post("/api/v1/rooms")
+				.with(authenticatedAs("creator@example.com"))
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(requestBody(2).replace("\"categoryId\": 1", "\"categoryId\": 2")))
@@ -95,5 +97,9 @@ class RoomControllerIntegrationTests {
 			  "maxMembers": %d
 			}
 			""".formatted(maxMembers);
+	}
+
+	private static RequestPostProcessor authenticatedAs(String username) {
+		return authentication(UsernamePasswordAuthenticationToken.authenticated(username, null, java.util.List.of()));
 	}
 }

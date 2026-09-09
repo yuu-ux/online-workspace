@@ -1,7 +1,7 @@
 package com.example.online_workspace;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -46,7 +48,11 @@ class SwaggerUiIntegrationTests {
 
 	@Test
 	void generatedOpenApiEndpointIsDisabled() throws Exception {
-		mockMvc.perform(get("/v3/api-docs").with(user("tester")))
+		mockMvc.perform(get("/v3/api-docs").with(authenticatedAs("tester")))
 			.andExpect(status().isNotFound());
+	}
+
+	private static RequestPostProcessor authenticatedAs(String username) {
+		return authentication(UsernamePasswordAuthenticationToken.authenticated(username, null, java.util.List.of()));
 	}
 }

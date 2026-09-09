@@ -29,7 +29,6 @@ pub type Msg {
   ToHome
   ToProfile
   ToFriend
-  ToHistory
   InputUpdated(target: InputType, str: String)
   SubmitClicked
 }
@@ -55,10 +54,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     ToFriend -> {
-      #(model, effect.none())
-    }
-
-    ToHistory -> {
       #(model, effect.none())
     }
 
@@ -102,7 +97,6 @@ pub fn view (model: Model) -> element.Element(Msg) {
         btn.to_home_btn_component(ToHome),
         btn.to_friend_btn_component(ToFriend),
         btn.to_profile_btn_component(ToProfile),
-        btn.to_history_btn_component(ToHistory),
         // input([
         //   on_input(InputUpdated(UserName, _)),
         //   attribute.value(model.current_user_name)

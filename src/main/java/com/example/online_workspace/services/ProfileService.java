@@ -73,7 +73,6 @@ public class ProfileService {
 			row.bio(),
 			category,
 			"NONE",
-			false,
 			row.email(),
 			row.accountStatus(),
 			row.createdAt()
@@ -92,7 +91,6 @@ public class ProfileService {
 		String bio,
 		RoomCategory workCategory,
 		String friendship,
-		boolean blocked,
 		String email,
 		String accountStatus,
 		Instant createdAt

@@ -32,6 +32,25 @@ public class GlobalApiExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
 
+	@ExceptionHandler(TooManyLoginAttemptsException.class)
+	ResponseEntity<ApiErrorResponse> handleTooManyLoginAttempts(
+		TooManyLoginAttemptsException exception,
+		HttpServletRequest request
+	) {
+		HttpHeaders headers = new HttpHeaders();
+		headers.set(HttpHeaders.RETRY_AFTER, Long.toString(exception.retryAfterSeconds()));
+		return problem(
+			exception.getStatus(),
+			headers,
+			ApiErrorResponseFactory.create(
+				request,
+				exception.getStatus(),
+				exception.getCode(),
+				exception.getMessage()
+			)
+		);
+	}
+
 	@ExceptionHandler(ApiException.class)
 	ResponseEntity<?> handleApiException(
 		ApiException exception,
@@ -40,8 +59,13 @@ public class GlobalApiExceptionHandler {
 		if (!exception.getFieldErrors().isEmpty()) {
 			return validationProblem(request, exception.getStatus(), exception.getFieldErrors());
 		}
+		HttpHeaders headers = new HttpHeaders();
+		if (exception instanceof TooManyLoginAttemptsException tooManyAttempts) {
+			headers.set("Retry-After", String.valueOf(tooManyAttempts.retryAfterSeconds()));
+		}
 		return problem(
 			exception.getStatus(),
+			headers,
 			ApiErrorResponseFactory.create(
 				request,
 				exception.getStatus(),

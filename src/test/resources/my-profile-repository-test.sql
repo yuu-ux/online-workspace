@@ -2,12 +2,6 @@ DROP TABLE IF EXISTS profiles;
 DROP TABLE IF EXISTS room_categories;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS account_statuses;
-DROP TABLE IF EXISTS roles;
-
-CREATE TABLE roles (
-    id SMALLINT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE
-);
 
 CREATE TABLE account_statuses (
     id SMALLINT PRIMARY KEY,
@@ -19,7 +13,6 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role_id SMALLINT NOT NULL REFERENCES roles(id),
     account_status_id SMALLINT NOT NULL REFERENCES account_statuses(id),
     suspended_until TIMESTAMP WITH TIME ZONE,
     deleted_at TIMESTAMP WITH TIME ZONE,
@@ -41,7 +34,6 @@ CREATE TABLE profiles (
     is_public BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-INSERT INTO roles (id, code) VALUES (1, 'USER');
 INSERT INTO account_statuses (id, code) VALUES (1, 'ACTIVE');
-INSERT INTO users (id, name, email, password_hash, role_id, account_status_id)
-VALUES (10, '自分', 'me@example.com', 'password-hash', 1, 1);
+INSERT INTO users (id, name, email, password_hash, account_status_id)
+VALUES (10, '自分', 'me@example.com', 'password-hash', 1);

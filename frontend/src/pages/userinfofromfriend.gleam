@@ -19,9 +19,9 @@ pub type Msg {
 }
 
 pub fn init(session: Session, target_user_info: UserInfo) -> #(Model, effect.Effect(Msg)) {
-  let #(model, effect) = userinfo.init(session, target_user_info)
+  let #(model, user_effect) = userinfo.init_friend(session, target_user_info)
 
-  #(Model(user_info_component: model), effect.none())
+  #(Model(user_info_component: model), user_effect |> effect.map(UserInfo))
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
@@ -31,8 +31,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     UserInfo(user_info_msg) -> {
-      let #(update_user_info_model, update_effect) = userinfo.update(model.user_info_component, user_info_msg)
-      #(Model(user_info_component: update_user_info_model), update_effect |> effect.map(UserInfo))
+      case user_info_msg {
+        userinfo.MoveToFriend ->
+          #(model, effect.from(fn(dispatch) { dispatch(ToFriend) }))
+        _ -> {
+          let #(update_user_info_model, update_effect) = userinfo.update(model.user_info_component, user_info_msg)
+          #(Model(user_info_component: update_user_info_model), update_effect |> effect.map(UserInfo))
+        }
+      }
     }
   }
 }

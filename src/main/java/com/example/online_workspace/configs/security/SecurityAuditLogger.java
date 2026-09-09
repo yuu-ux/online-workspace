@@ -1,5 +1,6 @@
 package com.example.online_workspace.configs.security;
 
+import com.example.online_workspace.events.security.LoginRateLimitExceededEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -8,6 +9,9 @@ import org.springframework.security.authentication.event.AuthenticationSuccessEv
 import org.springframework.security.authentication.event.LogoutSuccessEvent;
 import org.springframework.stereotype.Component;
 
+/**
+ * 認証・ログアウトの重要操作を監査ログへ記録する。
+ */
 @Component
 final class SecurityAuditLogger {
 
@@ -27,6 +31,14 @@ final class SecurityAuditLogger {
 		LOGGER.info(
 			"security_audit event=authentication outcome=denied reason={}",
 			event.getException().getClass().getSimpleName()
+		);
+	}
+
+	@EventListener
+	void loginRateLimitExceeded(LoginRateLimitExceededEvent event) {
+		LOGGER.info(
+			"security_audit event=authentication outcome=denied reason=rate_limit retryAfterSeconds={}",
+			event.retryAfterSeconds()
 		);
 	}
 

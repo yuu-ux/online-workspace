@@ -1,6 +1,7 @@
 package com.example.online_workspace.configs.security;
 
 import com.example.online_workspace.repositories.AccountWithdrawalRepository;
+import com.example.online_workspace.repositories.users.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -12,6 +13,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
@@ -25,12 +27,21 @@ public class WebSecurityConfig {
 	 * Web用のSecurityFilterChainを生成する。
 	 *
 	 * @param http HTTPセキュリティの設定オブジェクト
+	 * @param securityContextRepository セキュリティコンテキストの保存先
+	 * @param sessionRegistry セッション一覧の管理先
 	 * @return Web用のSecurityFilterChain
 	 * @throws Exception セキュリティ設定に失敗した場合
 	 */
 	@Bean
 	@Order(2)
-	public SecurityFilterChain webSecurityFilterChain(HttpSecurity http, SessionRegistry sessionRegistry) throws Exception {
+	public SecurityFilterChain webSecurityFilterChain(
+		HttpSecurity http,
+		SecurityContextRepository securityContextRepository,
+		SessionRegistry sessionRegistry,
+		UserRepository userRepository
+	) throws Exception {
+		ActiveUserAuthenticationFilter activeUserAuthenticationFilter =
+			new ActiveUserAuthenticationFilter(userRepository, securityContextRepository);
 		http
 			.csrf(csrf -> csrf.ignoringRequestMatchers("/ws/**"))
 			.authorizeHttpRequests((authorize) -> authorize
@@ -45,14 +56,17 @@ public class WebSecurityConfig {
 				// anyRequest() より前に個別ルールを追加する。
 				.anyRequest().authenticated()
 			)
-			// React側のログイン画面とログインAPIが実装されるまでは、
-			// Swagger UIなどのWeb利用向けにSpring Securityのログイン画面を維持する。
-			// ログイン機能のReact移行時にformLoginを削除する。
+			.securityContext(securityContext -> securityContext
+				.securityContextRepository(securityContextRepository)
+			)
+			// Gream側のログイン画面が実装されるまでは、Swagger UIなどのWeb利用向けに
+			// Spring Securityのログイン画面を維持する。Gream画面統合時にformLoginを削除する。
 			.formLogin(Customizer.withDefaults())
 			.sessionManagement(session -> session
 				.maximumSessions(-1)
 				.sessionRegistry(sessionRegistry)
 			)
+			.addFilterBefore(activeUserAuthenticationFilter, CsrfFilter.class)
 			.addFilterBefore(new SecurityAuditFilter("web"), CsrfFilter.class);
 
 		return http.build();
