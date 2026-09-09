@@ -12,6 +12,8 @@ import lustre/element/html.{button, div, text, input, textarea, select, option}
 
 import types/session.{type Session}
 import types/user.{type UserInfo}
+import wrap/api as api
+import wrap/user as user_wrap
 
 pub type InputType {
   UserName
@@ -31,6 +33,7 @@ pub type Msg {
   ToFriend
   InputUpdated(target: InputType, str: String)
   SubmitClicked
+  MyProfileLoaded(Result(user_wrap.MyProfile, user_wrap.MyProfileErr))
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
@@ -39,7 +42,7 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
       session: session,
       current_user_name: "",
       messages: []),
-    effect.none()
+    user_wrap.get_my_profile(MyProfileLoaded)
   )
 }
 
@@ -70,6 +73,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // 送信ボタンが押されたら、入力内容を履歴に追加し、入力欄を空にする
     SubmitClicked -> {
       #(model, effect.none())
+    }
+
+    MyProfileLoaded(Ok(profile)) -> {
+      #(Model(..model, current_user_name: profile.name, messages: []), effect.none())
+    }
+
+    MyProfileLoaded(Error(user_wrap.MyProfileApiErr(api.ApiError(message)))) -> {
+      #(Model(..model, messages: [message]), effect.none())
     }
   }
 }

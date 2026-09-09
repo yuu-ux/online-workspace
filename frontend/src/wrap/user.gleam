@@ -9,21 +9,6 @@ import types/session.{type Session, Token}
 import types/room.{type RoomId}
 import wrap/api
 
-/// get_all_user_info_list関数のエラー
-pub type GetUserInfoListErr {
-  GetUserInfoListAuthErr // roomにアクセスする権限が無い
-}
-
-/// ルームに所属するすべてのユーザーを表示する
-pub fn get_all_user_info_list(session: Session, room_id: RoomId) -> Result(List(UserInfo), GetUserInfoListErr) {
-  // TODO SERVER API
-  Ok([
-    UserInfo(name: "Tom", user_id: UserId("xxx")),
-    UserInfo(name: "Alice", user_id: UserId("xyz")),
-    UserInfo(name: "Bob", user_id: UserId("123")),
-  ])
-}
-
 pub type SearchErr {
   SearchApiErr(api.ApiError)
 }
@@ -41,6 +26,22 @@ pub type UserProfile {
 
 pub type GetUserProfileErr {
   GetUserProfileApiErr(api.ApiError)
+}
+
+pub type MyProfile {
+  MyProfile(
+    name: String,
+    icon_url: String,
+    is_public: Bool,
+    bio: String,
+    work_category_id: Int,
+    work_category: String,
+    email: String,
+  )
+}
+
+pub type MyProfileErr {
+  MyProfileApiErr(api.ApiError)
 }
 
 /// userを名前から検索する
@@ -118,6 +119,89 @@ pub fn user_profile_decoder() -> decode.Decoder(UserProfile) {
 fn work_category_name_decoder() -> decode.Decoder(String) {
   use name <- decode.field("name", decode.string)
   decode.success(name)
+}
+
+pub fn get_my_profile(
+  to_msg: fn(Result(MyProfile, MyProfileErr)) -> msg,
+) -> effect.Effect(msg) {
+  api.json_request(
+    "GET",
+    "/api/v1/users/me/profile",
+    "",
+    my_profile_decoder(),
+    fn(result) {
+      case result {
+        Ok(profile) -> to_msg(Ok(profile))
+        Error(err) -> to_msg(Error(MyProfileApiErr(err)))
+      }
+    },
+  )
+}
+
+fn my_profile_decoder() -> decode.Decoder(MyProfile) {
+  use name <- decode.field("name", decode.string)
+  use icon_url <- decode.optional_field("iconUrl", option.None, decode.optional(decode.string))
+  use is_public <- decode.field("isPublic", decode.bool)
+  use bio <- decode.field("bio", decode.string)
+  use work_category_id <- decode.optional_field(
+    "workCategory",
+    option.None,
+    decode.optional(work_category_id_decoder()),
+  )
+  use work_category <- decode.optional_field(
+    "workCategory",
+    option.None,
+    decode.optional(work_category_name_decoder()),
+  )
+  use email <- decode.field("email", decode.string)
+  decode.success(
+    MyProfile(
+      name: name,
+      icon_url: option.unwrap(icon_url, ""),
+      is_public: is_public,
+      bio: bio,
+      work_category_id: option.unwrap(work_category_id, 0),
+      work_category: option.unwrap(work_category, ""),
+      email: email,
+    ),
+  )
+}
+
+pub fn update_my_profile(
+  name: String,
+  icon_url: String,
+  bio: String,
+  work_category_id: Int,
+  is_public: Bool,
+  to_msg: fn(Result(MyProfile, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  let icon = case icon_url {
+    "" -> json.null()
+    _ -> json.string(icon_url)
+  }
+  let category = case work_category_id {
+    0 -> json.null()
+    id -> json.int(id)
+  }
+  let body = json.object([
+    #("name", json.string(name)),
+    #("iconUrl", icon),
+    #("bio", json.string(bio)),
+    #("workCategoryId", category),
+    #("isPublic", json.bool(is_public)),
+  ]) |> json.to_string
+  api.json_request(
+    "PUT",
+    "/api/v1/users/me/profile",
+    body,
+    my_profile_decoder(),
+    to_msg,
+  )
+}
+
+fn work_category_id_decoder() -> decode.Decoder(Int) {
+  use id <- decode.field("id", decode.int)
+  decode.success(id)
 }
 
 /// すべてのフレンドを取得する

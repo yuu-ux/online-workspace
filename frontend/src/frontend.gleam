@@ -110,8 +110,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     MyPage(mypage_model), MyPageMsg(mypage.ToProfile) -> {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToProfile)
-      let #(init_profile_model, _) = profile.init(update_mypage_model.session)
-      #(Model(session: init_profile_model.session, current_page: Profile(init_profile_model)), effect.none())
+      let #(init_profile_model, init_effect) = profile.init(update_mypage_model.session)
+      #(
+        Model(session: init_profile_model.session, current_page: Profile(init_profile_model)),
+        init_effect |> effect.map(ProfileMsg),
+      )
     }
 
     MyPage(mypage_model), MyPageMsg(mypage.SubmitClicked) -> {
@@ -174,6 +177,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     Profile(profile_model), ProfileMsg(profile.ToHome) -> {
       let #(init_home_model, _) = home.init(profile_model.session)
       #(Model(..model, current_page: Home(init_home_model)), effect.none())
+    }
+
+    Profile(profile_model), ProfileMsg(other) -> {
+      let #(updated_profile_model, update_effect) = profile.update(profile_model, other)
+      #(
+        Model(..model, current_page: Profile(updated_profile_model)),
+        update_effect |> effect.map(ProfileMsg),
+      )
     }
 
     // profile other

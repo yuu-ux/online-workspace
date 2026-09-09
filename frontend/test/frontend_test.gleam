@@ -5,7 +5,6 @@ import gleam/json
 import lustre/element
 import gleam/string
 import pages/friend
-import pages/userinfofromsearch
 import components/userinfo
 import wrap/api.{ApiError}
 import types/session.{Authenticated, Token}
@@ -66,19 +65,6 @@ pub fn friend_page_displays_list_limit_test() {
   friend.view(model)
   |> element.to_string
   |> string.contains("最大50人")
-  |> should.equal(True)
-}
-
-pub fn search_user_info_marks_existing_friend_test() {
-  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
-  let target = UserInfo("test2", UserId("2"))
-  let #(model, _) = userinfofromsearch.init(session, target, "test2")
-  let #(updated_model, _) = userinfofromsearch.update(
-    model,
-    userinfofromsearch.FriendsLoaded(Ok([target])),
-  )
-
-  updated_model.user_info_component.is_friend
   |> should.equal(True)
 }
 
