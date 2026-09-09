@@ -3,8 +3,8 @@ import gleam/option.{type Option, None, Some}
 import lustre/attribute
 import lustre/effect
 import lustre/element
-import lustre/event.{on_click}
-import lustre/element/html.{button, div, text}
+import lustre/event.{on_check}
+import lustre/element/html.{div, input, text}
 import types/session.{type Session} as session_t
 import types/user.{type UserInfo}
 import wrap/api as api
@@ -16,6 +16,7 @@ pub type Model {
     user_info: UserInfo,
     profile: Option(user_wrap.UserProfile),
     loading: Bool,
+    is_friend: Bool,
     messages: List(String),
   )
 }
@@ -23,9 +24,27 @@ pub type Model {
 pub type Msg {
   ProfileLoaded(Result(user_wrap.UserProfile, user_wrap.GetUserProfileErr))
   MoveToFriend
+  FriendOnChecked(Bool)
+  FriendUpdated(Bool, Result(Nil, api.ApiError))
 }
 
 pub fn init(session: Session, target_user_info: UserInfo) -> #(Model, effect.Effect(Msg)) {
+  init_with_friend_status(session, target_user_info, False)
+}
+
+pub fn init_friend(session: Session, target_user_info: UserInfo) -> #(Model, effect.Effect(Msg)) {
+  init_with_friend_status(session, target_user_info, True)
+}
+
+pub fn set_friend_status(model: Model, is_friend: Bool) -> Model {
+  Model(..model, is_friend: is_friend)
+}
+
+fn init_with_friend_status(
+  session: Session,
+  target_user_info: UserInfo,
+  initial_is_friend: Bool,
+) -> #(Model, effect.Effect(Msg)) {
   case session {
     session_t.Guest ->
       #(
@@ -34,6 +53,7 @@ pub fn init(session: Session, target_user_info: UserInfo) -> #(Model, effect.Eff
           user_info: target_user_info,
           profile: None,
           loading: False,
+          is_friend: False,
           messages: ["ログインしてください"],
         ),
         effect.none(),
@@ -46,6 +66,7 @@ pub fn init(session: Session, target_user_info: UserInfo) -> #(Model, effect.Eff
           user_info: target_user_info,
           profile: None,
           loading: True,
+          is_friend: initial_is_friend,
           messages: [],
         ),
         user_wrap.get_user_profile(target_user_info.user_id, ProfileLoaded),
@@ -60,6 +81,22 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     ProfileLoaded(Error(user_wrap.GetUserProfileApiErr(api.ApiError(message)))) ->
       #(Model(..model, profile: None, loading: False, messages: [message]), effect.none())
+
+    FriendOnChecked(is_friend) -> {
+      let previous_state = model.is_friend
+      let to_msg = fn(result) { FriendUpdated(previous_state, result) }
+      let friend_effect = case is_friend {
+        True -> user_wrap.add_friend(model.user_info.user_id, to_msg)
+        False -> user_wrap.remove_friend(model.user_info.user_id, to_msg)
+      }
+      #(Model(..model, is_friend: is_friend, messages: []), friend_effect)
+    }
+
+    FriendUpdated(_, Ok(_)) ->
+      #(Model(..model, messages: []), effect.none())
+
+    FriendUpdated(previous_state, Error(api.ApiError(message))) ->
+      #(Model(..model, is_friend: previous_state, messages: [message]), effect.none())
 
     MoveToFriend -> #(model, effect.none())
   }
@@ -78,6 +115,20 @@ pub fn view(model: Model) -> element.Element(Msg) {
     None -> []
   }
 
+  let friend_control = case model.session {
+    session_t.Authenticated(_, _) -> [
+      div([], [
+        text("フレンド"),
+        input([
+          attribute.type_("checkbox"),
+          attribute.checked(model.is_friend),
+          on_check(FriendOnChecked),
+        ]),
+      ]),
+    ]
+    session_t.Guest -> []
+  }
+
   div(
     [attribute.attribute("style", "padding: 20px; font-family: sans-serif;")],
     [
@@ -88,12 +139,7 @@ pub fn view(model: Model) -> element.Element(Msg) {
         False -> []
       }),
       div([], profile_view),
-      div(
-        [attribute.attribute("style", "margin-top: 12px; display: flex; gap: 8px;")],
-        [
-          button([on_click(MoveToFriend)], [text("フレンド追加へ")]),
-        ],
-      ),
+      div([], friend_control),
     ],
   )
 }

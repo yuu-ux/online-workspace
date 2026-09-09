@@ -1,11 +1,11 @@
-import types/user.{type UserId, UserId, type UserInfo, UserInfo}
-import types/session.{type Session, Token}
 import gleam/dynamic/decode
 import gleam/int
+import gleam/json
+import gleam/result
 import lustre/effect
-import types/room.{
-  type RoomId,
-}
+import types/user.{type UserId, UserId, type UserInfo, UserInfo}
+import types/session.{type Session, Token}
+import types/room.{type RoomId}
 import wrap/api
 
 /// get_all_user_info_list関数のエラー
@@ -119,24 +119,65 @@ fn work_category_name_decoder() -> decode.Decoder(String) {
   decode.success(name)
 }
 
-pub type GetFriendErr {
-  GetFriendDummyErr
-}
-
 /// すべてのフレンドを取得する
-pub fn get_friends(session: Session) -> Result(List(UserInfo), GetFriendErr) {
-  // TODO SERVER API
-  Ok([
-    UserInfo(name: "Tom", user_id: UserId("xxx")),
-    UserInfo(name: "Alice", user_id: UserId("xyz")),
-    UserInfo(name: "Bob", user_id: UserId("123")),
-  ])
+pub fn get_friends(
+  to_msg: fn(Result(List(UserInfo), api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  let decoder = {
+    use friends <- decode.field("items", decode.list(friend_user_decoder()))
+    decode.success(friends)
+  }
+  api.json_request(
+    "GET",
+    "/api/v1/friends?page=0&size=50",
+    "",
+    decoder,
+    to_msg,
+  )
 }
 
-/// self_user_idがother_user_idのフレンドかどうかを確かめる
-pub fn is_friend(self_user_id: UserId, other_user_id: UserId) -> Bool {
-  // TODO API SERVER
-  False
+/// フレンドを追加する
+pub fn add_friend(
+  user_id: UserId,
+  to_msg: fn(Result(Nil, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  case user_id_int(user_id) {
+    Ok(id) ->
+      api.empty_request(
+        "POST",
+        "/api/v1/friends",
+        json.object([#("userId", json.int(id))]) |> json.to_string,
+        to_msg,
+      )
+    Error(err) -> effect.from(fn(dispatch) { dispatch(to_msg(Error(err))) })
+  }
 }
 
+/// フレンドを解除する
+pub fn remove_friend(
+  user_id: UserId,
+  to_msg: fn(Result(Nil, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  case user_id_path(user_id) {
+    Ok(path) -> api.empty_request("DELETE", "/api/v1/friends/" <> path, "", to_msg)
+    Error(err) -> effect.from(fn(dispatch) { dispatch(to_msg(Error(err))) })
+  }
+}
 
+fn friend_user_decoder() -> decode.Decoder(UserInfo) {
+  use id <- decode.subfield(["user", "id"], decode.int)
+  use name <- decode.subfield(["user", "name"], decode.string)
+  decode.success(UserInfo(name: name, user_id: UserId(int.to_string(id))))
+}
+
+fn user_id_int(user_id: UserId) -> Result(Int, api.ApiError) {
+  let UserId(id) = user_id
+  case int.parse(id) {
+    Ok(parsed) -> Ok(parsed)
+    Error(_) -> Error(api.ApiError("ユーザーIDの形式が不正です。"))
+  }
+}
+
+fn user_id_path(user_id: UserId) -> Result(String, api.ApiError) {
+  user_id_int(user_id) |> result.map(int.to_string)
+}
