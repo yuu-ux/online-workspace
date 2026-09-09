@@ -44,9 +44,6 @@ public class UserSearchService {
 		if (viewerId == targetUserId) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "自身のプロフィールはこのAPIでは取得できません。");
 		}
-		if (repository.existsBlockedRelation(viewerId, targetUserId)) {
-			throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "このユーザーのプロフィールは表示できません。");
-		}
 
 		UserProfileRow row = repository.findUserProfileById(viewerId, targetUserId);
 		if (row == null) {

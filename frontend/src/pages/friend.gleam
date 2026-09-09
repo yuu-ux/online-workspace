@@ -9,11 +9,12 @@ import lustre/effect
 import gleam/io
 import lustre/element/html.{button, div, h1, h3, hr, span, style, text}
 
-import types/user.{type UserId, type UserInfo} as user_t
-import types/session.{type Session,type Token, Guest, Authenticated}
+import types/user.{type UserInfo} as user_t
+import types/session.{type Session, Guest, Authenticated}
 
 import components/userlist.{user_list_component}
 
+import wrap/api.{type ApiError, ApiError}
 import wrap/user.{get_friends}
 
 pub type Model {
@@ -28,24 +29,25 @@ pub type Msg {
   ToHome
   ToMyPage
   ToUserInfo(UserInfo)
+  FriendsLoaded(Result(List(UserInfo), ApiError))
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
-  case get_friends(session) {
-    Ok(friends) -> {
-      #(Model(
-          session: session,
-          friends: friends,
-          messages: []),
-        effect.none()
-      )
-    }
-    Error(err_type) -> {
+  case session {
+    Guest -> {
       #(Model(
           session: session,
           friends: [],
-          messages: ["フレンドの取得に失敗しました"]),
-        effect.none()
+          messages: ["ログインしてください"]),
+        effect.none(),
+      )
+    }
+    Authenticated(..) -> {
+      #(Model(
+          session: session,
+          friends: [],
+          messages: []),
+        get_friends(FriendsLoaded),
       )
     }
   }
@@ -65,6 +67,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     ToUserInfo(user_info) -> {
       #(model, effect.none())
     }
+
+    FriendsLoaded(Ok(friends)) -> {
+      #(Model(..model, friends: friends, messages: []), effect.none())
+    }
+
+    FriendsLoaded(Error(ApiError(message))) -> {
+      #(Model(..model, friends: [], messages: [message]), effect.none())
+    }
   }
 }
 
@@ -81,12 +91,12 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ])
     }
 
-    session.Authenticated(jwt, user_id) -> {
+    session.Authenticated(_, _) -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
       [
-        text("フレンド"),
+        text("フレンド一覧（最大50人）"),
         user_list_component(model.friends, ToUserInfo),
         button([
           on_click(ToMyPage)
@@ -97,4 +107,3 @@ pub fn view (model: Model) -> element.Element(Msg) {
     }
   }
 }
-

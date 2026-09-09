@@ -75,7 +75,7 @@ fn init(_flag) -> #(Model, effect.Effect(Msg)) {
   )
 }
 
-fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
+pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case model.current_page, msg {
 
     _, SessionLoaded(Ok(current_session)) -> {
@@ -101,8 +101,11 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     MyPage(mypage_model), MyPageMsg(mypage.ToFriend) -> {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToFriend)
-      let #(init_friend_model, _) = friend.init(update_mypage_model.session)
-      #(Model(session: update_mypage_model.session, current_page: Friend(init_friend_model)), effect.none())
+      let #(init_friend_model, friend_effect) = friend.init(update_mypage_model.session)
+      #(
+        Model(session: update_mypage_model.session, current_page: Friend(init_friend_model)),
+        friend_effect |> effect.map(FriendMsg),
+      )
     }
 
     MyPage(mypage_model), MyPageMsg(mypage.ToProfile) -> {
@@ -147,6 +150,14 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(
         Model(..model, current_page: UserInfoFromFriend(update_user_info_model)),
         update_effect |> effect.map(UserInfoFromFriendMsg),
+      )
+    }
+
+    Friend(friend_model), FriendMsg(other) -> {
+      let #(updated_friend_model, update_effect) = friend.update(friend_model, other)
+      #(
+        Model(..model, current_page: Friend(updated_friend_model)),
+        update_effect |> effect.map(FriendMsg),
       )
     }
 
@@ -336,8 +347,11 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // -- userinfofromfriend --
 
     UserInfoFromFriend(userinfofromfriend_model), UserInfoFromFriendMsg(userinfofromfriend.ToFriend) -> {
-      let #(init_friend_model, _) = friend.init(userinfofromfriend_model.user_info_component.session)
-      #(Model(..model, current_page: Friend(init_friend_model)), effect.none())
+      let #(init_friend_model, friend_effect) = friend.init(userinfofromfriend_model.user_info_component.session)
+      #(
+        Model(..model, current_page: Friend(init_friend_model)),
+        friend_effect |> effect.map(FriendMsg),
+      )
     }
 
 

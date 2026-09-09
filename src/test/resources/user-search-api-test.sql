@@ -42,12 +42,6 @@ CREATE TABLE friends (
     status_id SMALLINT NOT NULL
 );
 
-CREATE TABLE blocks (
-    blocker_user_id BIGINT NOT NULL,
-    blocked_user_id BIGINT NOT NULL,
-    PRIMARY KEY (blocker_user_id, blocked_user_id)
-);
-
 INSERT INTO account_statuses (id, code) VALUES
     (1, 'ACTIVE'),
     (2, 'SUSPENDED'),
@@ -77,6 +71,3 @@ INSERT INTO profiles (user_id, icon_url, bio, work_category_id, is_public) VALUE
 INSERT INTO friends (id, user_id, friend_user_id, status_id) VALUES
     (1, 1, 3, 1),
     (2, 1, 2, 2);
-
-INSERT INTO blocks (blocker_user_id, blocked_user_id) VALUES
-    (1, 6);

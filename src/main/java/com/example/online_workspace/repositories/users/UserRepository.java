@@ -167,11 +167,6 @@ public interface UserRepository {
 		  AND s.code = 'ACTIVE'
 		  AND (u.suspended_until IS NULL OR u.suspended_until &lt;= CURRENT_TIMESTAMP)
 		  AND u.id &lt;&gt; #{viewerId}
-		  AND NOT EXISTS (
-		  	SELECT 1 FROM blocks b
-		  	WHERE (b.blocker_user_id = #{viewerId} AND b.blocked_user_id = u.id)
-		  	   OR (b.blocker_user_id = u.id AND b.blocked_user_id = #{viewerId})
-		  )
 		  AND LOWER(u.name) LIKE CONCAT('%', LOWER(#{query}), '%')
 		</script>
 		""")
@@ -187,11 +182,6 @@ public interface UserRepository {
 		  AND s.code = 'ACTIVE'
 		  AND (u.suspended_until IS NULL OR u.suspended_until &lt;= CURRENT_TIMESTAMP)
 		  AND u.id &lt;&gt; #{viewerId}
-		  AND NOT EXISTS (
-		  	SELECT 1 FROM blocks b
-		  	WHERE (b.blocker_user_id = #{viewerId} AND b.blocked_user_id = u.id)
-		  	   OR (b.blocker_user_id = u.id AND b.blocked_user_id = #{viewerId})
-		  )
 		  AND LOWER(u.name) LIKE CONCAT('%', LOWER(#{query}), '%')
 		ORDER BY u.name ASC, u.id ASC
 		LIMIT #{size} OFFSET #{offset}
@@ -203,15 +193,6 @@ public interface UserRepository {
 		@Param("size") int size,
 		@Param("offset") long offset
 	);
-
-	@Select("""
-		SELECT EXISTS (
-			SELECT 1 FROM blocks b
-			WHERE (b.blocker_user_id = #{viewerId} AND b.blocked_user_id = #{targetId})
-			   OR (b.blocker_user_id = #{targetId} AND b.blocked_user_id = #{viewerId})
-		)
-		""")
-	boolean existsBlockedRelation(@Param("viewerId") long viewerId, @Param("targetId") long targetId);
 
 	@Select("""
 		SELECT
