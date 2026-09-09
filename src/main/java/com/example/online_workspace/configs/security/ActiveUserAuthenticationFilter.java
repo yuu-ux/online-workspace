@@ -5,12 +5,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -39,7 +41,8 @@ final class ActiveUserAuthenticationFilter extends OncePerRequestFilter {
 		FilterChain filterChain
 	) throws ServletException, IOException {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (isAuthenticatedUser(authentication)
+		if (hasPersistedSecurityContext(request)
+			&& isAuthenticatedUser(authentication)
 			&& !userRepository.isActiveByEmail(authentication.getName())) {
 			SecurityContext emptyContext = SecurityContextHolder.createEmptyContext();
 			SecurityContextHolder.setContext(emptyContext);
@@ -47,6 +50,13 @@ final class ActiveUserAuthenticationFilter extends OncePerRequestFilter {
 		}
 
 		filterChain.doFilter(request, response);
+	}
+
+	private boolean hasPersistedSecurityContext(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		return session != null
+			&& session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)
+				instanceof SecurityContext;
 	}
 
 	private boolean isAuthenticatedUser(Authentication authentication) {

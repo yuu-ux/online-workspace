@@ -2,7 +2,7 @@ package com.example.online_workspace;
 
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -14,6 +14,7 @@ import com.example.online_workspace.exceptions.ApiException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,7 +25,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,7 +49,7 @@ class ApiExceptionHandlerIntegrationTests {
 	@Test
 	void validationErrorsUseTheOpenApiErrorSchema() throws Exception {
 		mockMvc.perform(post("/api/v1/test/errors/validation")
-				.with(user("tester"))
+				.with(authenticatedAs("tester"))
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"\"}"))
@@ -65,7 +68,7 @@ class ApiExceptionHandlerIntegrationTests {
 	@Test
 	void malformedJsonUsesTheCommonBadRequestFormat() throws Exception {
 		mockMvc.perform(post("/api/v1/test/errors/validation")
-				.with(user("tester"))
+				.with(authenticatedAs("tester"))
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{"))
@@ -79,7 +82,7 @@ class ApiExceptionHandlerIntegrationTests {
 	@Test
 	void requestParameterValidationUsesBadRequest() throws Exception {
 		mockMvc.perform(get("/api/v1/test/errors/parameter-validation")
-				.with(user("tester"))
+				.with(authenticatedAs("tester"))
 				.param("page", "-1"))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.status").value(400))
@@ -91,7 +94,7 @@ class ApiExceptionHandlerIntegrationTests {
 	@Test
 	void frameworkClientErrorsPreserveTheirStatus() throws Exception {
 		mockMvc.perform(post("/api/v1/test/errors/validation")
-				.with(user("tester"))
+				.with(authenticatedAs("tester"))
 				.with(csrf())
 				.contentType(MediaType.TEXT_PLAIN)
 				.content("name=test"))
@@ -100,7 +103,7 @@ class ApiExceptionHandlerIntegrationTests {
 			.andExpect(jsonPath("$.code").value("UNSUPPORTED_MEDIA_TYPE"));
 
 		mockMvc.perform(get("/api/v1/test/errors/json")
-				.with(user("tester"))
+				.with(authenticatedAs("tester"))
 				.accept(MediaType.TEXT_PLAIN))
 			.andExpect(status().isNotAcceptable())
 			.andExpect(jsonPath("$.status").value(406))
@@ -121,7 +124,7 @@ class ApiExceptionHandlerIntegrationTests {
 	@Test
 	void authorizationErrorsUseTheCommonJsonFormat() throws Exception {
 		mockMvc.perform(post("/api/v1/test/errors/validation")
-				.with(user("tester"))
+				.with(authenticatedAs("tester"))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"name\":\"valid\"}"))
 			.andExpect(status().isForbidden())
@@ -133,21 +136,21 @@ class ApiExceptionHandlerIntegrationTests {
 
 	@Test
 	void controllerAuthenticationExceptionsPreserveUnauthorizedStatus() throws Exception {
-		mockMvc.perform(get("/api/v1/test/errors/authentication").with(user("tester")))
+		mockMvc.perform(get("/api/v1/test/errors/authentication").with(authenticatedAs("tester")))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
 	}
 
 	@Test
 	void controllerAccessDeniedExceptionsPreserveForbiddenStatus() throws Exception {
-		mockMvc.perform(get("/api/v1/test/errors/access-denied").with(user("tester")))
+		mockMvc.perform(get("/api/v1/test/errors/access-denied").with(authenticatedAs("tester")))
 			.andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.code").value("FORBIDDEN"));
 	}
 
 	@Test
 	void responseStatusExceptionsPreserveDeclaredStatus() throws Exception {
-		mockMvc.perform(get("/api/v1/test/errors/status").with(user("tester")))
+		mockMvc.perform(get("/api/v1/test/errors/status").with(authenticatedAs("tester")))
 			.andExpect(status().isGone())
 			.andExpect(jsonPath("$.status").value(410))
 			.andExpect(jsonPath("$.message").value("このリソースは廃止されました。"));
@@ -155,12 +158,12 @@ class ApiExceptionHandlerIntegrationTests {
 
 	@Test
 	void responseStatusExceptionsHandleNonStandardAndSanitizeServerErrors() throws Exception {
-		mockMvc.perform(get("/api/v1/test/errors/non-standard-status").with(user("tester")))
+		mockMvc.perform(get("/api/v1/test/errors/non-standard-status").with(authenticatedAs("tester")))
 			.andExpect(status().is(499))
 			.andExpect(jsonPath("$.status").value(499))
 			.andExpect(jsonPath("$.code").value("HTTP_499"));
 
-		mockMvc.perform(get("/api/v1/test/errors/server-status").with(user("tester")))
+		mockMvc.perform(get("/api/v1/test/errors/server-status").with(authenticatedAs("tester")))
 			.andExpect(status().isInternalServerError())
 			.andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"))
 			.andExpect(jsonPath("$.message").value("予期しないエラーが発生しました。"));
@@ -168,14 +171,14 @@ class ApiExceptionHandlerIntegrationTests {
 
 	@Test
 	void methodNotAllowedPreservesAllowHeader() throws Exception {
-		mockMvc.perform(get("/api/v1/test/errors/validation").with(user("tester")))
+		mockMvc.perform(get("/api/v1/test/errors/validation").with(authenticatedAs("tester")))
 			.andExpect(status().isMethodNotAllowed())
 			.andExpect(header().string(HttpHeaders.ALLOW, "POST"));
 	}
 
 	@Test
 	void resourceNotFoundErrorsUseTheCommonJsonFormat() throws Exception {
-		mockMvc.perform(get("/api/v1/test/errors/not-found").with(user("tester")))
+		mockMvc.perform(get("/api/v1/test/errors/not-found").with(authenticatedAs("tester")))
 			.andExpect(status().isNotFound())
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
 			.andExpect(jsonPath("$.status").value(404))
@@ -185,7 +188,7 @@ class ApiExceptionHandlerIntegrationTests {
 
 	@Test
 	void unmappedApiPathsUseTheCommonNotFoundFormat() throws Exception {
-		mockMvc.perform(get("/api/v1/does-not-exist").with(user("tester")))
+		mockMvc.perform(get("/api/v1/does-not-exist").with(authenticatedAs("tester")))
 			.andExpect(status().isNotFound())
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
 			.andExpect(jsonPath("$.status").value(404))
@@ -195,7 +198,7 @@ class ApiExceptionHandlerIntegrationTests {
 
 	@Test
 	void businessErrorsUseConflictAndTheCommonJsonFormat() throws Exception {
-		mockMvc.perform(get("/api/v1/test/errors/business").with(user("tester")))
+		mockMvc.perform(get("/api/v1/test/errors/business").with(authenticatedAs("tester")))
 			.andExpect(status().isConflict())
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
 			.andExpect(jsonPath("$.status").value(409))
@@ -205,13 +208,17 @@ class ApiExceptionHandlerIntegrationTests {
 
 	@Test
 	void unexpectedErrorsReturn500WithoutLeakingInternalDetails() throws Exception {
-		mockMvc.perform(get("/api/v1/test/errors/unexpected").with(user("tester")))
+		mockMvc.perform(get("/api/v1/test/errors/unexpected").with(authenticatedAs("tester")))
 			.andExpect(status().isInternalServerError())
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
 			.andExpect(jsonPath("$.status").value(500))
 			.andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"))
 			.andExpect(jsonPath("$.message").value("予期しないエラーが発生しました。"))
 			.andExpect(jsonPath("$.traceId", matchesPattern(TRACE_ID_PATTERN)));
+	}
+
+	private static RequestPostProcessor authenticatedAs(String username) {
+		return authentication(UsernamePasswordAuthenticationToken.authenticated(username, null, List.of()));
 	}
 
 	@RestController

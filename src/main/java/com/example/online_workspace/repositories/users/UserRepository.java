@@ -30,9 +30,6 @@ public interface UserRepository {
 		Instant createdAt,
 		Instant suspendedUntil
 	) {
-		public AuthenticatedUser toAuthenticatedUser() {
-			return new AuthenticatedUser(id, name, email, accountStatus, suspendedUntil);
-		}
 	}
 
 	/**
@@ -63,6 +60,22 @@ public interface UserRepository {
 		""")
 	boolean isActiveByEmail(@Param("email") String email);
 
+	@Select("""
+		SELECT
+			u.id,
+			u.name,
+			u.email,
+			s.code AS account_status,
+			u.suspended_until
+		FROM users u
+		JOIN account_statuses s ON s.id = u.account_status_id
+		WHERE u.email = #{email}
+		  AND u.deleted_at IS NULL
+		  AND s.code = 'ACTIVE'
+		  AND (u.suspended_until IS NULL OR u.suspended_until <= CURRENT_TIMESTAMP)
+		""")
+	AuthenticatedUser findAuthenticatedUserByEmail(@Param("email") String email);
+
 	/**
 	 * ユーザーの認証情報を登録する。
 	 *
@@ -87,12 +100,11 @@ public interface UserRepository {
 			c.description AS category_description,
 			c.sort_order AS category_sort_order,
 			u.email,
-			r.code AS role,
+			'USER' AS role,
 			s.code AS account_status,
 			u.created_at,
 			u.suspended_until
 		FROM users u
-		JOIN roles r ON r.id = u.role_id
 		JOIN account_statuses s ON s.id = u.account_status_id
 		LEFT JOIN profiles p ON p.user_id = u.id
 		LEFT JOIN room_categories c ON c.id = p.work_category_id

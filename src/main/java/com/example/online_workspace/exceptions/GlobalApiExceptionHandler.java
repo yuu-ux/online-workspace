@@ -37,14 +37,18 @@ public class GlobalApiExceptionHandler {
 		TooManyLoginAttemptsException exception,
 		HttpServletRequest request
 	) {
-		return ResponseEntity.status(exception.getStatus())
-			.header(HttpHeaders.RETRY_AFTER, Long.toString(exception.retryAfterSeconds()))
-			.body(ApiErrorResponseFactory.create(
+		HttpHeaders headers = new HttpHeaders();
+		headers.set(HttpHeaders.RETRY_AFTER, Long.toString(exception.retryAfterSeconds()));
+		return problem(
+			exception.getStatus(),
+			headers,
+			ApiErrorResponseFactory.create(
 				request,
 				exception.getStatus(),
 				exception.getCode(),
 				exception.getMessage()
-			));
+			)
+		);
 	}
 
 	@ExceptionHandler(ApiException.class)
