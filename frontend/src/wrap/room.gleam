@@ -22,7 +22,6 @@ import types/room.{
 }
 import types/user.{UserId, UserInfo, type UserInfo}
 import wrap/api as api
-import wrap/api.{type ApiError}
 
 pub fn create_room(
   roomname: RoomNameType,
@@ -30,7 +29,7 @@ pub fn create_room(
   category_type: CategoryType,
   workstyle_type: WorkStyleType,
   max_number_of_member: Int,
-  to_msg: fn(Result(RoomId, ApiError)) -> msg,
+  to_msg: fn(Result(RoomId, api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   let RoomNameType(name) = roomname
   let DescriptionType(description) = description
@@ -51,7 +50,7 @@ pub fn create_room(
 }
 
 pub fn get_rooms(
-  to_msg: fn(Result(List(RoomInfo), ApiError)) -> msg,
+  to_msg: fn(Result(List(RoomInfo), api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   api.json_request(
     "GET",
@@ -101,7 +100,7 @@ fn room_id_decoder() -> decode.Decoder(RoomId) {
 
 pub fn join_room(
   room_id: RoomId,
-  to_msg: fn(Result(Nil, ApiError)) -> msg,
+  to_msg: fn(Result(Nil, api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   api.empty_request(
     "POST",
@@ -113,7 +112,7 @@ pub fn join_room(
 
 pub fn get_room_members(
   room_id: RoomId,
-  to_msg: fn(Result(List(UserInfo), ApiError)) -> msg,
+  to_msg: fn(Result(List(UserInfo), api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   api.json_request(
     "GET",
@@ -126,7 +125,7 @@ pub fn get_room_members(
 
 pub fn get_messages(
   room_id: RoomId,
-  to_msg: fn(Result(List(Chat), ApiError)) -> msg,
+  to_msg: fn(Result(List(Chat), api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   api.json_request(
     "GET",
@@ -140,7 +139,7 @@ pub fn get_messages(
 pub fn create_message(
   room_id: RoomId,
   message: String,
-  to_msg: fn(Result(Nil, ApiError)) -> msg,
+  to_msg: fn(Result(Nil, api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   api.empty_request(
     "POST",
