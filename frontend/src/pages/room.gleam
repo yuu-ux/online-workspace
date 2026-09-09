@@ -19,10 +19,10 @@ import wrap/room.{
   close_ws,
   connect_to_server,
   create_message,
-  delete_room,
   get_messages,
   get_room_members,
   join_room,
+  leave_room,
 }
 
 import components/userlist.{user_list_component}
@@ -90,7 +90,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     ToHome -> {
       close_ws()
-      #(model, delete_room(model.room_id, RoomClosed))
+      #(model, leave_room(model.room_id, RoomClosed))
     }
 
     ToUserInfo(_user_info) -> {

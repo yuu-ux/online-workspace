@@ -110,13 +110,13 @@ pub fn join_room(
   )
 }
 
-pub fn delete_room(
+pub fn leave_room(
   room_id: RoomId,
   to_msg: fn(Result(Nil, api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   api.empty_request(
     "DELETE",
-    "/api/v1/rooms/" <> room_path(room_id),
+    "/api/v1/rooms/" <> room_path(room_id) <> "/members/me",
     "",
     to_msg,
   )
