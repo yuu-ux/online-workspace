@@ -60,7 +60,13 @@ public interface ProfileRepository {
 
 	@Update("""
 		MERGE INTO profiles AS target
-		USING (VALUES (#{userId}, #{iconUrl}, #{bio}, #{workCategoryId}, #{isPublic}))
+		USING (VALUES (
+			#{userId,jdbcType=BIGINT},
+			#{iconUrl,jdbcType=VARCHAR},
+			#{bio,jdbcType=VARCHAR},
+			#{workCategoryId,jdbcType=BIGINT},
+			#{isPublic,jdbcType=BOOLEAN}
+		))
 			AS source(user_id, icon_url, bio, work_category_id, is_public)
 		ON target.user_id = source.user_id
 		WHEN MATCHED THEN UPDATE SET
