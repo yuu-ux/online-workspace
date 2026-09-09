@@ -66,11 +66,6 @@ pub fn to_profile_btn_component(msg: a) -> element.Element(a) {
   normal_btn(msg, "プロファイル編集")
 }
 
-/// 作業履歴ボタン
-pub fn to_history_btn_component(msg: a) -> element.Element(a) {
-  normal_btn(msg, "作業履歴")
-}
-
 /// 検索ボタン
 pub fn search_btn_component(msg: a) -> element.Element(a) {
   normal_btn(msg, "検索")
