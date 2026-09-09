@@ -1,18 +1,28 @@
 import components/btn
+import gleam/list
+import gleam/string
 import lustre/event.{on_click, on_input}
 import lustre/attribute
 import lustre/element
 import lustre/effect
-import gleam/list
 
 import lustre/element/html.{button, div, text, input}
 
 import types/session.{type Session}
-import types/room.{type RoomId, RoomId} as room_t
-import types/user.{type UserInfo, type UserId} as user_t
+import types/room.{type RoomId} as room_t
+import types/user.{type UserInfo} as user_t
+import wrap/api.{type ApiError, ApiError}
 
-import wrap/user.{GetUserInfoListAuthErr, get_all_user_info_list}
-import wrap/room.{room_send_msg_proc, close_ws, RoomDummyError, chat_to_json, chat_from_json, connect_to_server,type Chat}
+import wrap/room.{
+  type Chat,
+  chat_from_json,
+  close_ws,
+  connect_to_server,
+  create_message,
+  get_messages,
+  get_room_members,
+  join_room,
+}
 
 import components/userlist.{user_list_component}
 
@@ -33,48 +43,42 @@ pub type Model {
 
 pub type Msg {
   ToHome
-  // ToLogin
   ToUserInfo(UserInfo)
   InputUpdated(target: InputType, str: String)
   SubmitClicked
+  JoinedRoom(Result(Nil, ApiError))
+  MembersLoaded(Result(List(UserInfo), ApiError))
+  MessagesLoaded(Result(List(Chat), ApiError))
+  MessagePosted(Result(Nil, ApiError))
   WsMessageReceived(String)
 }
 
 pub fn init(session: Session, room_id: RoomId) -> #(Model, effect.Effect(Msg)) {
-  case get_all_user_info_list(session, room_id) {
-    Ok(all_user_in_room) -> {
-      #(
-        Model(
-          session: session,
-          room_id: room_id,
-          member_list: all_user_in_room,
-          chat_list: [
-            // Chat(from: "Tom", timestamp: "2026-8-12", comment: "hello"),
-            // Chat(from: "Alice", timestamp: "2026-8-12", comment: "hello"),
-          ],
-          current_message_input: "",
-          messages: []),
-          connect_to_server(WsMessageReceived)
-      )
-    }
-    Error(e) -> {
-      let err_msg = case e {
-        GetUserInfoListAuthErr -> {
-          "userの取得に失敗しました"
-        }
-      }
+  case session {
+    session.Guest -> {
       #(
         Model(
           session: session,
           room_id: room_id,
           member_list: [],
-          chat_list: [
-            // Chat(from: "Tom", timestamp: "2026-8-12", comment: "hello"),
-            // Chat(from: "Alice", timestamp: "2026-8-12", comment: "hello"),
-          ],
+          chat_list: [],
           current_message_input: "",
-          messages: [err_msg]),
-        effect.none()
+          messages: ["ログインしてください"],
+        ),
+        effect.none(),
+      )
+    }
+    session.Authenticated(..) -> {
+      #(
+        Model(
+          session: session,
+          room_id: room_id,
+          member_list: [],
+          chat_list: [],
+          current_message_input: "",
+          messages: [],
+        ),
+        join_room(room_id, JoinedRoom),
       )
     }
   }
@@ -87,7 +91,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(model, effect.none())
     }
 
-    ToUserInfo(user_id) -> {
+    ToUserInfo(_user_info) -> {
       close_ws()
       #(model, effect.none())
     }
@@ -102,25 +106,51 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(new_model, effect.none())
     }
 
-    // 送信ボタンが押されたら、入力内容を履歴に追加し、入力欄を空にする
+    JoinedRoom(_) -> {
+      #(
+        model,
+        get_room_members(model.room_id, MembersLoaded),
+      )
+    }
+
+    MembersLoaded(Ok(members)) -> {
+      #(
+        Model(..model, member_list: members, messages: []),
+        get_messages(model.room_id, MessagesLoaded),
+      )
+    }
+
+    MembersLoaded(Error(ApiError(message))) -> {
+      #(Model(..model, messages: [message]), effect.none())
+    }
+
+    MessagesLoaded(Ok(messages)) -> {
+      #(
+        Model(..model, chat_list: messages),
+        connect_to_server(model.room_id, WsMessageReceived),
+      )
+    }
+
+    MessagesLoaded(Error(ApiError(message))) -> {
+      #(Model(..model, messages: [message]), effect.none())
+    }
+
     SubmitClicked -> {
-      case room_send_msg_proc(
-        "me",
-        model.room_id,
-        model.current_message_input) {
-        Ok(_) -> {
-          #(Model(..model, current_message_input: ""), effect.none())
-        }
-        Error(err_type) -> {
-          let err_msg = case err_type {
-            RoomDummyError -> {
-              ["DummyError"]
-            }
-          }
-          let new_model = Model(..model, messages: err_msg)
-          #(new_model, effect.none())
-        }
+      case string.trim(model.current_message_input) {
+        "" -> #(model, effect.none())
+        _ -> #(
+          Model(..model, messages: []),
+          create_message(model.room_id, model.current_message_input, MessagePosted),
+        )
       }
+    }
+
+    MessagePosted(Ok(_)) -> {
+      #(Model(..model, current_message_input: ""), effect.none())
+    }
+
+    MessagePosted(Error(ApiError(message))) -> {
+      #(Model(..model, messages: [message]), effect.none())
     }
 
     WsMessageReceived(m) -> {
@@ -129,9 +159,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           #(Model(..model, chat_list: [chat, ..model.chat_list]), effect.none())
         }
         Ok(_) -> #(model, effect.none())
-        Error(_) -> {
-          #(Model(..model, messages: ["レスポンス解析エラー"]), effect.none())
-        }
+        Error(_) -> #(model, effect.none())
       }
     }
   }
@@ -150,7 +178,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ])
     }
 
-    session.Authenticated(jwt, user_id) -> {
+    session.Authenticated(_, _) -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
