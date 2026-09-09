@@ -19,6 +19,7 @@ import wrap/room.{
   close_ws,
   connect_to_server,
   create_message,
+  delete_room,
   get_messages,
   get_room_members,
   join_room,
@@ -50,6 +51,7 @@ pub type Msg {
   MembersLoaded(Result(List(UserInfo), ApiError))
   MessagesLoaded(Result(List(Chat), ApiError))
   MessagePosted(Result(Nil, ApiError))
+  RoomClosed(Result(Nil, ApiError))
   WsMessageReceived(String)
 }
 
@@ -88,7 +90,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     ToHome -> {
       close_ws()
-      #(model, effect.none())
+      #(model, delete_room(model.room_id, RoomClosed))
     }
 
     ToUserInfo(_user_info) -> {
@@ -151,6 +153,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     MessagePosted(Error(ApiError(message))) -> {
       #(Model(..model, messages: [message]), effect.none())
+    }
+
+    RoomClosed(_) -> {
+      #(model, effect.none())
     }
 
     WsMessageReceived(m) -> {
