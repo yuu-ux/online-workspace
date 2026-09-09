@@ -1,7 +1,6 @@
 import types/user.{type UserId, UserId, type UserInfo, UserInfo}
 import types/session.{type Session, Token}
 import gleam/dynamic/decode
-import gleam/list
 import gleam/int
 import lustre/effect
 import types/room.{
@@ -33,6 +32,21 @@ pub type SearchErr {
   SearchApiErr(api.ApiError)
 }
 
+pub type UserProfile {
+  UserProfile(
+    name: String,
+    icon_url: String,
+    is_public: Bool,
+    bio: String,
+    work_category: String,
+    friendship: String,
+  )
+}
+
+pub type GetUserProfileErr {
+  GetUserProfileApiErr(api.ApiError)
+}
+
 /// userを名前から検索する
 pub fn search_user(
   user_name: String,
@@ -61,6 +75,53 @@ fn user_summary_decoder() -> decode.Decoder(UserInfo) {
   use id <- decode.field("id", decode.int)
   use name <- decode.field("name", decode.string)
   decode.success(UserInfo(name: name, user_id: UserId(int.to_string(id))))
+}
+
+pub fn get_user_profile(
+  user_id: UserId,
+  to_msg: fn(Result(UserProfile, GetUserProfileErr)) -> msg,
+) -> effect.Effect(msg) {
+  let UserId(raw_user_id) = user_id
+  api.json_request(
+    "GET",
+    "/api/v1/users/" <> raw_user_id,
+    "",
+    user_profile_decoder(),
+    fn(result) {
+      case result {
+        Ok(profile) -> to_msg(Ok(profile))
+        Error(err) -> to_msg(Error(GetUserProfileApiErr(err)))
+      }
+    },
+  )
+}
+
+fn user_profile_decoder() -> decode.Decoder(UserProfile) {
+  use name <- decode.field("name", decode.string)
+  use icon_url <- decode.optional_field("iconUrl", "", decode.string)
+  use is_public <- decode.field("isPublic", decode.bool)
+  use bio <- decode.optional_field("bio", "", decode.string)
+  use friendship <- decode.optional_field("friendship", "", decode.string)
+  use work_category <- decode.optional_field(
+    "workCategory",
+    "",
+    work_category_name_decoder(),
+  )
+  decode.success(
+    UserProfile(
+      name: name,
+      icon_url: icon_url,
+      is_public: is_public,
+      bio: bio,
+      work_category: work_category,
+      friendship: friendship,
+    ),
+  )
+}
+
+fn work_category_name_decoder() -> decode.Decoder(String) {
+  use name <- decode.field("name", decode.string)
+  decode.success(name)
 }
 
 pub type InviteUserErr {
