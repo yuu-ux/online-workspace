@@ -1,6 +1,7 @@
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
+import gleam/option
 import gleam/result
 import lustre/effect
 import types/user.{type UserId, UserId, type UserInfo, UserInfo}
@@ -91,24 +92,24 @@ pub fn get_user_profile(
   )
 }
 
-fn user_profile_decoder() -> decode.Decoder(UserProfile) {
+pub fn user_profile_decoder() -> decode.Decoder(UserProfile) {
   use name <- decode.field("name", decode.string)
-  use icon_url <- decode.optional_field("iconUrl", "", decode.string)
+  use icon_url <- decode.optional_field("iconUrl", option.None, decode.optional(decode.string))
   use is_public <- decode.field("isPublic", decode.bool)
   use bio <- decode.optional_field("bio", "", decode.string)
   use friendship <- decode.optional_field("friendship", "", decode.string)
   use work_category <- decode.optional_field(
     "workCategory",
-    "",
-    work_category_name_decoder(),
+    option.None,
+    decode.optional(work_category_name_decoder()),
   )
   decode.success(
     UserProfile(
       name: name,
-      icon_url: icon_url,
+      icon_url: option.unwrap(icon_url, ""),
       is_public: is_public,
       bio: bio,
-      work_category: work_category,
+      work_category: option.unwrap(work_category, ""),
       friendship: friendship,
     ),
   )

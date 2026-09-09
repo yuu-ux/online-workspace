@@ -1,6 +1,7 @@
 import gleeunit
 import gleeunit/should
 import frontend
+import gleam/json
 import lustre/element
 import gleam/string
 import pages/friend
@@ -9,6 +10,7 @@ import components/userinfo
 import wrap/api.{ApiError}
 import types/session.{Authenticated, Token}
 import types/user.{UserInfo, UserId}
+import wrap/user as user_wrap
 
 pub fn main() {
   gleeunit.main()
@@ -78,4 +80,12 @@ pub fn search_user_info_marks_existing_friend_test() {
 
   updated_model.user_info_component.is_friend
   |> should.equal(True)
+}
+
+pub fn user_profile_decoder_accepts_nullable_fields_test() {
+  json.parse(
+    "{\"name\":\"Alice\",\"iconUrl\":null,\"isPublic\":true,\"bio\":\"alice bio\",\"workCategory\":null,\"friendship\":\"NONE\"}",
+    user_wrap.user_profile_decoder(),
+  )
+  |> should.be_ok()
 }
