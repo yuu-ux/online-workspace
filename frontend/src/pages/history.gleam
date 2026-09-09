@@ -6,18 +6,16 @@ import lustre/event.{on_click}
 import lustre/attribute
 import lustre/element
 import lustre/effect
-import gleam/io
-import lustre/element/html.{button, div, h1, h3, hr, span, style, text}
+import lustre/element/html.{button, div, text}
 
-import types/user.{type UserInfo} as user_t
-import types/session.{type Session}
-
-import wrap/user.{get_friends}
+import types/session.{type Session} as session_t
+import wrap/api.{ApiError, type ApiError}
+import wrap/workhistory.{type WorkHistory, list_work_histories}
 
 pub type Model {
   Model(
     session: Session,
-    // friends: List(UserInfo),
+    items: List(WorkHistory),
     messages: List(String)
   )
 }
@@ -25,16 +23,22 @@ pub type Model {
 pub type Msg {
   ToHome
   ToMyPage
+  HistoriesLoaded(Result(List(WorkHistory), ApiError))
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
-  #(
-    Model(
-      session: session,
-      // friends: get_friends(session),
-      messages: []),
-    effect.none()
-  )
+  case session {
+    session_t.Guest ->
+      #(
+        Model(session: session, items: [], messages: ["ログインしてください"]),
+        effect.none(),
+      )
+    session_t.Authenticated(..) ->
+      #(
+        Model(session: session, items: [], messages: []),
+        list_work_histories(HistoriesLoaded),
+      )
+  }
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
@@ -45,13 +49,18 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     ToHome -> {
       #(model, effect.none())
     }
-
+    HistoriesLoaded(Ok(items)) -> {
+      #(Model(..model, items: items, messages: []), effect.none())
+    }
+    HistoriesLoaded(Error(ApiError(message))) -> {
+      #(Model(..model, messages: [message]), effect.none())
+    }
   }
 }
 
 pub fn view (model: Model) -> element.Element(Msg) {
   case model.session {
-    session.Guest -> {
+    session_t.Guest -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
@@ -62,13 +71,13 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ])
     }
 
-    session.Authenticated(jwt, user_id) -> {
+    session_t.Authenticated(_, _) -> {
       div([
         attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
       ],
       [
         text("作業履歴"),
-
+        div([], list.map(model.items, history_view)),
         button([
           on_click(ToMyPage)
         ], [text("マイページに戻る")]),
@@ -77,6 +86,15 @@ pub fn view (model: Model) -> element.Element(Msg) {
 
     }
   }
+}
+
+fn history_view(item: WorkHistory) -> element.Element(Msg) {
+  div([], [
+    text("ルーム: " <> item.room_name),
+    text(" / 開始: " <> item.joined_at),
+    text(" / 終了: " <> item.left_at),
+    text(" / 作業分: " <> int.to_string(item.duration_minutes)),
+  ])
 }
 
 

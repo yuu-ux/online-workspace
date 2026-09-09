@@ -180,7 +180,10 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, current_page: Home(init_home_model)), effect.none())
     }
 
-    // history other
+    History(history_model), HistoryMsg(other) -> {
+      let #(updated_history_model, update_effect) = history.update(history_model, other)
+      #(Model(..model, current_page: History(updated_history_model)), update_effect |> effect.map(HistoryMsg))
+    }
 
     // -- home --
     Home(home_model), HomeMsg(home.ToMyPage) -> {

@@ -673,6 +673,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /workhistories:
+    get:
+      tags: [WorkHistories]
+      summary: 作業履歴を取得する
+      operationId: listWorkHistories
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '200':
+          description: 作業履歴一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkHistoryPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /actuator/health:
     get:
       tags: [Operations]
@@ -1307,6 +1329,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Friend'
+        page:
+          $ref: '#/components/schemas/PageMeta'
+
+    WorkHistory:
+      type: object
+      required: [roomId, roomName, joinedAt, durationMinutes]
+      properties:
+        roomId:
+          $ref: '#/components/schemas/Id'
+        roomName:
+          type: string
+          maxLength: 100
+        joinedAt:
+          type: string
+          format: date-time
+        leftAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationMinutes:
+          type: integer
+          minimum: 0
+
+    WorkHistoryPage:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkHistory'
         page:
           $ref: '#/components/schemas/PageMeta'
 
