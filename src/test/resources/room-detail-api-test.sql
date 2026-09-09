@@ -1,11 +1,4 @@
-DROP TABLE IF EXISTS room_members;
-DROP TABLE IF EXISTS rooms;
-DROP TABLE IF EXISTS profiles;
-DROP TABLE IF EXISTS room_categories;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS room_statuses;
-DROP TABLE IF EXISTS work_styles;
-DROP TABLE IF EXISTS room_category_statuses;
+DROP ALL OBJECTS;
 
 CREATE TABLE room_category_statuses (
     id SMALLINT PRIMARY KEY,
