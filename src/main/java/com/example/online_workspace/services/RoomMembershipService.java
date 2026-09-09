@@ -35,9 +35,6 @@ public class RoomMembershipService {
 		if (userEmail == null || userEmail.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 		}
-		if (!repository.isActiveMember(roomId, userEmail)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Room membership required");
-		}
 		return repository.findActiveMembers(roomId).stream()
 			.map(this::withPresence)
 			.toList();
