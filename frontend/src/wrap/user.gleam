@@ -23,11 +23,6 @@ pub fn get_all_user_info_list(session: Session, room_id: RoomId) -> Result(List(
   ])
 }
 
-pub type ReportReason {
-  ViolationOfTerms
-  Other
-}
-
 pub type SearchErr {
   SearchApiErr(api.ApiError)
 }
@@ -124,17 +119,6 @@ fn work_category_name_decoder() -> decode.Decoder(String) {
   decode.success(name)
 }
 
-pub type InviteUserErr {
-  InviteAuthErr // 招待権限が無い
-  ExceedsMaxMember // ルームの人数上限を超える
-}
-
-/// userをroomに招待する
-pub fn invite_user_to_room(session: Session, room_id: RoomId, user: UserId) -> Result(Nil, InviteUserErr) {
-  // TODO SERVER API
-  Ok(Nil)
-}
-
 pub type GetFriendErr {
   GetFriendDummyErr
 }
@@ -155,9 +139,4 @@ pub fn is_friend(self_user_id: UserId, other_user_id: UserId) -> Bool {
   False
 }
 
-/// self_user_idがother_user_idをブロックしているかどうかを確かめる
-pub fn is_blocked(self_user_id: UserId, other_user_id: UserId) -> Bool {
-  // TODO API SERVER
-  False
-}
 
