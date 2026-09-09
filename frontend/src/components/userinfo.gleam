@@ -23,8 +23,6 @@ pub type Model {
 pub type Msg {
   ProfileLoaded(Result(user_wrap.UserProfile, user_wrap.GetUserProfileErr))
   MoveToFriend
-  MoveToBlock
-  MoveToReport
 }
 
 pub fn init(session: Session, target_user_info: UserInfo) -> #(Model, effect.Effect(Msg)) {
@@ -64,8 +62,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, profile: None, loading: False, messages: [message]), effect.none())
 
     MoveToFriend -> #(model, effect.none())
-    MoveToBlock -> #(model, effect.none())
-    MoveToReport -> #(model, effect.none())
   }
 }
 
@@ -96,8 +92,6 @@ pub fn view(model: Model) -> element.Element(Msg) {
         [attribute.attribute("style", "margin-top: 12px; display: flex; gap: 8px;")],
         [
           button([on_click(MoveToFriend)], [text("フレンド追加へ")]),
-          button([on_click(MoveToBlock)], [text("ブロックへ")]),
-          button([on_click(MoveToReport)], [text("通報へ")]),
         ],
       ),
     ],
