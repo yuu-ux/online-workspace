@@ -16,7 +16,6 @@ import pages/room
 import pages/mypage
 import pages/friend
 import pages/profile
-import pages/history
 import pages/search
 
 import pages/userinfofromfriend
@@ -28,7 +27,6 @@ pub type Page {
   MyPage(mypage.Model)
   Friend(friend.Model)
   Profile(profile.Model)
-  History(history.Model)
   Login(login.Model)
   Register(register.Model)
   PrivacyPolicy(privacypolicy.Model)
@@ -53,7 +51,6 @@ pub type Msg {
   MyPageMsg(mypage.Msg)
   FriendMsg(friend.Msg)
   ProfileMsg(profile.Msg)
-  HistoryMsg(history.Msg)
   HomeMsg(home.Msg)
   LoginMsg(login.Msg)
   RegisterMsg(register.Msg)
@@ -106,12 +103,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToFriend)
       let #(init_friend_model, _) = friend.init(update_mypage_model.session)
       #(Model(session: update_mypage_model.session, current_page: Friend(init_friend_model)), effect.none())
-    }
-
-    MyPage(mypage_model), MyPageMsg(mypage.ToHistory) -> {
-      let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToHistory)
-      let #(init_history_model, _) = history.init(update_mypage_model.session)
-      #(Model(session: update_mypage_model.session, current_page: History(init_history_model)), effect.none())
     }
 
     MyPage(mypage_model), MyPageMsg(mypage.ToProfile) -> {
@@ -172,21 +163,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     // profile other
-
-    // -- history --
-
-    History(history_model), HistoryMsg(history.ToMyPage) -> {
-      let #(update_history_model, _) = history.update(history_model, history.ToMyPage)
-      let #(init_mypage_model, _) = mypage.init(update_history_model.session)
-      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
-    }
-
-    History(history_model), HistoryMsg(history.ToHome) -> {
-      let #(init_home_model, _) = home.init(history_model.session)
-      #(Model(..model, current_page: Home(init_home_model)), effect.none())
-    }
-
-    // history other
 
     // -- home --
     Home(home_model), HomeMsg(home.ToMyPage) -> {
@@ -474,10 +450,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     _, ProfileMsg(_) -> {
       #(model, effect.none())
     }
-    _, HistoryMsg(_) -> {
-      #(model, effect.none())
-    }
-
     _, UserInfoFromFriendMsg(_) -> {
       #(model, effect.none())
     }
@@ -524,9 +496,6 @@ fn view (model: Model) -> element.Element(Msg) {
     }
     Profile(profile_model) -> {
       profile.view(profile_model) |> element.map(ProfileMsg)
-    }
-    History(history_model) -> {
-      history.view(history_model) |> element.map(HistoryMsg)
     }
     Search(search_model) -> {
       search.view(search_model) |> element.map(SearchMsg)
