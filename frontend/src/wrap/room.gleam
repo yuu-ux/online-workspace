@@ -1,5 +1,6 @@
 import lustre/effect
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
 import gleam/result
 import types/room.{
@@ -27,6 +28,7 @@ import types/room.{
 import types/user.{type UserId}
 import types/session.{type Session,type Token, Guest, Authenticated}
 import wrap/api.{type ApiError}
+import wrap/api as api
 
 pub fn create_room(
   roomname: RoomNameType,
@@ -63,6 +65,37 @@ pub fn get_rooms(
     "",
     rooms_decoder(),
     to_msg,
+  )
+}
+
+pub type InviteInfo {
+  InviteInfo(
+    token: String,
+    invite_url: String,
+    expires_at: String,
+  )
+}
+
+pub fn create_room_invite(
+  room_id: RoomId,
+  to_msg: fn(Result(InviteInfo, ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  let RoomId(id) = room_id
+  api.json_request(
+    "POST",
+    "/api/v1/rooms/" <> int.to_string(id) <> "/invites",
+    "",
+    invite_decoder(),
+    to_msg,
+  )
+}
+
+fn invite_decoder() -> decode.Decoder(InviteInfo) {
+  use token <- decode.field("token", decode.string)
+  use invite_url <- decode.field("inviteUrl", decode.string)
+  use expires_at <- decode.field("expiresAt", decode.string)
+  decode.success(
+    InviteInfo(token: token, invite_url: invite_url, expires_at: expires_at),
   )
 }
 

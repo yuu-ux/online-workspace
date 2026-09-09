@@ -673,6 +673,62 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /rooms/{roomId}/invites:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    post:
+      tags: [RoomInvites]
+      summary: 招待リンクを発行する
+      operationId: createRoomInvite
+      security:
+        - sessionAuth: []
+          csrfToken: []
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '201':
+          description: 作成した招待リンク情報
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomInvite'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /room-invites/{token}/join:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [RoomInvites]
+      summary: 招待リンクでルーム参加する
+      operationId: joinByRoomInvite
+      security:
+        - sessionAuth: []
+          csrfToken: []
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '200':
+          description: 参加結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteJoinResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /actuator/health:
     get:
       tags: [Operations]
@@ -1309,6 +1365,30 @@ components:
             $ref: '#/components/schemas/Friend'
         page:
           $ref: '#/components/schemas/PageMeta'
+
+    RoomInvite:
+      type: object
+      required: [token, inviteUrl, expiresAt]
+      properties:
+        token:
+          type: string
+        inviteUrl:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    InviteJoinResult:
+      type: object
+      required: [roomId, membershipId, joinedAt]
+      properties:
+        roomId:
+          $ref: '#/components/schemas/Id'
+        membershipId:
+          $ref: '#/components/schemas/Id'
+        joinedAt:
+          type: string
+          format: date-time
 
     HealthStatus:
       type: object
