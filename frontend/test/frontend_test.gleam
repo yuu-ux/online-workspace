@@ -4,6 +4,7 @@ import frontend
 import gleam/json
 import lustre/element
 import gleam/string
+import gleam/option.{Some}
 import pages/friend
 import pages/mypage
 import components/userinfo
@@ -191,4 +192,83 @@ pub fn mypage_renders_gray_icon_fallback_when_icon_url_is_empty_test() {
   rendered |> string.contains("background-color: #d1d5db") |> should.equal(True)
   rendered |> string.contains("自己紹介: 未設定") |> should.equal(True)
   rendered |> string.contains("作業カテゴリ: 未設定") |> should.equal(True)
+
+pub fn user_profile_renders_icon_url_as_image_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("Alice", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let model =
+    userinfo.Model(
+      ..model,
+      profile: Some(user_wrap.UserProfile(
+        name: "Alice",
+        icon_url: "https://example.com/icon.png",
+        is_public: True,
+        bio: "alice bio",
+        work_category: "未分類",
+        friendship: "FRIEND",
+      )),
+      loading: False,
+    )
+
+  userinfo.view(model)
+  |> element.to_string
+  |> string.contains("src=\"https://example.com/icon.png\"")
+  |> should.equal(True)
+
+  userinfo.view(model)
+  |> element.to_string
+  |> string.contains("alt=\"アイコン\"")
+  |> should.equal(True)
 }
+
+pub fn user_profile_renders_fallback_when_icon_url_is_empty_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("Alice", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let model =
+    userinfo.Model(
+      ..model,
+      profile: Some(user_wrap.UserProfile(
+        name: "Alice",
+        icon_url: "",
+        is_public: True,
+        bio: "alice bio",
+        work_category: "未分類",
+        friendship: "FRIEND",
+      )),
+      loading: False,
+    )
+
+  userinfo.view(model)
+  |> element.to_string
+  |> string.contains("background-color: #d1d5db")
+  |> should.equal(True)
+}
+
+pub fn user_profile_renders_gray_fallback_when_icon_loading_fails_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("Alice", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let model = userinfo.Model(
+    ..model,
+    profile: Some(user_wrap.UserProfile(
+      name: "Alice",
+      icon_url: "https://example.com/missing-icon.png",
+      is_public: True,
+      bio: "alice bio",
+      work_category: "未分類",
+      friendship: "FRIEND",
+    )),
+    loading: False,
+  )
+  let #(failed_model, _) = userinfo.update(model, userinfo.IconLoadFailed)
+  let rendered = userinfo.view(failed_model) |> element.to_string
+
+  rendered
+  |> string.contains("background-color: #d1d5db")
+  |> should.equal(True)
+
+  rendered
+  |> string.contains("<img")
+  |> should.equal(False)

@@ -99,6 +99,21 @@ class ProfileControllerIntegrationTests {
 	}
 
 	@Test
+	void rejectHttpIconUrl() throws Exception {
+		mockMvc.perform(put("/api/v1/users/me/profile")
+				.with(user(email))
+				.with(csrf())
+				.contentType(APPLICATION_JSON)
+				.content("""
+					{"name":"更新後","iconUrl":"http://example.com/icon.png","bio":"","workCategoryId":null,"isPublic":true}
+					"""))
+			.andExpect(status().isUnprocessableEntity())
+			.andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("iconUrl"))
+			.andExpect(jsonPath("$.fieldErrors[0].message").value("アイコンURLはhttpsで入力してください。"));
+	}
+
+	@Test
 	void rejectUnknownCategory() throws Exception {
 		mockMvc.perform(put("/api/v1/users/me/profile")
 				.with(user(email))
