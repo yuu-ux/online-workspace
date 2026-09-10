@@ -116,6 +116,9 @@ pub fn view(model: Model) -> element.Element(Msg) {
   }
 
   let friend_control = case model.session {
+    session_t.Authenticated(_, current_user)
+      if current_user.user_id == model.user_info.user_id -> []
+
     session_t.Authenticated(_, _) -> [
       div([], [
         text("フレンド"),

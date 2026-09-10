@@ -54,6 +54,16 @@ pub fn friend_error_message_is_rendered_test() {
   |> should.equal(True)
 }
 
+pub fn own_profile_does_not_render_friend_control_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = userinfo.init(session, UserInfo("me", UserId("1")))
+
+  userinfo.view(model)
+  |> element.to_string
+  |> string.contains("type=\"checkbox\"")
+  |> should.equal(False)
+}
+
 pub fn friend_page_displays_list_limit_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
   let model = friend.Model(
