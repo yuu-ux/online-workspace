@@ -77,7 +77,16 @@ fn init_with_friend_status(
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     ProfileLoaded(Ok(profile)) ->
-      #(Model(..model, profile: Some(profile), loading: False, messages: []), effect.none())
+      #(
+        Model(
+          ..model,
+          profile: Some(profile),
+          is_friend: profile.friendship == "FRIEND",
+          loading: False,
+          messages: [],
+        ),
+        effect.none(),
+      )
 
     ProfileLoaded(Error(user_wrap.GetUserProfileApiErr(api.ApiError(message)))) ->
       #(Model(..model, profile: None, loading: False, messages: [message]), effect.none())
@@ -85,18 +94,44 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     FriendOnChecked(is_friend) -> {
       let previous_state = model.is_friend
       let to_msg = fn(result) { FriendUpdated(previous_state, result) }
+      let friendship = case is_friend {
+        True -> "FRIEND"
+        False -> "NONE"
+      }
       let friend_effect = case is_friend {
         True -> user_wrap.add_friend(model.user_info.user_id, to_msg)
         False -> user_wrap.remove_friend(model.user_info.user_id, to_msg)
       }
-      #(Model(..model, is_friend: is_friend, messages: []), friend_effect)
+      #(
+        Model(
+          ..model,
+          profile: set_profile_friendship(model.profile, friendship),
+          is_friend: is_friend,
+          messages: [],
+        ),
+        friend_effect,
+      )
     }
 
     FriendUpdated(_, Ok(_)) ->
       #(Model(..model, messages: []), effect.none())
 
     FriendUpdated(previous_state, Error(api.ApiError(message))) ->
-      #(Model(..model, is_friend: previous_state, messages: [message]), effect.none())
+      #(
+        Model(
+          ..model,
+          profile: set_profile_friendship(
+            model.profile,
+            case previous_state {
+              True -> "FRIEND"
+              False -> "NONE"
+            },
+          ),
+          is_friend: previous_state,
+          messages: [message],
+        ),
+        effect.none(),
+      )
 
     MoveToFriend -> #(model, effect.none())
   }
@@ -116,6 +151,9 @@ pub fn view(model: Model) -> element.Element(Msg) {
   }
 
   let friend_control = case model.session {
+    session_t.Authenticated(_, current_user)
+      if current_user.user_id == model.user_info.user_id -> []
+
     session_t.Authenticated(_, _) -> [
       div([], [
         text("フレンド"),
@@ -155,5 +193,15 @@ fn string_or_fallback(value: String, fallback: String) -> String {
   case value {
     "" -> fallback
     _ -> value
+  }
+}
+
+fn set_profile_friendship(
+  profile: Option(user_wrap.UserProfile),
+  friendship: String,
+) -> Option(user_wrap.UserProfile) {
+  case profile {
+    Some(profile) -> Some(user_wrap.UserProfile(..profile, friendship: friendship))
+    None -> None
   }
 }
