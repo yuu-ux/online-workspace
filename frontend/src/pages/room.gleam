@@ -81,18 +81,19 @@ pub fn init(session: Session, room_id: room_t.RoomId) -> #(Model, effect.Effect(
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     ToHome -> {
-      close_ws()
       case model.joined {
         True -> #(model, leave_room(model.room_id, RoomLeft))
-        False -> #(
-          model,
-          effect.from(fn(dispatch) { dispatch(LeaveCompleted) }),
-        )
+        False -> {
+          close_ws()
+          #(
+            model,
+            effect.from(fn(dispatch) { dispatch(LeaveCompleted) }),
+          )
+        }
       }
     }
 
     ToUserInfo(_user_info) -> {
-      close_ws()
       #(model, effect.none())
     }
 
@@ -182,6 +183,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     RoomLeft(Ok(_)) -> {
+      close_ws()
       #(model, effect.from(fn(dispatch) { dispatch(LeaveCompleted) }))
     }
 

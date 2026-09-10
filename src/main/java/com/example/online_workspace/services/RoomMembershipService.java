@@ -64,6 +64,7 @@ public class RoomMembershipService {
 		if (repository.leave(membershipId, leftAt) != 1) {
 			throw conflict("The room membership could not be ended");
 		}
+		presence.publishRoomLeft(userEmail, roomId, userId);
 	}
 
 	private RoomMember joinLockedRoom(JoinPolicy room, long userId, Instant joinedAt) {
