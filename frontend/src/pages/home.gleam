@@ -52,6 +52,7 @@ pub type Msg {
   ToLogout
   ToMyPage
   ToRoom(RoomId)
+  RoomNotJoinable
   LeftRoom
   RoomsLoaded(Result(List(RoomInfo), ApiError))
   LogoutCompleted(Result(Nil, ApiError))
@@ -78,6 +79,8 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     ToLogout -> #(model, session_api.logout_proc(LogoutCompleted))
+    RoomNotJoinable ->
+      #(Model(..model, messages: ["このルームは満員のため入室できません。"]), effect.none())
     LeftRoom -> #(Model(..model, messages: ["退室しました。"]), effect.none())
     RoomsLoaded(Ok(rooms)) ->
       #(Model(..model, rooms: rooms), effect.none())
