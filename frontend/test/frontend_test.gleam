@@ -66,6 +66,29 @@ pub fn own_profile_does_not_render_friend_control_test() {
   |> should.equal(False)
 }
 
+pub fn own_profile_uses_my_profile_response_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = userinfo.init(session, UserInfo("me", UserId("1")))
+  let profile = user_wrap.MyProfile(
+    name: "me",
+    icon_url: "",
+    is_public: True,
+    bio: "my bio",
+    work_category_id: 0,
+    work_category: "未設定",
+    email: "me@example.com",
+  )
+  let #(updated_model, _) = userinfo.update(
+    model,
+    userinfo.MyProfileLoaded(Ok(profile)),
+  )
+
+  userinfo.view(updated_model)
+  |> element.to_string
+  |> string.contains("自己紹介: my bio")
+  |> should.equal(True)
+}
+
 pub fn loaded_friendship_status_checks_friend_control_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
   let target = UserInfo("friend", UserId("2"))
