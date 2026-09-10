@@ -1,14 +1,16 @@
 // マイページ
 import components/input
 import components/btn
+import gleam/dynamic/decode
 import gleam/int
-import lustre/event.{on_click, on_input}
+import gleam/option.{type Option, None, Some}
+import lustre/event.{on, on_click, on_input}
 import lustre/attribute
 import lustre/element
 import lustre/effect
 import gleam/io
 import gleam/list
-import lustre/element/html.{button, div, text, input, textarea, select, option}
+import lustre/element/html.{button, div, img, text, input, textarea, select, option}
 
 import types/session.{type Session}
 import types/user.{type UserInfo}
@@ -23,6 +25,8 @@ pub type Model {
   Model(
     session: Session,
     current_user_name: String,
+    profile: Option(user_wrap.MyProfile),
+    icon_load_failed: Bool,
     messages: List(String)
   )
 }
@@ -34,6 +38,7 @@ pub type Msg {
   InputUpdated(target: InputType, str: String)
   SubmitClicked
   MyProfileLoaded(Result(user_wrap.MyProfile, user_wrap.MyProfileErr))
+  IconLoadFailed
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
@@ -41,6 +46,8 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
     Model(
       session: session,
       current_user_name: "",
+      profile: None,
+      icon_load_failed: False,
       messages: []),
     user_wrap.get_my_profile(MyProfileLoaded)
   )
@@ -76,16 +83,38 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     MyProfileLoaded(Ok(profile)) -> {
-      #(Model(..model, current_user_name: profile.name, messages: []), effect.none())
+      #(
+        Model(
+          ..model,
+          current_user_name: profile.name,
+          profile: Some(profile),
+          icon_load_failed: False,
+          messages: [],
+        ),
+        effect.none(),
+      )
     }
 
     MyProfileLoaded(Error(user_wrap.MyProfileApiErr(api.ApiError(message)))) -> {
       #(Model(..model, messages: [message]), effect.none())
     }
+
+    IconLoadFailed -> #(Model(..model, icon_load_failed: True), effect.none())
   }
 }
 
 pub fn view (model: Model) -> element.Element(Msg) {
+  let profile_view = case model.profile {
+    Some(profile) -> [
+      div([], [text("名前: " <> profile.name)]),
+      div([], [text("アイコン:")]),
+      icon_view(profile.icon_url, model.icon_load_failed),
+      div([], [text("自己紹介: " <> string_or_fallback(profile.bio, "未設定"))]),
+      div([], [text("作業カテゴリ: " <> string_or_fallback(profile.work_category, "未設定"))]),
+    ]
+    None -> [div([], [text("プロフィールを読み込み中...")])]
+  }
+
   case model.session {
     session.Guest -> {
       div([
@@ -104,6 +133,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
       ],
       [
         text("MyPage"),
+        div([], profile_view),
 
         btn.to_home_btn_component(ToHome),
         btn.to_friend_btn_component(ToFriend),
@@ -123,4 +153,40 @@ pub fn view (model: Model) -> element.Element(Msg) {
 
     }
   }
+}
+
+fn string_or_fallback(value: String, fallback: String) -> String {
+  case value {
+    "" -> fallback
+    _ -> value
+  }
+}
+
+fn icon_view(icon_url: String, load_failed: Bool) -> element.Element(Msg) {
+  case icon_url {
+    "" -> icon_fallback("アイコン未設定")
+    _ -> case load_failed {
+      True -> icon_fallback("アイコンを表示できません")
+      False ->
+        img([
+          attribute.src(icon_url),
+          attribute.alt("アイコン"),
+          on("error", decode.success(IconLoadFailed)),
+          attribute.attribute(
+            "style",
+            "width: 64px; height: 64px; object-fit: cover; border-radius: 50%;",
+          ),
+        ])
+    }
+  }
+}
+
+fn icon_fallback(label: String) -> element.Element(Msg) {
+  div([
+    attribute.attribute("aria-label", label),
+    attribute.attribute(
+      "style",
+      "width: 64px; height: 64px; border-radius: 50%; background-color: #d1d5db;",
+    ),
+  ], [])
 }

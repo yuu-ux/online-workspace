@@ -26,6 +26,7 @@ import wrap/room.{
   get_room_members,
   join_room,
   leave_room,
+  presence_from_json,
 }
 
 pub type InputType {
@@ -199,7 +200,25 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           #(Model(..model, chat_list: [chat, ..model.chat_list]), effect.none())
         }
         Ok(_) -> #(model, effect.none())
-        Error(_) -> #(model, effect.none())
+        Error(_) -> {
+          case presence_from_json(message) {
+            Ok(presence) if presence.room_id == model.room_id -> {
+              let without_user =
+                list.filter(model.member_list, fn(member) {
+                  member.user_id != presence.user_id
+                })
+              let members = case presence.online {
+                True -> [
+                  UserInfo(name: presence.user, user_id: presence.user_id),
+                  ..without_user
+                ]
+                False -> without_user
+              }
+              #(Model(..model, member_list: members), effect.none())
+            }
+            _ -> #(model, effect.none())
+          }
+        }
       }
     }
   }

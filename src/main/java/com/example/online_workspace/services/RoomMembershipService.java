@@ -61,10 +61,11 @@ public class RoomMembershipService {
 		if (membershipId == null) {
 			throw notFound("Active room membership not found");
 		}
+		RoomMember member = repository.findActiveMember(roomId, userId);
 		if (repository.leave(membershipId, leftAt) != 1) {
 			throw conflict("The room membership could not be ended");
 		}
-		presence.publishRoomLeft(userEmail, roomId, userId);
+		presence.publishRoomLeft(userEmail, roomId, userId, member);
 	}
 
 	private RoomMember joinLockedRoom(JoinPolicy room, long userId, Instant joinedAt) {

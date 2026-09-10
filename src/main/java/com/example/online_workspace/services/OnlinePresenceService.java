@@ -17,6 +17,7 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import com.example.online_workspace.repositories.RoomMembershipRepository;
 import com.example.online_workspace.repositories.RoomMembershipRepository.ActivePresence;
+import com.example.online_workspace.models.RoomMember;
 import com.example.online_workspace.services.auth.EmailNormalizer;
 
 @Service
@@ -78,9 +79,15 @@ public class OnlinePresenceService {
 			&& sessionsByUser.containsKey(EmailNormalizer.normalize(email));
 	}
 
-	public void publishRoomLeft(String email, long roomId, long userId) {
-		if (isOnline(email)) {
-			publish(email, "room:user_left", false, new ActivePresence(roomId, userId));
+	public void publishRoomLeft(String email, long roomId, long userId, RoomMember member) {
+		if (isOnline(email) && member != null) {
+			publish(
+				email,
+				"room:user_left",
+				false,
+				new ActivePresence(roomId, userId),
+				member
+			);
 		}
 	}
 
@@ -113,9 +120,25 @@ public class OnlinePresenceService {
 	}
 
 	private void publish(String email, String type, boolean online, ActivePresence presence) {
+		RoomMember member = repository.findActiveMember(presence.roomId(), presence.userId());
+		if (member == null) {
+			return;
+		}
+		publish(email, type, online, presence, member);
+	}
+
+	private void publish(
+		String email,
+		String type,
+		boolean online,
+		ActivePresence presence,
+		RoomMember member
+	) {
 		RoomPresence payload = new RoomPresence(
 			presence.roomId(),
 			presence.userId(),
+			member.userName(),
+			member.iconUrl(),
 			online,
 			Instant.now()
 		);
@@ -125,7 +148,14 @@ public class OnlinePresenceService {
 			.forEach(memberEmail -> messagingTemplate.convertAndSendToUser(memberEmail, destination, event));
 	}
 
-	public record RoomPresence(long roomId, long userId, boolean online, Instant occurredAt) {
+	public record RoomPresence(
+		long roomId,
+		long userId,
+		String name,
+		String iconUrl,
+		boolean online,
+		Instant occurredAt
+	) {
 	}
 
 	public record RoomPresenceEvent(String type, RoomPresence payload) {
