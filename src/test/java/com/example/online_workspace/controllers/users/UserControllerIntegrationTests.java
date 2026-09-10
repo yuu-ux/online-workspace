@@ -85,7 +85,7 @@ class UserControllerIntegrationTests {
 			.andExpect(jsonPath("$.friendship").value("FRIEND"));
 	}
 
-	@DisplayName("非公開プロフィールは名前とアイコンのみ返す")
+	@DisplayName("非公開プロフィールでもフレンド状態を返す")
 	@Test
 	void getsHiddenProfile() throws Exception {
 		mockMvc.perform(get("/api/v1/users/{userId}", 2L)
@@ -94,7 +94,7 @@ class UserControllerIntegrationTests {
 			.andExpect(jsonPath("$.name").value("Tomoko"))
 			.andExpect(jsonPath("$.isPublic").value(false))
 			.andExpect(jsonPath("$.bio").doesNotExist())
-			.andExpect(jsonPath("$.friendship").doesNotExist());
+			.andExpect(jsonPath("$.friendship").value("FRIEND"));
 	}
 
 }

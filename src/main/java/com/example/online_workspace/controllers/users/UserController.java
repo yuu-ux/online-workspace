@@ -70,7 +70,7 @@ public class UserController {
 				profile.friendship()
 			);
 		}
-		return new HiddenUserProfileResponse(profile.name(), profile.iconUrl(), false);
+		return new HiddenUserProfileResponse(profile.name(), profile.iconUrl(), false, profile.friendship());
 	}
 
 	public record UserPageResponse(List<UserSummaryResponse> items, PageMetaResponse page) {
@@ -109,7 +109,8 @@ public class UserController {
 	public record HiddenUserProfileResponse(
 		String name,
 		String iconUrl,
-		boolean isPublic
+		boolean isPublic,
+		String friendship
 	) implements UserProfileResponse {
 	}
 

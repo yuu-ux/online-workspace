@@ -54,6 +54,75 @@ pub fn friend_error_message_is_rendered_test() {
   |> should.equal(True)
 }
 
+pub fn own_profile_does_not_render_friend_control_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = userinfo.init(session, UserInfo("me", UserId("1")))
+
+  userinfo.view(model)
+  |> element.to_string
+  |> string.contains("type=\"checkbox\"")
+  |> should.equal(False)
+}
+
+pub fn loaded_friendship_status_checks_friend_control_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("friend", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let profile = user_wrap.UserProfile(
+    name: "friend",
+    icon_url: "",
+    is_public: True,
+    bio: "",
+    work_category: "",
+    friendship: "FRIEND",
+  )
+
+  let #(updated_model, _) = userinfo.update(
+    model,
+    userinfo.ProfileLoaded(Ok(profile)),
+  )
+
+  updated_model.is_friend |> should.equal(True)
+}
+
+pub fn checking_friend_updates_friendship_label_immediately_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("friend", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let profile = user_wrap.UserProfile(
+    name: "friend",
+    icon_url: "",
+    is_public: True,
+    bio: "",
+    work_category: "",
+    friendship: "NONE",
+  )
+  let #(loaded_model, _) = userinfo.update(
+    model,
+    userinfo.ProfileLoaded(Ok(profile)),
+  )
+
+  let #(updated_model, _) = userinfo.update(
+    loaded_model,
+    userinfo.FriendOnChecked(True),
+  )
+
+  userinfo.view(updated_model)
+  |> element.to_string
+  |> string.contains("フレンド状態: FRIEND")
+  |> should.equal(True)
+
+  let #(unchecked_model, _) = userinfo.update(
+    updated_model,
+    userinfo.FriendOnChecked(False),
+  )
+
+  userinfo.view(unchecked_model)
+  |> element.to_string
+  |> string.contains("フレンド状態: NONE")
+  |> should.equal(True)
+}
+
 pub fn friend_page_displays_list_limit_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
   let model = friend.Model(

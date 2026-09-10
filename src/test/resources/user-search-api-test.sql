@@ -70,4 +70,5 @@ INSERT INTO profiles (user_id, icon_url, bio, work_category_id, is_public) VALUE
 
 INSERT INTO friends (id, user_id, friend_user_id, status_id) VALUES
     (1, 1, 3, 1),
-    (2, 1, 2, 2);
+    (2, 1, 2, 2),
+    (3, 3, 2, 1);
