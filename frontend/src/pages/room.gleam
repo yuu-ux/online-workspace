@@ -7,7 +7,7 @@ import gleam/string
 import lustre/attribute.{class}
 import lustre/effect
 import lustre/element
-import lustre/element/html.{button, div, h1, input, p, span, text}
+import lustre/element/html.{button, div, h1, h2, input, p, span, text}
 import lustre/event.{on_click, on_input}
 
 import types/room as room_t
@@ -253,40 +253,72 @@ pub fn view(model: Model) -> element.Element(Msg) {
   case model.session {
     session.Guest ->
       div(
-        [class("p-5")],
-        [text("Room"), text("ログインしてください"), btn.to_home_btn_component(ToHome)],
+        [class("flex min-h-screen items-center justify-center bg-gray-50 p-5")],
+        [
+          div([class("rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm")], [
+            h1([class("mb-3 text-xl font-bold text-gray-900")], [text("ルーム")]),
+            p([class("mb-6 text-gray-600")], [text("ログインしてください")]),
+            btn.to_home_btn_component(ToHome),
+          ]),
+        ],
       )
 
     session.Authenticated(_, _) -> {
       let room_content = case model.joined {
         True -> [
-          user_list_component(model.member_list, ToUserInfo),
-          div([], [
-            div(
-              [],
-              list.map(
-                list.reverse(model.chat_list),
-                fn(chat) { div([], [text("from" <> chat.user), text(chat.message)]) },
+          div([class("grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]")], [
+            div([class("flex min-h-[28rem] flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm")], [
+              div([class("mb-4 border-b border-gray-100 pb-3")], [
+                h2([class("text-lg font-semibold text-gray-900")], [text("チャット")]),
+                p([class("text-sm text-gray-500")], [text("ルームのメンバーと会話できます")]),
+              ]),
+              div(
+                [class("flex-1 space-y-3 overflow-y-auto rounded-lg bg-gray-50 p-4")],
+                list.map(
+                  list.reverse(model.chat_list),
+                  fn(chat) {
+                    div([class("rounded-lg bg-white p-3 shadow-sm")], [
+                      div([class("mb-1 text-xs font-semibold text-blue-700")], [text(chat.user)]),
+                      div([class("break-words text-sm text-gray-800")], [text(chat.message)]),
+                    ])
+                  },
+                ),
               ),
-            ),
-            input([
-              on_input(InputUpdated(ChatMsg, _)),
-              attribute.value(model.current_message_input),
+              div([class("mt-4 flex gap-2")], [
+                input([
+                  class("min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"),
+                  on_input(InputUpdated(ChatMsg, _)),
+                  attribute.value(model.current_message_input),
+                ]),
+                button(
+                  [
+                    class("rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"),
+                    on_click(SubmitClicked),
+                  ],
+                  [text("送信")],
+                ),
+              ]),
             ]),
-            button([on_click(SubmitClicked)], [text("send")]),
+            user_list_component(model.member_list, ToUserInfo),
           ]),
           btn.to_home_btn_component(ToHome),
         ]
         False -> [btn.to_home_btn_component(ToHome)]
       }
       div(
-        [class("p-5 font-sans")],
+        [class("min-h-screen bg-gray-50 p-4 font-sans sm:p-6")],
         list.flatten([
           [room_detail_view(model.room_detail)],
           room_content,
-          [div([class("text-red-600")], list.map(model.messages, fn(message) {
-            div([], [text(message)])
-          }))],
+          [
+            div([class("mx-auto mt-4 max-w-7xl")], [
+              div([class("space-y-2")], list.map(model.messages, fn(message) {
+                div([class("rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700")], [
+                  text(message),
+                ])
+              })),
+            ]),
+          ],
         ]),
       )
     }
@@ -303,15 +335,23 @@ fn room_detail_view(detail: Option(room_t.RoomDetail)) -> element.Element(Msg) {
       let creator_name = case room.created_by {
         UserInfo(name: name, user_id: _) -> name
       }
-      div([class("mb-5")], [
-        h1([], [text(room_name)]),
-        p([], [text(room_description(room.description))]),
-        detail_row("カテゴリ", category_to_string(room.category)),
-        detail_row("作業スタイル", work_style_to_string(room.work_style)),
-        detail_row("参加人数", int_to_string(room.current_members) <> " / " <> int_to_string(room.max_number_of_member) <> " 人"),
-        detail_row("ステータス", room.status),
-        detail_row("作成者", creator_name),
-        detail_row("作成日時", format_created_at_jst(room.created_at)),
+      div([class("mx-auto mb-6 max-w-7xl rounded-xl border border-gray-200 bg-white p-5 shadow-sm")], [
+        div([class("mb-4 flex flex-wrap items-start justify-between gap-3")], [
+          div([], [
+            h1([class("text-2xl font-bold text-gray-900")], [text(room_name)]),
+            p([class("mt-1 text-sm text-gray-600")], [text(room_description(room.description))]),
+          ]),
+          span([class("rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700")], [
+            text(room.status),
+          ]),
+        ]),
+        div([class("grid gap-3 text-sm text-gray-700 sm:grid-cols-2 lg:grid-cols-4")], [
+          detail_row("カテゴリ", category_to_string(room.category)),
+          detail_row("作業スタイル", work_style_to_string(room.work_style)),
+          detail_row("参加人数", int_to_string(room.current_members) <> " / " <> int_to_string(room.max_number_of_member) <> " 人"),
+          detail_row("作成者", creator_name),
+        ]),
+        p([class("mt-3 text-xs text-gray-500")], [text("作成日時: " <> format_created_at_jst(room.created_at))]),
       ])
     }
   }
@@ -327,7 +367,10 @@ fn room_description(description: room_t.DescriptionType) -> String {
 }
 
 fn detail_row(label: String, value: String) -> element.Element(Msg) {
-  div([], [span([], [text(label <> ": ")]), span([], [text(value)])])
+  div([class("rounded-lg bg-gray-50 p-3")], [
+    div([class("text-xs text-gray-500")], [text(label)]),
+    div([class("mt-1 font-semibold text-gray-900")], [text(value)]),
+  ])
 }
 
 fn category_to_string(category: room_t.CategoryType) -> String {
