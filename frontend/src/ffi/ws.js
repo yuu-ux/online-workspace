@@ -41,6 +41,37 @@ function parseStompChatMessage(frame) {
   }
 }
 
+function parseStompPresenceMessage(frame) {
+  const separator = frame.indexOf("\n\n");
+  if (separator < 0) return null;
+
+  const bodyWithNull = frame.slice(separator + 2);
+  const body = bodyWithNull.endsWith("\0")
+    ? bodyWithNull.slice(0, -1)
+    : bodyWithNull;
+
+  try {
+    const event = JSON.parse(body);
+    if (
+      !event.type ||
+      !event.type.startsWith("room:user_") ||
+      !event.payload
+    ) {
+      return null;
+    }
+    return JSON.stringify({
+      type: "presence",
+      room_id: event.payload.roomId,
+      user_id: event.payload.userId,
+      user: event.payload.name,
+      icon_url: event.payload.iconUrl || "",
+      online: event.payload.online,
+    });
+  } catch (_) {
+    return null;
+  }
+}
+
 export function connect_ws(roomId, dispatch) {
   if (
     socket &&
@@ -81,12 +112,24 @@ export function connect_ws(roomId, dispatch) {
             ])
           )
         );
+        connection.send(
+          sockFrame(
+            stompFrame([
+              "SUBSCRIBE",
+              "id:sub-room-presence",
+              `destination:/user/queue/rooms/${roomId}/presence`,
+              "ack:auto",
+            ])
+          )
+        );
         continue;
       }
 
       if (frame.startsWith("MESSAGE")) {
         const parsed = parseStompChatMessage(frame);
+        const presence = parsed === null ? parseStompPresenceMessage(frame) : null;
         if (parsed !== null) dispatch(parsed);
+        if (presence !== null) dispatch(presence);
       }
     }
   };
