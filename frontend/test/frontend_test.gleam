@@ -46,6 +46,54 @@ pub fn room_presence_updates_member_list_test() {
   left_model.member_list |> should.equal([UserInfo("Alice", UserId("2"))])
 }
 
+pub fn room_presence_updates_member_count_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = room.init(session, room_t.RoomId(10))
+  let detail = room_t.RoomDetail(
+    room_id: room_t.RoomId(10),
+    roomname: room_t.RoomNameType("Room"),
+    description: room_t.DescriptionType("Description"),
+    category: room_t.Cat1,
+    work_style: room_t.Quiet,
+    max_number_of_member: 3,
+    current_members: 1,
+    status: "OPEN",
+    created_by: UserInfo("Alice", UserId("2")),
+    joinable: True,
+    join_restriction: None,
+    member: True,
+    created_at: "2026-09-10T00:00:00Z",
+    updated_at: "2026-09-10T00:00:00Z",
+  )
+  let model = room.Model(
+    ..model,
+    room_detail: Some(detail),
+    member_list: [UserInfo("Alice", UserId("2"))],
+  )
+
+  let #(joined_model, _) = room.update(
+    model,
+    room.WsMessageReceived(
+      "{\"type\":\"presence\",\"room_id\":10,\"user_id\":3,\"user\":\"Bob\",\"online\":true}",
+    ),
+  )
+  case joined_model.room_detail {
+    Some(updated_detail) -> updated_detail.current_members |> should.equal(2)
+    None -> should.fail()
+  }
+
+  let #(left_model, _) = room.update(
+    joined_model,
+    room.WsMessageReceived(
+      "{\"type\":\"presence\",\"room_id\":10,\"user_id\":3,\"user\":\"Bob\",\"online\":false}",
+    ),
+  )
+  case left_model.room_detail {
+    Some(updated_detail) -> updated_detail.current_members |> should.equal(1)
+    None -> should.fail()
+  }
+}
+
 pub fn friend_loaded_message_updates_friend_page_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
   let #(friend_model, _) = friend.init(session)

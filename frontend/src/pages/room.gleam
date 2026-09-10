@@ -203,6 +203,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         Error(_) -> {
           case presence_from_json(message) {
             Ok(presence) if presence.room_id == model.room_id -> {
+              let member_was_present =
+                list.any(model.member_list, fn(member) {
+                  member.user_id == presence.user_id
+                })
               let without_user =
                 list.filter(model.member_list, fn(member) {
                   member.user_id != presence.user_id
@@ -214,7 +218,20 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
                 ]
                 False -> without_user
               }
-              #(Model(..model, member_list: members), effect.none())
+              let member_count = case presence.online, member_was_present {
+                True, True -> room_member_count(model.room_detail)
+                True, False -> room_member_count(model.room_detail) + 1
+                False, True -> room_member_count(model.room_detail) - 1
+                False, False -> room_member_count(model.room_detail)
+              }
+              #(
+                Model(
+                  ..model,
+                  member_list: members,
+                  room_detail: update_member_count(model.room_detail, member_count),
+                ),
+                effect.none(),
+              )
             }
             _ -> #(model, effect.none())
           }
@@ -330,4 +347,21 @@ fn work_style_to_string(work_style: room_t.WorkStyleType) -> String {
 
 fn int_to_string(value: Int) -> String {
   int.to_string(value)
+}
+
+fn room_member_count(detail: Option(room_t.RoomDetail)) -> Int {
+  case detail {
+    Some(room) -> room.current_members
+    None -> 0
+  }
+}
+
+fn update_member_count(
+  detail: Option(room_t.RoomDetail),
+  member_count: Int,
+) -> Option(room_t.RoomDetail) {
+  case detail {
+    Some(room) -> Some(room_t.RoomDetail(..room, current_members: member_count))
+    None -> None
+  }
 }
