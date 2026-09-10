@@ -328,14 +328,18 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     Room(room_model), RoomMsg(room.ToHome) -> {
       let #(update_room_model, room_effect) = room.update(room_model, room.ToHome)
-      let #(init_home_model, home_effect) = home.init(update_room_model.session)
-
       #(
-        Model(session: init_home_model.session, current_page: Home(init_home_model)),
-        effect.batch([
-          room_effect |> effect.map(RoomMsg),
-          home_effect |> effect.map(HomeMsg),
-        ]),
+        Model(..model, current_page: Room(update_room_model)),
+        room_effect |> effect.map(RoomMsg),
+      )
+    }
+
+    Room(room_model), RoomMsg(room.LeaveCompleted) -> {
+      let #(init_home_model, home_effect) = home.init(room_model.session)
+      let #(updated_home_model, _) = home.update(init_home_model, home.LeftRoom)
+      #(
+        Model(session: room_model.session, current_page: Home(updated_home_model)),
+        home_effect |> effect.map(HomeMsg),
       )
     }
 
