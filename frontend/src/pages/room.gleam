@@ -273,11 +273,14 @@ fn room_detail_view(detail: Option(room_t.RoomDetail)) -> element.Element(Msg) {
         detail_row("参加人数", int_to_string(room.current_members) <> " / " <> int_to_string(room.max_number_of_member) <> " 人"),
         detail_row("ステータス", room.status),
         detail_row("作成者", creator_name),
-        detail_row("作成日時", room.created_at),
+        detail_row("作成日時", format_created_at_jst(room.created_at)),
       ])
     }
   }
 }
+
+@external(javascript, "./../ffi/date.js", "format_created_at_jst")
+fn format_created_at_jst(value: String) -> String
 
 fn room_description(description: room_t.DescriptionType) -> String {
   case description {

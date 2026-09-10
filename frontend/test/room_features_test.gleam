@@ -96,6 +96,8 @@ pub fn room_detail_is_rendered_after_loading_test() {
 
   room.view(updated_model)
   |> element.to_string
-  |> string.contains("静かに作業します")
-  |> should.equal(True)
+  |> fn(html) {
+    html |> string.contains("静かに作業します") |> should.equal(True)
+    html |> string.contains("2026-09-10 09:00") |> should.equal(True)
+  }
 }
