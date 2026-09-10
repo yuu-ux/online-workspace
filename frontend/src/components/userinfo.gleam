@@ -25,6 +25,7 @@ pub type Model {
 
 pub type Msg {
   ProfileLoaded(Result(user_wrap.UserProfile, user_wrap.GetUserProfileErr))
+  MyProfileLoaded(Result(user_wrap.MyProfile, user_wrap.MyProfileErr))
   IconLoadFailed
   MoveToFriend
   FriendOnChecked(Bool)
@@ -63,7 +64,16 @@ fn init_with_friend_status(
         effect.none(),
       )
 
-    session_t.Authenticated(_, _) ->
+    session_t.Authenticated(_, _) -> {
+      let profile_effect = case session {
+        session_t.Authenticated(_, current_user)
+          if current_user.user_id == target_user_info.user_id ->
+          user_wrap.get_my_profile(MyProfileLoaded)
+        session_t.Authenticated(_, _) ->
+          user_wrap.get_user_profile(target_user_info.user_id, ProfileLoaded)
+        session_t.Guest ->
+          effect.none()
+      }
       #(
         Model(
           session: session,
@@ -74,8 +84,9 @@ fn init_with_friend_status(
           is_friend: initial_is_friend,
           messages: [],
         ),
-        user_wrap.get_user_profile(target_user_info.user_id, ProfileLoaded),
+        profile_effect,
       )
+    }
   }
 }
 
@@ -95,6 +106,28 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       )
 
     ProfileLoaded(Error(user_wrap.GetUserProfileApiErr(api.ApiError(message)))) ->
+      #(Model(..model, profile: None, loading: False, messages: [message]), effect.none())
+
+    MyProfileLoaded(Ok(profile)) ->
+      #(
+        Model(
+          ..model,
+          profile: Some(user_wrap.UserProfile(
+            name: profile.name,
+            icon_url: profile.icon_url,
+            is_public: profile.is_public,
+            bio: profile.bio,
+            work_category: profile.work_category,
+            friendship: "NONE",
+          )),
+          loading: False,
+          icon_load_failed: False,
+          messages: [],
+        ),
+        effect.none(),
+      )
+
+    MyProfileLoaded(Error(user_wrap.MyProfileApiErr(api.ApiError(message)))) ->
       #(Model(..model, profile: None, loading: False, messages: [message]), effect.none())
 
     IconLoadFailed ->
