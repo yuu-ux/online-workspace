@@ -78,8 +78,10 @@ pub fn full_room_is_rendered_as_unavailable_test() {
 
   rooms.room_list_view([info], fn(_) { Nil })
   |> element.to_string
-  |> string.contains("満員のため入室できません")
-  |> should.equal(True)
+  |> fn(html) {
+    html |> string.contains("満員のため入室できません") |> should.equal(True)
+    html |> string.contains("2026-09-10 00:00") |> should.equal(True)
+  }
 }
 
 pub fn room_detail_is_rendered_after_loading_test() {

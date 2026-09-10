@@ -1,6 +1,7 @@
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, Some}
+import gleam/string
 import lustre/attribute.{aria_disabled, class, disabled}
 import lustre/element.{text}
 import lustre/element/html.{button, div, span, h3}
@@ -67,7 +68,7 @@ fn room_card(room_info: RoomInfo, to_room: fn(RoomId) -> a) -> element.Element(a
             <> int.to_string(room_info.max_number_of_member)
             <> " 人",
         ),
-        info_row("作成日時", room_info.created_at),
+        info_row("作成日時", format_created_at(room_info.created_at)),
       ]),
 
       // --- 下部：入室ボタン ---
@@ -103,6 +104,18 @@ fn restriction_label(restriction: Option(String)) -> String {
     Some("FULL") -> "満員のため入室できません"
     Some("CLOSED") -> "終了したルームです"
     _ -> "入室できません"
+  }
+}
+
+fn format_created_at(value: String) -> String {
+  case string.split(value, "T") {
+    [date, time, ..] -> {
+      case string.split(time, ":") {
+        [hour, minute, ..] -> date <> " " <> hour <> ":" <> minute
+        _ -> value
+      }
+    }
+    _ -> value
   }
 }
 
