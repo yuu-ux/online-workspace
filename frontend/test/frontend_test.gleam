@@ -192,6 +192,7 @@ pub fn mypage_renders_gray_icon_fallback_when_icon_url_is_empty_test() {
   rendered |> string.contains("background-color: #d1d5db") |> should.equal(True)
   rendered |> string.contains("自己紹介: 未設定") |> should.equal(True)
   rendered |> string.contains("作業カテゴリ: 未設定") |> should.equal(True)
+}
 
 pub fn user_profile_renders_icon_url_as_image_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
