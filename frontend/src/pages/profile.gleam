@@ -1,10 +1,10 @@
 // プロフィール編集画面
 import gleam/list
-import lustre/event.{on_click, on_input}
+import lustre/event.{on_click}
 import lustre/attribute
 import lustre/element
 import lustre/effect
-import lustre/element/html.{button, div, text}
+import lustre/element/html.{button, div, h1, label, p, text}
 
 import types/session.{type Session}
 import wrap/api.{type ApiError, ApiError}
@@ -114,46 +114,74 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 pub fn view (model: Model) -> element.Element(Msg) {
   case model.session {
     session.Guest -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("プロフィール編集"),
-        text("ログインしてください"),
-        btn.to_home_btn_component(ToHome),
+      div([attribute.class("flex min-h-screen items-center justify-center bg-gray-50 p-5")], [
+        div([attribute.class("rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm")], [
+          h1([attribute.class("mb-3 text-xl font-bold text-gray-900")], [text("プロフィール編集")]),
+          p([attribute.class("mb-6 text-gray-600")], [text("ログインしてください")]),
+          btn.to_home_btn_component(ToHome),
+        ]),
       ])
     }
 
     session.Authenticated(_, _) -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("プロフィール編集"),
-        div([], [text("名前")]),
-        input.normal_input(InputName, model.name),
-        div([], [text("アイコンURL")]),
-        input.normal_input(InputIconUrl, model.icon_url),
-        div([], [text("自己紹介")]),
-        input.normal_input(InputBio, model.bio),
-        div([], [
-          text("公開設定: "),
-          button([on_click(TogglePublic(toggle(model.is_public)))], [
-            text(case model.is_public { True -> "公開" False -> "非公開" }),
+      div([attribute.class("min-h-screen bg-gray-50 p-4 font-sans sm:p-6")], [
+        div([attribute.class("mx-auto max-w-2xl")], [
+          div([attribute.class("mb-5")], [
+            h1([attribute.class("text-2xl font-bold text-gray-900")], [text("プロフィール編集")]),
+            p([attribute.class("mt-1 text-sm text-gray-500")], [
+              text("プロフィール情報と公開設定を変更できます"),
+            ]),
+          ]),
+          div([attribute.class("rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8")], [
+            div([attribute.class("space-y-5")], [
+              field("名前", input.normal_input(InputName, model.name)),
+              field("アイコンURL", input.normal_input(InputIconUrl, model.icon_url)),
+              field("自己紹介", input.normal_input(InputBio, model.bio)),
+              div([attribute.class("flex items-center justify-between rounded-lg border border-gray-200 p-4")], [
+                div([], [
+                  div([attribute.class("font-semibold text-gray-900")], [text("公開設定")]),
+                  p([attribute.class("mt-1 text-xs text-gray-500")], [
+                    text("プロフィールを他のユーザーに公開します"),
+                  ]),
+                ]),
+                button([
+                  attribute.class(case model.is_public {
+                    True -> "rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-200"
+                    False -> "rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-200"
+                  }),
+                  on_click(TogglePublic(toggle(model.is_public))),
+                ], [
+                  text(case model.is_public { True -> "公開" False -> "非公開" }),
+                ]),
+              ]),
+            ]),
+            div([attribute.class("mt-6 space-y-3")], list.map(model.messages, fn(message) {
+              div([attribute.class("rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700")], [
+                text(message),
+              ])
+            })),
+            div([attribute.class("mt-6 flex flex-col gap-3 sm:flex-row-reverse")], [
+              button([
+                attribute.class("rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"),
+                on_click(SaveClicked),
+              ], [text(case model.loading { True -> "保存中..." False -> "プロフィールを保存" })]),
+              button([
+                attribute.class("rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"),
+                on_click(ToMyPage),
+              ], [text("マイページに戻る")]),
+            ]),
           ]),
         ]),
-        button(
-          [on_click(SaveClicked)],
-          [text("保存")],
-        ),
-        button([
-          on_click(ToMyPage)
-        ], [text("マイページに戻る")]),
-        div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
       ])
-
     }
   }
+}
+
+fn field(label_text: String, control: element.Element(Msg)) -> element.Element(Msg) {
+  div([attribute.class("space-y-1.5")], [
+    label([attribute.class("block text-sm font-semibold text-gray-700")], [text(label_text)]),
+    control,
+  ])
 }
 
 fn toggle(value: Bool) -> Bool {
