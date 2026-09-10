@@ -50,6 +50,28 @@ class RoomMembershipServiceTests {
 	}
 
 	@Test
+	void publishesMemberDetailsWhenUserConnectsToRoomWebSocket() {
+		service.join(10L, "member@example.com");
+		clearInvocations(messagingTemplate);
+
+		connected("member-1", "member@example.com");
+
+		ArgumentCaptor<OnlinePresenceService.RoomPresenceEvent> event =
+			ArgumentCaptor.forClass(OnlinePresenceService.RoomPresenceEvent.class);
+		verify(messagingTemplate).convertAndSendToUser(
+			eq("creator@example.com"),
+			eq("/queue/rooms/10/presence"),
+			event.capture()
+		);
+		assertThat(event.getValue().type()).isEqualTo("room:user_joined");
+		assertThat(event.getValue().payload().userId()).isEqualTo(2L);
+		assertThat(event.getValue().payload().name()).isEqualTo("member");
+		assertThat(event.getValue().payload().iconUrl())
+			.isEqualTo("https://example.com/member.png");
+		assertThat(event.getValue().payload().online()).isTrue();
+	}
+
+	@Test
 	void listsOnlineMembersForAnyAuthenticatedUser() {
 		service.join(10L, "member@example.com");
 		Message<byte[]> firstTab = connected("member-1", "member@example.com");

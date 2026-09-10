@@ -145,8 +145,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     Friend(friend_model), FriendMsg(friend.ToMyPage) -> {
       let #(update_friend_model, _) = friend.update(friend_model, friend.ToMyPage)
-      let #(init_mypage_model, _) = mypage.init(update_friend_model.session)
-      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
+      let #(init_mypage_model, init_effect) = mypage.init(update_friend_model.session)
+      #(
+        Model(..model, current_page: MyPage(init_mypage_model)),
+        init_effect |> effect.map(MyPageMsg),
+      )
     }
 
     Friend(friend_model), FriendMsg(friend.ToHome) -> {
@@ -176,8 +179,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     Profile(profile_model), ProfileMsg(profile.ToMyPage) -> {
       let #(update_profile_model, _) = profile.update(profile_model, profile.ToMyPage)
-      let #(init_mypage_model, _) = mypage.init(update_profile_model.session)
-      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
+      let #(init_mypage_model, init_effect) = mypage.init(update_profile_model.session)
+      #(
+        Model(..model, current_page: MyPage(init_mypage_model)),
+        init_effect |> effect.map(MyPageMsg),
+      )
     }
 
     Profile(profile_model), ProfileMsg(profile.ToHome) -> {
@@ -197,8 +203,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     // -- home --
     Home(home_model), HomeMsg(home.ToMyPage) -> {
-      let #(init_my_page, _) = mypage.init(home_model.session)
-      #(Model(..model, current_page: MyPage(init_my_page)), effect.none())
+      let #(init_my_page, init_effect) = mypage.init(home_model.session)
+      #(
+        Model(..model, current_page: MyPage(init_my_page)),
+        init_effect |> effect.map(MyPageMsg),
+      )
     }
 
     Home(_), HomeMsg(home.ToLogin) -> {
@@ -435,8 +444,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     Search(search_model), SearchMsg(search.ToMyPage) -> {
-      let #(init_mypage_model, _) = mypage.init(search_model.session)
-      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
+      let #(init_mypage_model, init_effect) = mypage.init(search_model.session)
+      #(
+        Model(..model, current_page: MyPage(init_mypage_model)),
+        init_effect |> effect.map(MyPageMsg),
+      )
     }
 
     Search(search_model), SearchMsg(search.ToUserInfo(user_info)) -> {

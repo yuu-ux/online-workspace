@@ -23,7 +23,7 @@ import types/room.{
   type RoomNameType,
   type WorkStyleType,
 }
-import types/user.{UserId, UserInfo, type UserInfo}
+import types/user.{UserId, UserInfo, type UserId, type UserInfo}
 import wrap/api as api
 
 pub fn create_room(
@@ -304,6 +304,15 @@ pub type Chat {
   )
 }
 
+pub type Presence {
+  Presence(
+    room_id: RoomId,
+    user_id: UserId,
+    user: String,
+    online: Bool,
+  )
+}
+
 // ---------------------------------------------------------
 // 1. FFI (JavaScriptの関数をインポート)
 // ---------------------------------------------------------
@@ -353,4 +362,22 @@ pub fn chat_from_json(json_string: String) -> Result(Chat, json.DecodeError) {
     ))
   }
   json.parse(from: json_string, using: chat_decoder)
+}
+
+pub fn presence_from_json(json_string: String) -> Result(Presence, json.DecodeError) {
+  let presence_decoder = {
+    use room_id <- decode.field("room_id", decode.int)
+    use user_id <- decode.field("user_id", decode.int)
+    use user <- decode.field("user", decode.string)
+    use online <- decode.field("online", decode.bool)
+    decode.success(
+      Presence(
+        room_id: RoomId(room_id),
+        user_id: UserId(int.to_string(user_id)),
+        user: user,
+        online: online,
+      ),
+    )
+  }
+  json.parse(from: json_string, using: presence_decoder)
 }

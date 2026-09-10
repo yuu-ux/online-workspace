@@ -6,6 +6,8 @@ import gleam/option.{None, Some}
 import lustre/element
 import gleam/string
 import pages/friend
+import pages/mypage
+import pages/room
 import components/userinfo
 import wrap/api.{ApiError}
 import types/session.{Authenticated, Token}
@@ -15,6 +17,32 @@ import wrap/user as user_wrap
 
 pub fn main() {
   gleeunit.main()
+}
+
+pub fn room_presence_updates_member_list_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = room.init(session, room_t.RoomId(10))
+  let #(with_member, _) = room.update(
+    model,
+    room.MembersLoaded(Ok([UserInfo("Alice", UserId("2"))])),
+  )
+
+  let #(joined_model, _) = room.update(
+    with_member,
+    room.WsMessageReceived(
+      "{\"type\":\"presence\",\"room_id\":10,\"user_id\":3,\"user\":\"Bob\",\"online\":true}",
+    ),
+  )
+  joined_model.member_list
+  |> should.equal([UserInfo("Bob", UserId("3")), UserInfo("Alice", UserId("2"))])
+
+  let #(left_model, _) = room.update(
+    joined_model,
+    room.WsMessageReceived(
+      "{\"type\":\"presence\",\"room_id\":10,\"user_id\":3,\"user\":\"Bob\",\"online\":false}",
+    ),
+  )
+  left_model.member_list |> should.equal([UserInfo("Alice", UserId("2"))])
 }
 
 pub fn friend_loaded_message_updates_friend_page_test() {
@@ -145,6 +173,53 @@ pub fn user_profile_decoder_accepts_nullable_fields_test() {
     user_wrap.user_profile_decoder(),
   )
   |> should.be_ok()
+}
+
+pub fn mypage_loaded_profile_renders_profile_fields_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = mypage.init(session)
+  let profile = user_wrap.MyProfile(
+    name: "Alice",
+    icon_url: "https://example.com/icon.png",
+    is_public: True,
+    bio: "alice bio",
+    work_category_id: 1,
+    work_category: "集中",
+    email: "alice@example.com",
+  )
+  let #(updated_model, _) = mypage.update(
+    model,
+    mypage.MyProfileLoaded(Ok(profile)),
+  )
+  let rendered = mypage.view(updated_model) |> element.to_string
+
+  rendered |> string.contains("名前: Alice") |> should.equal(True)
+  rendered |> string.contains("src=\"https://example.com/icon.png\"") |> should.equal(True)
+  rendered |> string.contains("自己紹介: alice bio") |> should.equal(True)
+  rendered |> string.contains("作業カテゴリ: 集中") |> should.equal(True)
+}
+
+pub fn mypage_renders_gray_icon_fallback_when_icon_url_is_empty_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = mypage.init(session)
+  let profile = user_wrap.MyProfile(
+    name: "Alice",
+    icon_url: "",
+    is_public: True,
+    bio: "",
+    work_category_id: 0,
+    work_category: "",
+    email: "alice@example.com",
+  )
+  let #(updated_model, _) = mypage.update(
+    model,
+    mypage.MyProfileLoaded(Ok(profile)),
+  )
+  let rendered = mypage.view(updated_model) |> element.to_string
+
+  rendered |> string.contains("background-color: #d1d5db") |> should.equal(True)
+  rendered |> string.contains("自己紹介: 未設定") |> should.equal(True)
+  rendered |> string.contains("作業カテゴリ: 未設定") |> should.equal(True)
 }
 
 pub fn user_profile_renders_icon_url_as_image_test() {
