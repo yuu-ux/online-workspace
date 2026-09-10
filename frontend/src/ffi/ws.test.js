@@ -48,7 +48,7 @@ test("SockJS/STOMPで接続してメッセージを変換できる", () => {
 
   first.onmessage?.({ data: 'a["CONNECTED\\nversion:1.2\\n\\n\\u0000"]' });
   assert.match(first.sent[2], /destination:\/user\/queue\/rooms\/42\/messages/);
-  assert.match(first.sent[3], /destination:\/user\/queue\/rooms\/42\/presence/);
+  assert.match(first.sent[3], /destination:\/topic\/rooms\/42\/presence/);
 
   const stompMessage = [
     "MESSAGE",
