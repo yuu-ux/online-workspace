@@ -2,9 +2,9 @@ import gleeunit
 import gleeunit/should
 import frontend
 import gleam/json
+import gleam/option.{None, Some}
 import lustre/element
 import gleam/string
-import gleam/option.{Some}
 import pages/friend
 import pages/mypage
 import pages/room
@@ -301,4 +301,12 @@ pub fn user_profile_renders_gray_fallback_when_icon_loading_fails_test() {
   rendered
   |> string.contains("<img")
   |> should.equal(False)
+}
+
+pub fn stored_room_id_is_parsed_test() {
+  frontend.parse_stored_room_id("42")
+  |> should.equal(Some(room_t.RoomId(42)))
+
+  frontend.parse_stored_room_id("0") |> should.equal(None)
+  frontend.parse_stored_room_id("invalid") |> should.equal(None)
 }

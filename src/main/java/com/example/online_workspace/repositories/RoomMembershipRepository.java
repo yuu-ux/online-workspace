@@ -136,6 +136,18 @@ public interface RoomMembershipRepository {
 		""")
 	int leave(@Param("membershipId") long membershipId, @Param("leftAt") Instant leftAt);
 
+	@Update("""
+		UPDATE room_members SET left_at = #{leftAt}
+		WHERE room_id = #{roomId}
+		  AND user_id = #{userId}
+		  AND left_at IS NULL
+		""")
+	int leaveActiveMembership(
+		@Param("roomId") long roomId,
+		@Param("userId") long userId,
+		@Param("leftAt") Instant leftAt
+	);
+
 	record JoinPolicy(long id, int maxMembers, String status) {
 	}
 

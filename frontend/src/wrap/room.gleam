@@ -1,6 +1,7 @@
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
+import gleam/option
 import lustre/effect
 import types/room.{
   Cat1,
@@ -11,10 +12,12 @@ import types/room.{
   Public,
   Quiet,
   RoomId,
+  RoomDetail,
   RoomInfo,
   RoomNameType,
   type CategoryType,
   type DescriptionType,
+  type RoomDetail,
   type RoomId,
   type RoomInfo,
   type RoomNameType,
@@ -61,12 +64,25 @@ pub fn get_rooms(
   )
 }
 
+pub fn get_room(
+  room_id: RoomId,
+  to_msg: fn(Result(RoomDetail, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.json_request(
+    "GET",
+    "/api/v1/rooms/" <> room_path(room_id),
+    "",
+    room_detail_decoder(),
+    to_msg,
+  )
+}
+
 fn rooms_decoder() -> decode.Decoder(List(RoomInfo)) {
   use rooms <- decode.field("items", decode.list(room_decoder()))
   decode.success(rooms)
 }
 
-fn room_decoder() -> decode.Decoder(RoomInfo) {
+pub fn room_info_decoder() -> decode.Decoder(RoomInfo) {
   use id <- decode.field("id", decode.int)
   use name <- decode.field("name", decode.string)
   use category_id <- decode.field(
@@ -75,6 +91,15 @@ fn room_decoder() -> decode.Decoder(RoomInfo) {
   )
   use work_style <- decode.field("workStyle", decode.string)
   use max_members <- decode.field("maxMembers", decode.int)
+  use current_members <- decode.field("currentMembers", decode.int)
+  use status <- decode.field("status", decode.string)
+  use joinable <- decode.field("joinable", decode.bool)
+  use join_restriction <- decode.optional_field(
+    "joinRestriction",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use created_at <- decode.field("createdAt", decode.string)
   decode.success(RoomInfo(
     roomname: RoomNameType(name),
     visibility: Public,
@@ -85,6 +110,62 @@ fn room_decoder() -> decode.Decoder(RoomInfo) {
     },
     max_number_of_member: max_members,
     room_id: RoomId(id),
+    current_members: current_members,
+    status: status,
+    joinable: joinable,
+    join_restriction: join_restriction,
+    created_at: created_at,
+  ))
+}
+
+fn room_decoder() -> decode.Decoder(RoomInfo) {
+  room_info_decoder()
+}
+
+pub fn room_detail_decoder() -> decode.Decoder(RoomDetail) {
+  use id <- decode.field("id", decode.int)
+  use name <- decode.field("name", decode.string)
+  use description <- decode.field("description", decode.string)
+  use category_id <- decode.field(
+    "category",
+    category_id_decoder(),
+  )
+  use work_style <- decode.field("workStyle", decode.string)
+  use max_members <- decode.field("maxMembers", decode.int)
+  use current_members <- decode.field("currentMembers", decode.int)
+  use status <- decode.field("status", decode.string)
+  use creator_id <- decode.subfield(["createdBy", "id"], decode.int)
+  use creator_name <- decode.subfield(["createdBy", "name"], decode.string)
+  use joinable <- decode.field("joinable", decode.bool)
+  use join_restriction <- decode.optional_field(
+    "joinRestriction",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use member <- decode.field("member", decode.bool)
+  use created_at <- decode.field("createdAt", decode.string)
+  use updated_at <- decode.field("updatedAt", decode.string)
+  decode.success(RoomDetail(
+    room_id: RoomId(id),
+    roomname: RoomNameType(name),
+    description: DescriptionType(description),
+    category: category_from_id(category_id),
+    work_style: case work_style {
+      "CHAT_OK" -> CasualChat
+      _ -> Quiet
+    },
+    max_number_of_member: max_members,
+    current_members: current_members,
+    status: status,
+    created_by: UserInfo(
+      name: creator_name,
+      user_id: UserId(int.to_string(creator_id)),
+    ),
+    joinable: joinable,
+    join_restriction: join_restriction,
+    member: member,
+    created_at: created_at,
+    updated_at: updated_at,
   ))
 }
 
