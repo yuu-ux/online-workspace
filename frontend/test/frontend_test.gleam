@@ -2,12 +2,14 @@ import gleeunit
 import gleeunit/should
 import frontend
 import gleam/json
+import gleam/option.{None, Some}
 import lustre/element
 import gleam/string
 import pages/friend
 import components/userinfo
 import wrap/api.{ApiError}
 import types/session.{Authenticated, Token}
+import types/room as room_t
 import types/user.{UserInfo, UserId}
 import wrap/user as user_wrap
 
@@ -143,4 +145,12 @@ pub fn user_profile_decoder_accepts_nullable_fields_test() {
     user_wrap.user_profile_decoder(),
   )
   |> should.be_ok()
+}
+
+pub fn stored_room_id_is_parsed_test() {
+  frontend.parse_stored_room_id("42")
+  |> should.equal(Some(room_t.RoomId(42)))
+
+  frontend.parse_stored_room_id("0") |> should.equal(None)
+  frontend.parse_stored_room_id("invalid") |> should.equal(None)
 }
