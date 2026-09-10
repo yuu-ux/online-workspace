@@ -321,7 +321,7 @@ pub fn mypage_loaded_profile_renders_profile_fields_test() {
 
   rendered |> string.contains("名前: Alice") |> should.equal(True)
   rendered |> string.contains("src=\"https://example.com/icon.png\"") |> should.equal(True)
-  rendered |> string.contains("自己紹介: alice bio") |> should.equal(True)
+  rendered |> string.contains("alice bio") |> should.equal(True)
   rendered |> string.contains("作業カテゴリ: 集中") |> should.equal(True)
 }
 
@@ -343,8 +343,8 @@ pub fn mypage_renders_gray_icon_fallback_when_icon_url_is_empty_test() {
   )
   let rendered = mypage.view(updated_model) |> element.to_string
 
-  rendered |> string.contains("background-color: #d1d5db") |> should.equal(True)
-  rendered |> string.contains("自己紹介: 未設定") |> should.equal(True)
+  rendered |> string.contains("bg-gray-200") |> should.equal(True)
+  rendered |> string.contains("未設定") |> should.equal(True)
   rendered |> string.contains("作業カテゴリ: 未設定") |> should.equal(True)
 }
 

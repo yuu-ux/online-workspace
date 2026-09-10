@@ -10,7 +10,7 @@ import lustre/element
 import lustre/effect
 import gleam/io
 import gleam/list
-import lustre/element/html.{button, div, img, text, input, textarea, select, option}
+import lustre/element/html.{button, div, h1, img, p, text}
 
 import types/session.{type Session}
 import types/user.{type UserInfo}
@@ -106,53 +106,75 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 pub fn view (model: Model) -> element.Element(Msg) {
   let profile_view = case model.profile {
     Some(profile) -> [
-      div([], [text("名前: " <> profile.name)]),
-      div([], [text("アイコン:")]),
-      icon_view(profile.icon_url, model.icon_load_failed),
-      div([], [text("自己紹介: " <> string_or_fallback(profile.bio, "未設定"))]),
-      div([], [text("作業カテゴリ: " <> string_or_fallback(profile.work_category, "未設定"))]),
+      div([attribute.class("flex items-center gap-4 border-b border-gray-100 pb-5")], [
+        icon_view(profile.icon_url, model.icon_load_failed),
+        div([], [
+          h1([attribute.class("text-2xl font-bold text-gray-900")], [text(profile.name)]),
+          p([attribute.class("mt-1 text-sm text-gray-500")], [text("アカウントプロフィール")]),
+        ]),
+      ]),
+      div([attribute.class("mt-5 grid gap-3 sm:grid-cols-2")], [
+        profile_row("名前", profile.name),
+        profile_row("作業カテゴリ", string_or_fallback(profile.work_category, "未設定")),
+        div([attribute.class("rounded-lg bg-gray-50 p-4 sm:col-span-2")], [
+          div([attribute.class("text-xs font-medium text-gray-500")], [text("自己紹介")]),
+          p([attribute.class("mt-1 break-words text-sm text-gray-800")], [
+            text(string_or_fallback(profile.bio, "未設定")),
+          ]),
+        ]),
+      ]),
     ]
-    None -> [div([], [text("プロフィールを読み込み中...")])]
+    None -> [
+      div([attribute.class("py-10 text-center text-sm text-gray-500")], [
+        text("プロフィールを読み込んでいます..."),
+      ]),
+    ]
   }
 
   case model.session {
     session.Guest -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("MyPage"),
-        text("ログインしてください"),
-        btn.to_home_btn_component(ToHome)
+      div([attribute.class("flex min-h-screen items-center justify-center bg-gray-50 p-5")], [
+        div([attribute.class("rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm")], [
+          h1([attribute.class("mb-3 text-xl font-bold text-gray-900")], [text("マイページ")]),
+          p([attribute.class("mb-6 text-gray-600")], [text("ログインしてください")]),
+          btn.to_home_btn_component(ToHome),
+        ]),
       ])
     }
 
-    session.Authenticated(jwt, user_id) -> {
-      div([
-        attribute.attribute("style", "padding: 20px; font-family: sans-serif;")
-      ],
-      [
-        text("MyPage"),
-        div([], profile_view),
-
-        btn.to_home_btn_component(ToHome),
-        btn.to_friend_btn_component(ToFriend),
-        btn.to_profile_btn_component(ToProfile),
-        // input([
-        //   on_input(InputUpdated(UserName, _)),
-        //   attribute.value(model.current_user_name)
-        // ]),
-        input.normal_input(InputUpdated(UserName, _), model.current_user_name),
-
-        div([], [
-          // ボタンが押されたら SubmitClicked イベントを発射
-          btn.search_btn_component(SubmitClicked),
+    session.Authenticated(_, _) -> {
+      div([attribute.class("min-h-screen bg-gray-50 p-4 font-sans sm:p-6")], [
+        div([attribute.class("mx-auto max-w-2xl")], [
+          div([attribute.class("mb-5 flex items-center justify-between")], [
+            h1([attribute.class("text-2xl font-bold text-gray-900")], [text("マイページ")]),
+            p([attribute.class("text-sm text-gray-500")], [text("アカウント情報")]),
+          ]),
+          div([attribute.class("rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8")], [
+            div([attribute.class("space-y-3")], list.map(model.messages, fn (message) {
+              div([attribute.class("rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700")], [
+                text(message),
+              ])
+            })),
+            div([], profile_view),
+            div([attribute.class("mt-6 grid gap-3 sm:grid-cols-3")], [
+              btn.to_profile_btn_component(ToProfile),
+              btn.to_friend_btn_component(ToFriend),
+              btn.to_home_btn_component(ToHome),
+            ]),
+          ]),
         ]),
-        div([], list.map(model.messages, fn (x) {div([], [text(x)])}))
       ])
-
     }
   }
+}
+
+fn profile_row(label: String, value: String) -> element.Element(Msg) {
+  div([attribute.class("rounded-lg bg-gray-50 p-4")], [
+    div([attribute.class("text-xs font-medium text-gray-500")], [text(label)]),
+    div([attribute.class("mt-1 break-words text-sm font-semibold text-gray-900")], [
+      text(label <> ": " <> value),
+    ]),
+  ])
 }
 
 fn string_or_fallback(value: String, fallback: String) -> String {
@@ -171,11 +193,8 @@ fn icon_view(icon_url: String, load_failed: Bool) -> element.Element(Msg) {
         img([
           attribute.src(icon_url),
           attribute.alt("アイコン"),
+          attribute.class("h-20 w-20 rounded-full border border-gray-200 object-cover"),
           on("error", decode.success(IconLoadFailed)),
-          attribute.attribute(
-            "style",
-            "width: 64px; height: 64px; object-fit: cover; border-radius: 50%;",
-          ),
         ])
     }
   }
@@ -184,9 +203,6 @@ fn icon_view(icon_url: String, load_failed: Bool) -> element.Element(Msg) {
 fn icon_fallback(label: String) -> element.Element(Msg) {
   div([
     attribute.attribute("aria-label", label),
-    attribute.attribute(
-      "style",
-      "width: 64px; height: 64px; border-radius: 50%; background-color: #d1d5db;",
-    ),
+    attribute.class("flex h-20 w-20 items-center justify-center rounded-full bg-gray-200 text-xs text-gray-500"),
   ], [])
 }
