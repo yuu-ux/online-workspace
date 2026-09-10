@@ -1,32 +1,30 @@
-import lustre/effect
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
-import gleam/result
+import gleam/option
+import lustre/effect
 import types/room.{
-  type CategoryType,
-  type WorkStyleType,
-  type VisibilityType,
-  type RoomId,
-  type RoomNameType,
-  type DescriptionType,
-  type RoomInfo,
-  RoomNameType,
-  DescriptionType,
-  RoomId,
   Cat1,
   Cat2,
   Cat3,
   CasualChat,
-  Quiet,
+  DescriptionType,
   Public,
-  Invite,
-  Friend,
-  RoomInfo
+  Quiet,
+  RoomId,
+  RoomDetail,
+  RoomInfo,
+  RoomNameType,
+  type CategoryType,
+  type DescriptionType,
+  type RoomDetail,
+  type RoomId,
+  type RoomInfo,
+  type RoomNameType,
+  type WorkStyleType,
 }
-
-import types/user.{type UserId}
-import types/session.{type Session,type Token, Guest, Authenticated}
-import wrap/api.{type ApiError}
+import types/user.{UserId, UserInfo, type UserInfo}
+import wrap/api as api
 
 pub fn create_room(
   roomname: RoomNameType,
@@ -34,7 +32,7 @@ pub fn create_room(
   category_type: CategoryType,
   workstyle_type: WorkStyleType,
   max_number_of_member: Int,
-  to_msg: fn(Result(RoomId, ApiError)) -> msg,
+  to_msg: fn(Result(RoomId, api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   let RoomNameType(name) = roomname
   let DescriptionType(description) = description
@@ -55,7 +53,7 @@ pub fn create_room(
 }
 
 pub fn get_rooms(
-  to_msg: fn(Result(List(RoomInfo), ApiError)) -> msg,
+  to_msg: fn(Result(List(RoomInfo), api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   api.json_request(
     "GET",
@@ -66,12 +64,25 @@ pub fn get_rooms(
   )
 }
 
+pub fn get_room(
+  room_id: RoomId,
+  to_msg: fn(Result(RoomDetail, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.json_request(
+    "GET",
+    "/api/v1/rooms/" <> room_path(room_id),
+    "",
+    room_detail_decoder(),
+    to_msg,
+  )
+}
+
 fn rooms_decoder() -> decode.Decoder(List(RoomInfo)) {
   use rooms <- decode.field("items", decode.list(room_decoder()))
   decode.success(rooms)
 }
 
-fn room_decoder() -> decode.Decoder(RoomInfo) {
+pub fn room_info_decoder() -> decode.Decoder(RoomInfo) {
   use id <- decode.field("id", decode.int)
   use name <- decode.field("name", decode.string)
   use category_id <- decode.field(
@@ -80,6 +91,15 @@ fn room_decoder() -> decode.Decoder(RoomInfo) {
   )
   use work_style <- decode.field("workStyle", decode.string)
   use max_members <- decode.field("maxMembers", decode.int)
+  use current_members <- decode.field("currentMembers", decode.int)
+  use status <- decode.field("status", decode.string)
+  use joinable <- decode.field("joinable", decode.bool)
+  use join_restriction <- decode.optional_field(
+    "joinRestriction",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use created_at <- decode.field("createdAt", decode.string)
   decode.success(RoomInfo(
     roomname: RoomNameType(name),
     visibility: Public,
@@ -90,6 +110,62 @@ fn room_decoder() -> decode.Decoder(RoomInfo) {
     },
     max_number_of_member: max_members,
     room_id: RoomId(id),
+    current_members: current_members,
+    status: status,
+    joinable: joinable,
+    join_restriction: join_restriction,
+    created_at: created_at,
+  ))
+}
+
+fn room_decoder() -> decode.Decoder(RoomInfo) {
+  room_info_decoder()
+}
+
+pub fn room_detail_decoder() -> decode.Decoder(RoomDetail) {
+  use id <- decode.field("id", decode.int)
+  use name <- decode.field("name", decode.string)
+  use description <- decode.field("description", decode.string)
+  use category_id <- decode.field(
+    "category",
+    category_id_decoder(),
+  )
+  use work_style <- decode.field("workStyle", decode.string)
+  use max_members <- decode.field("maxMembers", decode.int)
+  use current_members <- decode.field("currentMembers", decode.int)
+  use status <- decode.field("status", decode.string)
+  use creator_id <- decode.subfield(["createdBy", "id"], decode.int)
+  use creator_name <- decode.subfield(["createdBy", "name"], decode.string)
+  use joinable <- decode.field("joinable", decode.bool)
+  use join_restriction <- decode.optional_field(
+    "joinRestriction",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use member <- decode.field("member", decode.bool)
+  use created_at <- decode.field("createdAt", decode.string)
+  use updated_at <- decode.field("updatedAt", decode.string)
+  decode.success(RoomDetail(
+    room_id: RoomId(id),
+    roomname: RoomNameType(name),
+    description: DescriptionType(description),
+    category: category_from_id(category_id),
+    work_style: case work_style {
+      "CHAT_OK" -> CasualChat
+      _ -> Quiet
+    },
+    max_number_of_member: max_members,
+    current_members: current_members,
+    status: status,
+    created_by: UserInfo(
+      name: creator_name,
+      user_id: UserId(int.to_string(creator_id)),
+    ),
+    joinable: joinable,
+    join_restriction: join_restriction,
+    member: member,
+    created_at: created_at,
+    updated_at: updated_at,
   ))
 }
 
@@ -101,6 +177,99 @@ fn category_id_decoder() -> decode.Decoder(Int) {
 fn room_id_decoder() -> decode.Decoder(RoomId) {
   use id <- decode.field("id", decode.int)
   decode.success(RoomId(id))
+}
+
+pub fn join_room(
+  room_id: RoomId,
+  to_msg: fn(Result(Nil, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.empty_request(
+    "POST",
+    "/api/v1/rooms/" <> room_path(room_id) <> "/members/me",
+    "",
+    to_msg,
+  )
+}
+
+pub fn leave_room(
+  room_id: RoomId,
+  to_msg: fn(Result(Nil, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.empty_request(
+    "DELETE",
+    "/api/v1/rooms/" <> room_path(room_id) <> "/members/me",
+    "",
+    to_msg,
+  )
+}
+
+pub fn get_room_members(
+  room_id: RoomId,
+  to_msg: fn(Result(List(UserInfo), api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.json_request(
+    "GET",
+    "/api/v1/rooms/" <> room_path(room_id) <> "/members",
+    "",
+    decode.list(room_member_decoder()),
+    to_msg,
+  )
+}
+
+pub fn get_messages(
+  room_id: RoomId,
+  to_msg: fn(Result(List(Chat), api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.json_request(
+    "GET",
+    "/api/v1/rooms/" <> room_path(room_id) <> "/messages?page=0&size=50",
+    "",
+    message_list_decoder(),
+    to_msg,
+  )
+}
+
+pub fn create_message(
+  room_id: RoomId,
+  message: String,
+  to_msg: fn(Result(Nil, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  api.empty_request(
+    "POST",
+    "/api/v1/rooms/" <> room_path(room_id) <> "/messages",
+    json.object([#("content", json.string(message))]) |> json.to_string,
+    to_msg,
+  )
+}
+
+fn room_path(room_id: RoomId) -> String {
+  let RoomId(id) = room_id
+  int.to_string(id)
+}
+
+fn room_member_decoder() -> decode.Decoder(UserInfo) {
+  use id <- decode.subfield(["user", "id"], decode.int)
+  use name <- decode.subfield(["user", "name"], decode.string)
+  decode.success(UserInfo(name: name, user_id: UserId(int.to_string(id))))
+}
+
+fn message_list_decoder() -> decode.Decoder(List(Chat)) {
+  use messages <- decode.field("items", decode.list(message_decoder()))
+  decode.success(messages)
+}
+
+fn message_decoder() -> decode.Decoder(Chat) {
+  use room_id <- decode.field("roomId", decode.int)
+  use user <- decode.subfield(["sender", "name"], decode.string)
+  use message <- decode.field("content", decode.string)
+  decode.success(
+    Chat(
+      msg_type: "msg",
+      room_id: RoomId(room_id),
+      user: user,
+      message: message,
+    ),
+  )
 }
 
 fn category_id(category: CategoryType) -> Int {
@@ -126,18 +295,10 @@ fn work_style_code(work_style: WorkStyleType) -> String {
   }
 }
 
-pub type RoomErr {
-  RoomDummyError
-}
-
 pub type Chat {
   Chat(
-    // from: String, // 誰から
-    // timestamp: String,
-    // comment: String, 
-
     msg_type: String,
-    room_id: RoomId, 
+    room_id: RoomId,
     user: String,
     message: String,
   )
@@ -149,7 +310,7 @@ pub type Chat {
 
 /// 接続する
 @external(javascript, "./../ffi/ws.js", "connect_ws")
-fn do_connect(url: String, dispatch: fn(String) -> Nil) -> Nil
+fn do_connect(room_id: Int, dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
@@ -159,50 +320,23 @@ fn do_send(message: String) -> Bool
 pub fn close_ws() -> Nil
 
 /// チャット画面に入ったタイミングで接続を開始する
-pub fn connect_to_server(m: fn(String) -> msg) -> effect.Effect(msg) {
+pub fn connect_to_server(room_id: RoomId, m: fn(String) -> msg) -> effect.Effect(msg) {
+  let RoomId(id) = room_id
   effect.from(fn(dispatch) {
     let js_callback = fn(received_text: String) {
       dispatch(m(received_text))
     }
 
     // JS側の接続関数を呼び出す
-    do_connect("/ws-test", js_callback)
+    do_connect(id, js_callback)
   })
 }
 
-pub fn room_send_msg_proc(
-  user_name: String,
-  room_id: RoomId,
-  send_msg: String
-) -> Result(Nil, RoomErr) {
-  // TODO SERVER API
-  let message = chat_to_json(
-    Chat(
-      msg_type: "msg",
-      room_id: room_id,
-      user: user_name,
-      message: send_msg
-    )
-  )
-
+pub fn send_ws_message(message: String) -> Bool {
   case do_send(message) {
-    True -> Ok(Nil)
-    False -> Error(RoomDummyError)
+    True -> True
+    False -> False
   }
-}
-
-// TODO テストデータ用構造体
-
-// https://gleam-json.hexdocs.pm/
-
-pub fn chat_to_json(chat: Chat) -> String {
-  json.object([
-    #("type", json.string(chat.msg_type)),
-    #("room_id", json.int(case chat.room_id { RoomId(i) -> i })),
-    #("user", json.string(chat.user)),
-    #("message", json.string(chat.message)),
-  ])
-  |> json.to_string
 }
 
 pub fn chat_from_json(json_string: String) -> Result(Chat, json.DecodeError) {

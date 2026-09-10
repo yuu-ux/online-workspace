@@ -2,8 +2,12 @@ package com.example.online_workspace.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -34,17 +38,19 @@ class RoomMembershipServiceTests {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
+	private SimpMessagingTemplate messagingTemplate;
 	private RoomMembershipService service;
 	private OnlinePresenceService presence;
 
 	@BeforeEach
 	void setUp() {
-		presence = new OnlinePresenceService(membershipRepository, mock(SimpMessagingTemplate.class));
+		messagingTemplate = mock(SimpMessagingTemplate.class);
+		presence = new OnlinePresenceService(membershipRepository, messagingTemplate);
 		service = new RoomMembershipService(membershipRepository, presence);
 	}
 
 	@Test
-	void listsOnlineMembersOnlyForRoomParticipants() {
+	void listsOnlineMembersForAnyAuthenticatedUser() {
 		service.join(10L, "member@example.com");
 		Message<byte[]> firstTab = connected("member-1", "member@example.com");
 		Message<byte[]> secondTab = connected("member-2", "member@example.com");
@@ -57,12 +63,34 @@ class RoomMembershipServiceTests {
 
 		presence.disconnected(new SessionDisconnectEvent(this, firstTab, "member-1", CloseStatus.NORMAL));
 		assertThat(presence.isOnline("member@example.com")).isTrue();
+		assertThat(jdbcTemplate.queryForObject(
+			"SELECT COUNT(*) FROM room_members WHERE user_id = 2 AND left_at IS NULL",
+			Integer.class
+		)).isOne();
 		presence.disconnected(new SessionDisconnectEvent(this, secondTab, "member-2", CloseStatus.NORMAL));
 		assertThat(presence.isOnline("member@example.com")).isFalse();
 
-		assertThatThrownBy(() -> service.list(10L, "other@example.com"))
-			.isInstanceOfSatisfying(ResponseStatusException.class,
-				exception -> assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
+		assertThat(service.list(10L, "other@example.com"))
+			.extracting(member -> member.member().userId())
+			.contains(1L)
+			.doesNotContain(2L);
+	}
+
+	@Test
+	void leavesRoomWhenLastWebSocketConnectionDisconnects() {
+		service.join(10L, "member@example.com");
+		Message<byte[]> tab = connected("member-1", "member@example.com");
+
+		presence.disconnected(new SessionDisconnectEvent(this, tab, "member-1", CloseStatus.NORMAL));
+
+		assertThat(jdbcTemplate.queryForObject(
+			"SELECT COUNT(*) FROM room_members WHERE user_id = 2 AND left_at IS NULL",
+			Integer.class
+		)).isZero();
+		assertThat(jdbcTemplate.queryForObject(
+			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NOT NULL",
+			Integer.class
+		)).isOne();
 	}
 
 	@Test
@@ -108,6 +136,45 @@ class RoomMembershipServiceTests {
 		assertThat(membershipRepository.hasActiveMembership(2L)).isFalse();
 		assertThat(jdbcTemplate.queryForObject(
 			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NOT NULL",
+			Integer.class
+		)).isOne();
+	}
+
+	@Test
+	void notifiesOtherMembersWhenRoomMemberLeaves() {
+		service.join(10L, "member@example.com");
+		connected("member-1", "member@example.com");
+		clearInvocations(messagingTemplate);
+
+		service.leave(10L, "member@example.com");
+
+		ArgumentCaptor<OnlinePresenceService.RoomPresenceEvent> event =
+			ArgumentCaptor.forClass(OnlinePresenceService.RoomPresenceEvent.class);
+		verify(messagingTemplate).convertAndSendToUser(
+			eq("creator@example.com"),
+			eq("/queue/rooms/10/presence"),
+			event.capture()
+		);
+		assertThat(event.getValue().type()).isEqualTo("room:user_left");
+		assertThat(event.getValue().payload().roomId()).isEqualTo(10L);
+		assertThat(event.getValue().payload().userId()).isEqualTo(2L);
+		assertThat(event.getValue().payload().online()).isFalse();
+	}
+
+	@Test
+	void canListAndRejoinPublicRoomAfterLeaving() {
+		service.join(10L, "member@example.com");
+		service.leave(10L, "member@example.com");
+
+		assertThat(service.list(10L, "member@example.com"))
+			.extracting(member -> member.member().userId())
+			.doesNotContain(2L);
+
+		RoomMember rejoined = service.join(10L, "member@example.com");
+
+		assertThat(rejoined.userId()).isEqualTo(2L);
+		assertThat(jdbcTemplate.queryForObject(
+			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NULL",
 			Integer.class
 		)).isOne();
 	}

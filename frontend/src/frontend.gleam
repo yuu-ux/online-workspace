@@ -1,7 +1,10 @@
+import gleam/int
+import gleam/option.{type Option, None, Some}
 import lustre/element
 import lustre/effect
 import lustre
 
+import types/room as room_t
 import types/session
 import wrap/session as session_api
 import wrap/api as api
@@ -65,6 +68,15 @@ pub type Msg {
   UserInfoFromSearchMsg(userinfofromsearch.Msg)
 }
 
+@external(javascript, "./ffi/storage.js", "get_current_room_id")
+fn get_current_room_id() -> String
+
+@external(javascript, "./ffi/storage.js", "set_current_room_id")
+fn set_current_room_id(room_id: String) -> Nil
+
+@external(javascript, "./ffi/storage.js", "clear_current_room_id")
+fn clear_current_room_id() -> Nil
+
 fn init(_flag) -> #(Model, effect.Effect(Msg)) {
   let #(init_home_model, _) = home.init(session.Guest)
   #(Model(
@@ -78,13 +90,7 @@ fn init(_flag) -> #(Model, effect.Effect(Msg)) {
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case model.current_page, msg {
 
-    _, SessionLoaded(Ok(current_session)) -> {
-      let #(home_model, home_effect) = home.init(current_session)
-      #(
-        Model(session: current_session, current_page: Home(home_model)),
-        home_effect |> effect.map(HomeMsg),
-      )
-    }
+    _, SessionLoaded(Ok(current_session)) -> restore_page(current_session)
 
     _, SessionLoaded(Error(_)) -> #(model, effect.none())
 
@@ -110,8 +116,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     MyPage(mypage_model), MyPageMsg(mypage.ToProfile) -> {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToProfile)
-      let #(init_profile_model, _) = profile.init(update_mypage_model.session)
-      #(Model(session: init_profile_model.session, current_page: Profile(init_profile_model)), effect.none())
+      let #(init_profile_model, init_effect) = profile.init(update_mypage_model.session)
+      #(
+        Model(session: init_profile_model.session, current_page: Profile(init_profile_model)),
+        init_effect |> effect.map(ProfileMsg),
+      )
     }
 
     MyPage(mypage_model), MyPageMsg(mypage.SubmitClicked) -> {
@@ -176,6 +185,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, current_page: Home(init_home_model)), effect.none())
     }
 
+    Profile(profile_model), ProfileMsg(other) -> {
+      let #(updated_profile_model, update_effect) = profile.update(profile_model, other)
+      #(
+        Model(..model, current_page: Profile(updated_profile_model)),
+        update_effect |> effect.map(ProfileMsg),
+      )
+    }
+
     // profile other
 
     // -- home --
@@ -204,6 +221,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     Home(home_model), HomeMsg(home.ToRoom(room_id)) -> {
       let #(update_home_model, _) = home.update(home_model, home.ToRoom(room_id))
+      remember_room(room_id)
       let #(init_room_model, update_effect) = room.init(update_home_model.session, room_id)
       #(Model(..model, current_page: Room(init_room_model)), update_effect |> effect.map(RoomMsg))
     }
@@ -218,6 +236,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     Home(home_model), HomeMsg(home.LogoutCompleted(response)) -> {
       let #(update_home_model, update_effect) = home.update(home_model, home.LogoutCompleted(response))
+      case response {
+        Ok(_) -> clear_current_room_id()
+        Error(_) -> Nil
+      }
       #(
         Model(
           session: update_home_model.session,
@@ -302,6 +324,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     CreateRoom(create_room_model), CreateRoomMsg(create_room.ToRoom(room_id)) -> {
       let #(update_create_room_model, _) = create_room.update(create_room_model, create_room.ToRoom(room_id))
+      remember_room(room_id)
       let #(init_room_model, init_effect) = room.init(update_create_room_model.session, room_id)
       #(Model(..model, current_page: Room(init_room_model)), init_effect |> effect.map(RoomMsg))
     }
@@ -316,11 +339,19 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // -- room --
 
     Room(room_model), RoomMsg(room.ToHome) -> {
-      let #(update_room_model, _) = room.update(room_model, room.ToHome)
-      let #(init_home_model, home_effect) = home.init(update_room_model.session)
-
+      let #(update_room_model, room_effect) = room.update(room_model, room.ToHome)
       #(
-        Model(session: init_home_model.session, current_page: Home(init_home_model)),
+        Model(..model, current_page: Room(update_room_model)),
+        room_effect |> effect.map(RoomMsg),
+      )
+    }
+
+    Room(room_model), RoomMsg(room.LeaveCompleted) -> {
+      clear_current_room_id()
+      let #(init_home_model, home_effect) = home.init(room_model.session)
+      let #(updated_home_model, _) = home.update(init_home_model, home.LeftRoom)
+      #(
+        Model(session: room_model.session, current_page: Home(updated_home_model)),
         home_effect |> effect.map(HomeMsg),
       )
     }
@@ -366,6 +397,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // -- userinfofromroom --
 
     UserInfoFromRoom(userinfofromroom_model), UserInfoFromRoomMsg(userinfofromroom.ToRoom(room_id)) -> {
+      remember_room(room_id)
       let #(init_room_model, init_effect) = room.init(userinfofromroom_model.user_info_component.session, room_id)
       #(Model(..model, current_page: Room(init_room_model)), init_effect |> effect.map(RoomMsg))
     }
@@ -504,6 +536,50 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
   }
+}
+
+fn restore_page(current_session: session.Session) -> #(Model, effect.Effect(Msg)) {
+  case current_session {
+    session.Guest -> {
+      clear_current_room_id()
+      let #(home_model, home_effect) = home.init(current_session)
+      #(
+        Model(session: current_session, current_page: Home(home_model)),
+        home_effect |> effect.map(HomeMsg),
+      )
+    }
+    session.Authenticated(..) -> {
+      case parse_stored_room_id(get_current_room_id()) {
+        Some(room_id) -> {
+          let #(room_model, room_effect) = room.init(current_session, room_id)
+          #(
+            Model(session: current_session, current_page: Room(room_model)),
+            room_effect |> effect.map(RoomMsg),
+          )
+        }
+        None -> {
+          clear_current_room_id()
+          let #(home_model, home_effect) = home.init(current_session)
+          #(
+            Model(session: current_session, current_page: Home(home_model)),
+            home_effect |> effect.map(HomeMsg),
+          )
+        }
+      }
+    }
+  }
+}
+
+pub fn parse_stored_room_id(value: String) -> Option(room_t.RoomId) {
+  case int.parse(value) {
+    Ok(id) if id > 0 -> Some(room_t.RoomId(id))
+    _ -> None
+  }
+}
+
+fn remember_room(room_id: room_t.RoomId) -> Nil {
+  let room_t.RoomId(id) = room_id
+  set_current_room_id(int.to_string(id))
 }
 
 fn view (model: Model) -> element.Element(Msg) {

@@ -1,30 +1,22 @@
 import gleam/int
 import gleam/list
-import lustre/attribute.{class}
+import gleam/option.{type Option, Some}
+import lustre/attribute.{aria_disabled, class, disabled}
 import lustre/element.{text}
-import lustre/element/html.{button, div, span, p, h3}
+import lustre/element/html.{button, div, span, h3}
 import lustre/event.{on_click}
 
 import types/room.{
   type RoomInfo,
   type CategoryType,
   type WorkStyleType,
-  type VisibilityType,
   type RoomId,
-  type RoomNameType,
-  type DescriptionType,
   RoomNameType,
-  DescriptionType,
-  RoomId,
   Cat1,
   Cat2,
   Cat3,
   CasualChat,
   Quiet,
-  Public,
-  Invite,
-  Friend,
-  RoomInfo,
 }
 
 // ui/button など自作のコンポーネントがあれば、それを使ってもOKです
@@ -68,21 +60,54 @@ fn room_card(room_info: RoomInfo, to_room: fn(RoomId) -> a) -> element.Element(a
       // --- 中部：詳細情報（ワークスタイルや人数） ---
       div([class("flex-1 space-y-3 mb-6")], [
         info_row("作業スタイル", work_style_to_string(room_info.work_style)),
-        info_row("最大人数", int.to_string(room_info.max_number_of_member) <> " 人"),
+        info_row(
+          "参加人数",
+          int.to_string(room_info.current_members)
+            <> " / "
+            <> int.to_string(room_info.max_number_of_member)
+            <> " 人",
+        ),
+        info_row("作成日時", format_created_at_jst(room_info.created_at)),
       ]),
 
       // --- 下部：入室ボタン ---
-      button(
-        [
-          // 青色のボタンを全幅で配置
-          class("w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition-colors duration-200"),
-          on_click(to_room(room_info.room_id))
-        ],
-        [text("このルームに入室する")]
-      )
+      join_button(room_info, to_room),
     ]
   )
 }
+
+fn join_button(room_info: RoomInfo, to_room: fn(RoomId) -> a) -> element.Element(a) {
+  case room_info.joinable {
+    True ->
+      button(
+        [
+          class("w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition-colors duration-200"),
+          on_click(to_room(room_info.room_id)),
+        ],
+        [text("このルームに入室する")],
+      )
+    False ->
+      button(
+        [
+          class("w-full py-2.5 px-4 bg-gray-300 text-gray-600 font-semibold rounded-lg cursor-not-allowed"),
+          disabled(True),
+          aria_disabled(True),
+        ],
+        [text(restriction_label(room_info.join_restriction))],
+      )
+  }
+}
+
+fn restriction_label(restriction: Option(String)) -> String {
+  case restriction {
+    Some("FULL") -> "満員のため入室できません"
+    Some("CLOSED") -> "終了したルームです"
+    _ -> "入室できません"
+  }
+}
+
+@external(javascript, "./../ffi/date.js", "format_created_at_jst")
+fn format_created_at_jst(value: String) -> String
 
 // --- ヘルパー関数（さらに小さな部品） ---
 

@@ -975,7 +975,7 @@ components:
           nullable: true
 
     UserProfile:
-      description: 公開設定に応じたプロフィール。非公開時は名前とアイコン以外のプロフィール情報を返さない。
+      description: 公開設定に応じたプロフィール。非公開時は名前とアイコン、および閲覧者とのフレンド状態のみ返す。
       oneOf:
         - $ref: '#/components/schemas/PublicUserProfile'
         - $ref: '#/components/schemas/HiddenUserProfile'
@@ -1004,7 +1004,7 @@ components:
     HiddenUserProfile:
       type: object
       additionalProperties: false
-      required: [name, iconUrl, isPublic]
+      required: [name, iconUrl, isPublic, friendship]
       properties:
         name:
           type: string
@@ -1017,6 +1017,9 @@ components:
         isPublic:
           type: boolean
           enum: [false]
+        friendship:
+          type: string
+          enum: [NONE, FRIEND]
 
     MyProfile:
       allOf:

@@ -31,18 +31,35 @@ globalThis.WebSocket = FakeWebSocket;
 
 const { close_ws, connect_ws, send_ws } = await import("./ws.js");
 
-test("WebSocket URL、送信結果、切断後の再接続", () => {
-  connect_ws("/ws-test", () => {});
+test("SockJS/STOMPで接続してメッセージを変換できる", () => {
+  const received = [];
+  connect_ws(42, (payload) => received.push(payload));
   const first = FakeWebSocket.instances[0];
 
-  assert.equal(first.url, "wss://example.com/ws-test");
+  assert.match(first.url, /^wss:\/\/example\.com\/ws\/001\/.+\/websocket$/);
   assert.equal(send_ws("before open"), false);
 
   first.readyState = FakeWebSocket.OPEN;
   assert.equal(send_ws("hello"), true);
-  assert.deepEqual(first.sent, ["hello"]);
+  assert.equal(first.sent[0], "hello");
+
+  first.onmessage?.({ data: "o" });
+  assert.match(first.sent[1], /^\["CONNECT\\naccept-version:1\.2\\nheart-beat:0,0\\n\\n\\u0000"\]$/);
+
+  first.onmessage?.({ data: 'a["CONNECTED\\nversion:1.2\\n\\n\\u0000"]' });
+  assert.match(first.sent[2], /destination:\/user\/queue\/rooms\/42\/messages/);
+
+  const stompMessage = [
+    "MESSAGE",
+    "subscription:sub-room-messages",
+    "message-id:007",
+    "",
+    "{\"type\":\"chat:message\",\"payload\":{\"roomId\":42,\"sender\":{\"name\":\"Alice\"},\"content\":\"hello\"}}\u0000",
+  ].join("\n");
+  first.onmessage?.({ data: `a[${JSON.stringify(stompMessage)}]` });
+  assert.deepEqual(received, ['{"type":"msg","room_id":42,"user":"Alice","message":"hello"}']);
 
   close_ws();
-  connect_ws("/ws-test", () => {});
+  connect_ws(42, () => {});
   assert.equal(FakeWebSocket.instances.length, 2);
 });

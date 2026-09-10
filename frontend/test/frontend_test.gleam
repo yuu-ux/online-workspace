@@ -2,13 +2,14 @@ import gleeunit
 import gleeunit/should
 import frontend
 import gleam/json
+import gleam/option.{None, Some}
 import lustre/element
 import gleam/string
 import pages/friend
-import pages/userinfofromsearch
 import components/userinfo
 import wrap/api.{ApiError}
 import types/session.{Authenticated, Token}
+import types/room as room_t
 import types/user.{UserInfo, UserId}
 import wrap/user as user_wrap
 
@@ -55,6 +56,75 @@ pub fn friend_error_message_is_rendered_test() {
   |> should.equal(True)
 }
 
+pub fn own_profile_does_not_render_friend_control_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = userinfo.init(session, UserInfo("me", UserId("1")))
+
+  userinfo.view(model)
+  |> element.to_string
+  |> string.contains("type=\"checkbox\"")
+  |> should.equal(False)
+}
+
+pub fn loaded_friendship_status_checks_friend_control_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("friend", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let profile = user_wrap.UserProfile(
+    name: "friend",
+    icon_url: "",
+    is_public: True,
+    bio: "",
+    work_category: "",
+    friendship: "FRIEND",
+  )
+
+  let #(updated_model, _) = userinfo.update(
+    model,
+    userinfo.ProfileLoaded(Ok(profile)),
+  )
+
+  updated_model.is_friend |> should.equal(True)
+}
+
+pub fn checking_friend_updates_friendship_label_immediately_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("friend", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let profile = user_wrap.UserProfile(
+    name: "friend",
+    icon_url: "",
+    is_public: True,
+    bio: "",
+    work_category: "",
+    friendship: "NONE",
+  )
+  let #(loaded_model, _) = userinfo.update(
+    model,
+    userinfo.ProfileLoaded(Ok(profile)),
+  )
+
+  let #(updated_model, _) = userinfo.update(
+    loaded_model,
+    userinfo.FriendOnChecked(True),
+  )
+
+  userinfo.view(updated_model)
+  |> element.to_string
+  |> string.contains("フレンド状態: FRIEND")
+  |> should.equal(True)
+
+  let #(unchecked_model, _) = userinfo.update(
+    updated_model,
+    userinfo.FriendOnChecked(False),
+  )
+
+  userinfo.view(unchecked_model)
+  |> element.to_string
+  |> string.contains("フレンド状態: NONE")
+  |> should.equal(True)
+}
+
 pub fn friend_page_displays_list_limit_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
   let model = friend.Model(
@@ -69,23 +139,99 @@ pub fn friend_page_displays_list_limit_test() {
   |> should.equal(True)
 }
 
-pub fn search_user_info_marks_existing_friend_test() {
-  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
-  let target = UserInfo("test2", UserId("2"))
-  let #(model, _) = userinfofromsearch.init(session, target, "test2")
-  let #(updated_model, _) = userinfofromsearch.update(
-    model,
-    userinfofromsearch.FriendsLoaded(Ok([target])),
-  )
-
-  updated_model.user_info_component.is_friend
-  |> should.equal(True)
-}
-
 pub fn user_profile_decoder_accepts_nullable_fields_test() {
   json.parse(
     "{\"name\":\"Alice\",\"iconUrl\":null,\"isPublic\":true,\"bio\":\"alice bio\",\"workCategory\":null,\"friendship\":\"NONE\"}",
     user_wrap.user_profile_decoder(),
   )
   |> should.be_ok()
+}
+
+pub fn user_profile_renders_icon_url_as_image_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("Alice", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let model =
+    userinfo.Model(
+      ..model,
+      profile: Some(user_wrap.UserProfile(
+        name: "Alice",
+        icon_url: "https://example.com/icon.png",
+        is_public: True,
+        bio: "alice bio",
+        work_category: "未分類",
+        friendship: "FRIEND",
+      )),
+      loading: False,
+    )
+
+  userinfo.view(model)
+  |> element.to_string
+  |> string.contains("src=\"https://example.com/icon.png\"")
+  |> should.equal(True)
+
+  userinfo.view(model)
+  |> element.to_string
+  |> string.contains("alt=\"アイコン\"")
+  |> should.equal(True)
+}
+
+pub fn user_profile_renders_fallback_when_icon_url_is_empty_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("Alice", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let model =
+    userinfo.Model(
+      ..model,
+      profile: Some(user_wrap.UserProfile(
+        name: "Alice",
+        icon_url: "",
+        is_public: True,
+        bio: "alice bio",
+        work_category: "未分類",
+        friendship: "FRIEND",
+      )),
+      loading: False,
+    )
+
+  userinfo.view(model)
+  |> element.to_string
+  |> string.contains("background-color: #d1d5db")
+  |> should.equal(True)
+}
+
+pub fn user_profile_renders_gray_fallback_when_icon_loading_fails_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("Alice", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let model = userinfo.Model(
+    ..model,
+    profile: Some(user_wrap.UserProfile(
+      name: "Alice",
+      icon_url: "https://example.com/missing-icon.png",
+      is_public: True,
+      bio: "alice bio",
+      work_category: "未分類",
+      friendship: "FRIEND",
+    )),
+    loading: False,
+  )
+  let #(failed_model, _) = userinfo.update(model, userinfo.IconLoadFailed)
+  let rendered = userinfo.view(failed_model) |> element.to_string
+
+  rendered
+  |> string.contains("background-color: #d1d5db")
+  |> should.equal(True)
+
+  rendered
+  |> string.contains("<img")
+  |> should.equal(False)
+}
+
+pub fn stored_room_id_is_parsed_test() {
+  frontend.parse_stored_room_id("42")
+  |> should.equal(Some(room_t.RoomId(42)))
+
+  frontend.parse_stored_room_id("0") |> should.equal(None)
+  frontend.parse_stored_room_id("invalid") |> should.equal(None)
 }

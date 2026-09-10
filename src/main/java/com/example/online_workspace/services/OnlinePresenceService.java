@@ -11,6 +11,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
@@ -57,16 +58,30 @@ public class OnlinePresenceService {
 	}
 
 	@EventListener
+	@Transactional
 	public void disconnected(SessionDisconnectEvent event) {
 		String email = usersBySession.remove(event.getSessionId());
 		if (email != null && removeSession(email, event.getSessionId())) {
-			publish(email, "room:user_left", false);
+			ActivePresence presence = repository.findActivePresence(email);
+			if (presence != null && repository.leaveActiveMembership(
+				presence.roomId(),
+				presence.userId(),
+				Instant.now()
+			) == 1) {
+				publish(email, "room:user_left", false, presence);
+			}
 		}
 	}
 
 	public boolean isOnline(String email) {
 		return email != null && !email.isBlank()
 			&& sessionsByUser.containsKey(EmailNormalizer.normalize(email));
+	}
+
+	public void publishRoomLeft(String email, long roomId, long userId) {
+		if (isOnline(email)) {
+			publish(email, "room:user_left", false, new ActivePresence(roomId, userId));
+		}
 	}
 
 	private boolean addSession(String email, String sessionId) {
@@ -94,6 +109,10 @@ public class OnlinePresenceService {
 		if (presence == null) {
 			return;
 		}
+		publish(email, type, online, presence);
+	}
+
+	private void publish(String email, String type, boolean online, ActivePresence presence) {
 		RoomPresence payload = new RoomPresence(
 			presence.roomId(),
 			presence.userId(),

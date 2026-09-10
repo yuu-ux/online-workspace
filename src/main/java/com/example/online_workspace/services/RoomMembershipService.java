@@ -35,9 +35,6 @@ public class RoomMembershipService {
 		if (userEmail == null || userEmail.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
 		}
-		if (!repository.isActiveMember(roomId, userEmail)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Room membership required");
-		}
 		return repository.findActiveMembers(roomId).stream()
 			.map(this::withPresence)
 			.toList();
@@ -67,6 +64,7 @@ public class RoomMembershipService {
 		if (repository.leave(membershipId, leftAt) != 1) {
 			throw conflict("The room membership could not be ended");
 		}
+		presence.publishRoomLeft(userEmail, roomId, userId);
 	}
 
 	private RoomMember joinLockedRoom(JoinPolicy room, long userId, Instant joinedAt) {
