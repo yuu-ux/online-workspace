@@ -1,4 +1,5 @@
 import gleam/int
+import gleam/list
 import gleam/option.{type Option, None, Some}
 import lustre/element
 import lustre/effect
@@ -229,10 +230,22 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     Home(home_model), HomeMsg(home.ToRoom(room_id)) -> {
-      let #(update_home_model, _) = home.update(home_model, home.ToRoom(room_id))
-      remember_room(room_id)
-      let #(init_room_model, update_effect) = room.init(update_home_model.session, room_id)
-      #(Model(..model, current_page: Room(init_room_model)), update_effect |> effect.map(RoomMsg))
+      case room_is_joinable(home_model.rooms, room_id) {
+        True -> {
+          let #(update_home_model, _) = home.update(home_model, home.ToRoom(room_id))
+          remember_room(room_id)
+          let #(init_room_model, update_effect) = room.init(update_home_model.session, room_id)
+          #(Model(..model, current_page: Room(init_room_model)), update_effect |> effect.map(RoomMsg))
+        }
+        False -> {
+          let #(update_home_model, update_effect) =
+            home.update(home_model, home.RoomNotJoinable)
+          #(
+            Model(..model, current_page: Home(update_home_model)),
+            update_effect |> effect.map(HomeMsg),
+          )
+        }
+      }
     }
 
     Home(home_model), HomeMsg(home.RoomsLoaded(response)) -> {
@@ -586,6 +599,13 @@ pub fn parse_stored_room_id(value: String) -> Option(room_t.RoomId) {
   case int.parse(value) {
     Ok(id) if id > 0 -> Some(room_t.RoomId(id))
     _ -> None
+  }
+}
+
+fn room_is_joinable(rooms: List(room_t.RoomInfo), room_id: room_t.RoomId) -> Bool {
+  case list.find(rooms, fn(room) { room.room_id == room_id }) {
+    Ok(room) -> room.joinable
+    Error(_) -> True
   }
 }
 

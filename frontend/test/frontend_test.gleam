@@ -6,6 +6,7 @@ import gleam/option.{None, Some}
 import lustre/element
 import gleam/string
 import pages/friend
+import pages/home
 import pages/mypage
 import pages/room
 import components/userinfo
@@ -332,4 +333,42 @@ pub fn stored_room_id_is_parsed_test() {
 
   frontend.parse_stored_room_id("0") |> should.equal(None)
   frontend.parse_stored_room_id("invalid") |> should.equal(None)
+}
+
+pub fn full_room_does_not_transition_from_home_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let room_id = room_t.RoomId(42)
+  let home_model = home.Model(
+    session: session,
+    rooms: [
+      room_t.RoomInfo(
+        roomname: room_t.RoomNameType("Full room"),
+        visibility: room_t.Public,
+        category: room_t.Cat1,
+        work_style: room_t.Quiet,
+        max_number_of_member: 1,
+        room_id: room_id,
+        current_members: 1,
+        status: "OPEN",
+        joinable: False,
+        join_restriction: Some("FULL"),
+        created_at: "2026-09-10T00:00:00Z",
+      ),
+    ],
+    messages: [],
+  )
+  let model = frontend.Model(
+    current_page: frontend.Home(home_model),
+    session: session,
+  )
+
+  let #(updated_model, _) =
+    frontend.update(model, frontend.HomeMsg(home.ToRoom(room_id)))
+
+  case updated_model.current_page {
+    frontend.Home(updated_home) ->
+      updated_home.messages
+      |> should.equal(["このルームは満員のため入室できません。"])
+    _ -> should.fail()
+  }
 }
