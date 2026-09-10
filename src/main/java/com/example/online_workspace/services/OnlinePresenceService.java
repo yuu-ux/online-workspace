@@ -144,6 +144,10 @@ public class OnlinePresenceService {
 		);
 		RoomPresenceEvent event = new RoomPresenceEvent(type, payload);
 		String destination = "/queue/rooms/" + presence.roomId() + "/presence";
+		messagingTemplate.convertAndSend(
+			"/topic/rooms/" + presence.roomId() + "/presence",
+			event
+		);
 		repository.findActiveMemberEmails(presence.roomId())
 			.forEach(memberEmail -> messagingTemplate.convertAndSendToUser(memberEmail, destination, event));
 	}

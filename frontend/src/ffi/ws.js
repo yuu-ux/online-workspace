@@ -8,6 +8,19 @@ function stompFrame(lines, body = "") {
   return `${lines.join("\n")}\n\n${body}\0`;
 }
 
+function subscribeChat(connection, roomId) {
+  connection.send(
+    sockFrame(
+      stompFrame([
+        "SUBSCRIBE",
+        "id:sub-room-messages",
+        `destination:/user/queue/rooms/${roomId}/messages`,
+        "ack:auto",
+      ])
+    )
+  );
+}
+
 function parseSockJsMessages(raw) {
   if (raw === "o" || raw === "h") return [];
   if (!raw.startsWith("a")) return [];
@@ -72,12 +85,15 @@ function parseStompPresenceMessage(frame) {
   }
 }
 
-export function connect_ws(roomId, dispatch) {
+function open_ws(roomIds, chatRoomId, dispatch) {
   if (
     socket &&
     (socket.readyState === WebSocket.CONNECTING ||
       socket.readyState === WebSocket.OPEN)
   ) {
+    if (socket.readyState === WebSocket.OPEN && chatRoomId !== null) {
+      subscribeChat(socket, chatRoomId);
+    }
     return;
   }
 
@@ -102,26 +118,21 @@ export function connect_ws(roomId, dispatch) {
     const frames = parseSockJsMessages(event.data);
     for (const frame of frames) {
       if (frame.startsWith("CONNECTED")) {
-        connection.send(
-          sockFrame(
-            stompFrame([
-              "SUBSCRIBE",
-              "id:sub-room-messages",
-              `destination:/user/queue/rooms/${roomId}/messages`,
-              "ack:auto",
-            ])
-          )
-        );
-        connection.send(
-          sockFrame(
-            stompFrame([
-              "SUBSCRIBE",
-              "id:sub-room-presence",
-              `destination:/user/queue/rooms/${roomId}/presence`,
-              "ack:auto",
-            ])
-          )
-        );
+        if (chatRoomId !== null) {
+          subscribeChat(connection, chatRoomId);
+        }
+        roomIds.forEach((roomId) => {
+          connection.send(
+            sockFrame(
+              stompFrame([
+                "SUBSCRIBE",
+                `id:sub-room-presence-${roomId}`,
+                `destination:/topic/rooms/${roomId}/presence`,
+                "ack:auto",
+              ])
+            )
+          );
+        });
         continue;
       }
 
@@ -137,6 +148,14 @@ export function connect_ws(roomId, dispatch) {
   connection.onclose = () => {
     if (socket === connection) socket = null;
   };
+}
+
+export function connect_ws(roomId, dispatch) {
+  open_ws([roomId], roomId, dispatch);
+}
+
+export function connect_room_list(roomIds, dispatch) {
+  open_ws(roomIds, null, dispatch);
 }
 
 export function send_ws(message) {

@@ -33,7 +33,12 @@ import types/room.{
   RoomInfo
 } as room_t
 
-import wrap/room.{get_rooms}
+import wrap/room.{
+  type Presence,
+  connect_to_room_list,
+  get_rooms,
+  presence_from_json,
+}
 import wrap/session as session_api
 import wrap/api.{type ApiError, ApiError}
 import components/rooms.{room_list_view}
@@ -56,6 +61,7 @@ pub type Msg {
   LeftRoom
   RoomsLoaded(Result(List(RoomInfo), ApiError))
   LogoutCompleted(Result(Nil, ApiError))
+  WsMessageReceived(String)
 }
 
 
@@ -83,13 +89,32 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, messages: ["このルームは満員のため入室できません。"]), effect.none())
     LeftRoom -> #(Model(..model, messages: ["退室しました。"]), effect.none())
     RoomsLoaded(Ok(rooms)) ->
-      #(Model(..model, rooms: rooms), effect.none())
+      #(
+        Model(..model, rooms: rooms),
+        connect_to_room_list(
+          list.map(rooms, fn(room) { room.room_id }),
+          WsMessageReceived,
+        ),
+      )
     RoomsLoaded(Error(ApiError(message))) ->
       #(Model(..model, messages: [message]), effect.none())
     LogoutCompleted(Ok(_)) ->
       #(Model(session: Guest, rooms: [], messages: []), effect.none())
     LogoutCompleted(Error(ApiError(message))) ->
       #(Model(..model, messages: [message]), effect.none())
+    WsMessageReceived(message) -> {
+      case presence_from_json(message) {
+        Ok(presence) ->
+          #(
+            Model(
+              ..model,
+              rooms: list.map(model.rooms, update_room_member_count(_, presence)),
+            ),
+            effect.none(),
+          )
+        Error(_) -> #(model, effect.none())
+      }
+    }
     _ -> #(model, effect.none())
   }
 }
@@ -220,4 +245,22 @@ fn authenticated_content(model: Model) -> element.Element(Msg) {
     ui.error_messages(model.messages),
     room_list_view(model.rooms, ToRoom)
   ])
+}
+
+fn update_room_member_count(room: RoomInfo, presence: Presence) -> RoomInfo {
+  case room.room_id == presence.room_id {
+    False -> room
+    True -> {
+      let member_count = case presence.online {
+        True -> room.current_members + 1
+        False if room.current_members > 0 -> room.current_members - 1
+        False -> 0
+      }
+      RoomInfo(
+        ..room,
+        current_members: member_count,
+        joinable: room.status == "OPEN" && member_count < room.max_number_of_member,
+      )
+    }
+  }
 }

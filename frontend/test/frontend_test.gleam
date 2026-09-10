@@ -118,6 +118,41 @@ pub fn friend_loaded_message_updates_friend_page_test() {
   }
 }
 
+pub fn home_presence_updates_room_member_count_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let room_id = room_t.RoomId(10)
+  let model = home.Model(
+    session: session,
+    rooms: [
+      room_t.RoomInfo(
+        roomname: room_t.RoomNameType("Room"),
+        visibility: room_t.Public,
+        category: room_t.Cat1,
+        work_style: room_t.Quiet,
+        max_number_of_member: 3,
+        room_id: room_id,
+        current_members: 1,
+        status: "OPEN",
+        joinable: True,
+        join_restriction: None,
+        created_at: "2026-09-10T00:00:00Z",
+      ),
+    ],
+    messages: [],
+  )
+
+  let #(updated_model, _) = home.update(
+    model,
+    home.WsMessageReceived(
+      "{\"type\":\"presence\",\"room_id\":10,\"user_id\":2,\"user\":\"Alice\",\"online\":true}",
+    ),
+  )
+  case updated_model.rooms {
+    [room, ..] -> room.current_members |> should.equal(2)
+    [] -> should.fail()
+  }
+}
+
 pub fn friend_error_message_is_rendered_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
   let target = UserInfo("test2", UserId("2"))
