@@ -80,7 +80,7 @@ pub fn full_room_is_rendered_as_unavailable_test() {
   |> element.to_string
   |> fn(html) {
     html |> string.contains("満員のため入室できません") |> should.equal(True)
-    html |> string.contains("2026-09-10 00:00") |> should.equal(True)
+    html |> string.contains("2026-09-10 09:00") |> should.equal(True)
   }
 }
 
