@@ -4,6 +4,7 @@ import types/user.{type UserInfo}
 import lustre/element
 import lustre/effect
 import types/session.{type Session}
+import lustre/attribute.{class}
 
 import components/userinfo
 import lustre/element/html.{button, div, text}
@@ -51,8 +52,13 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
 pub fn view(model: Model) -> element.Element(Msg) {
   let user_info_elem = userinfo.view(model.user_info_component) |> element.map(UserInfo)
-  div([], [
+  div([class("bg-gray-50")], [
     user_info_elem,
-    button([on_click(ToRoom(model.backroomid))], [text("ルームに戻る")])
+    div([class("mx-auto max-w-2xl px-4 pb-6 sm:px-8")], [
+      button([
+        class("w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"),
+        on_click(ToRoom(model.backroomid)),
+      ], [text("ルームに戻る")]),
+    ]),
   ])
 }
