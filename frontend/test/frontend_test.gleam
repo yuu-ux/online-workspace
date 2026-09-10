@@ -273,3 +273,4 @@ pub fn user_profile_renders_gray_fallback_when_icon_loading_fails_test() {
   rendered
   |> string.contains("<img")
   |> should.equal(False)
+}
