@@ -48,6 +48,7 @@ test("SockJS/STOMPで接続してメッセージを変換できる", () => {
 
   first.onmessage?.({ data: 'a["CONNECTED\\nversion:1.2\\n\\n\\u0000"]' });
   assert.match(first.sent[2], /destination:\/user\/queue\/rooms\/42\/messages/);
+  assert.match(first.sent[3], /destination:\/user\/queue\/rooms\/42\/presence/);
 
   const stompMessage = [
     "MESSAGE",
@@ -58,6 +59,16 @@ test("SockJS/STOMPで接続してメッセージを変換できる", () => {
   ].join("\n");
   first.onmessage?.({ data: `a[${JSON.stringify(stompMessage)}]` });
   assert.deepEqual(received, ['{"type":"msg","room_id":42,"user":"Alice","message":"hello"}']);
+
+  const presenceMessage = [
+    "MESSAGE",
+    "subscription:sub-room-presence",
+    "message-id:008",
+    "",
+    "{\"type\":\"room:user_joined\",\"payload\":{\"roomId\":42,\"userId\":7,\"name\":\"Bob\",\"iconUrl\":null,\"online\":true}}\u0000",
+  ].join("\n");
+  first.onmessage?.({ data: `a[${JSON.stringify(presenceMessage)}]` });
+  assert.deepEqual(received[1], '{"type":"presence","room_id":42,"user_id":7,"user":"Bob","icon_url":"","online":true}');
 
   close_ws();
   connect_ws(42, () => {});

@@ -2,8 +2,12 @@ package com.example.online_workspace.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -36,11 +40,35 @@ class RoomMembershipServiceTests {
 
 	private RoomMembershipService service;
 	private OnlinePresenceService presence;
+	private SimpMessagingTemplate messagingTemplate;
 
 	@BeforeEach
 	void setUp() {
-		presence = new OnlinePresenceService(membershipRepository, mock(SimpMessagingTemplate.class));
+		messagingTemplate = mock(SimpMessagingTemplate.class);
+		presence = new OnlinePresenceService(membershipRepository, messagingTemplate);
 		service = new RoomMembershipService(membershipRepository, presence);
+	}
+
+	@Test
+	void publishesMemberDetailsWhenUserConnectsToRoomWebSocket() {
+		service.join(10L, "member@example.com");
+		clearInvocations(messagingTemplate);
+
+		connected("member-1", "member@example.com");
+
+		ArgumentCaptor<OnlinePresenceService.RoomPresenceEvent> event =
+			ArgumentCaptor.forClass(OnlinePresenceService.RoomPresenceEvent.class);
+		verify(messagingTemplate).convertAndSendToUser(
+			eq("creator@example.com"),
+			eq("/queue/rooms/10/presence"),
+			event.capture()
+		);
+		assertThat(event.getValue().type()).isEqualTo("room:user_joined");
+		assertThat(event.getValue().payload().userId()).isEqualTo(2L);
+		assertThat(event.getValue().payload().name()).isEqualTo("member");
+		assertThat(event.getValue().payload().iconUrl())
+			.isEqualTo("https://example.com/member.png");
+		assertThat(event.getValue().payload().online()).isTrue();
 	}
 
 	@Test

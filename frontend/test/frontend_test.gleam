@@ -7,14 +7,42 @@ import gleam/string
 import gleam/option.{Some}
 import pages/friend
 import pages/mypage
+import pages/room
 import components/userinfo
 import wrap/api.{ApiError}
 import types/session.{Authenticated, Token}
+import types/room as room_t
 import types/user.{UserInfo, UserId}
 import wrap/user as user_wrap
 
 pub fn main() {
   gleeunit.main()
+}
+
+pub fn room_presence_updates_member_list_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = room.init(session, room_t.RoomId(10))
+  let #(with_member, _) = room.update(
+    model,
+    room.MembersLoaded(Ok([UserInfo("Alice", UserId("2"))])),
+  )
+
+  let #(joined_model, _) = room.update(
+    with_member,
+    room.WsMessageReceived(
+      "{\"type\":\"presence\",\"room_id\":10,\"user_id\":3,\"user\":\"Bob\",\"online\":true}",
+    ),
+  )
+  joined_model.member_list
+  |> should.equal([UserInfo("Bob", UserId("3")), UserInfo("Alice", UserId("2"))])
+
+  let #(left_model, _) = room.update(
+    joined_model,
+    room.WsMessageReceived(
+      "{\"type\":\"presence\",\"room_id\":10,\"user_id\":3,\"user\":\"Bob\",\"online\":false}",
+    ),
+  )
+  left_model.member_list |> should.equal([UserInfo("Alice", UserId("2"))])
 }
 
 pub fn friend_loaded_message_updates_friend_page_test() {
