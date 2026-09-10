@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Verify realtime room member-count updates through two browser sessions.
+"""Verify realtime room creation and member-count updates.
 
-The script creates two temporary users, creates a room with capacity three,
-and verifies that the creator sees the count change from 1 to 2 when the
-second user joins, then back to 1 when that user leaves.
+The script creates three temporary users, creates a room with capacity three,
+and verifies that a user watching the room list sees the new room and its
+count, then sees the count change from 1 to 2 and back to 1.
 
 Usage:
   python3.14 scripts/tests/157/room_member_count.py --speed human
@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,7 +37,7 @@ class User:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Verify realtime room member-count updates."
+        description="Verify realtime room creation and member-count updates."
     )
     parser.add_argument(
         "--speed",
@@ -106,7 +107,22 @@ def enter_room(page: Page, room_name: str) -> None:
 
 
 def expect_member_count(page: Page, count: int) -> None:
-    expect(page.locator("body")).to_contain_text(f"参加人数: {count} / 3 人")
+    expect(page.locator("body")).to_contain_text(
+        re.compile(rf"参加人数:?\s*{count} / 3 人")
+    )
+
+
+def debug_websocket(page: Page, label: str) -> None:
+    if os.getenv("DEBUG_WS") != "1":
+        return
+
+    def on_socket(socket) -> None:
+        print(f"{label} websocket: {socket.url}")
+        socket.on("framesent", lambda frame: print(f"{label} sent: {frame}"))
+        socket.on("framereceived", lambda frame: print(f"{label} received: {frame}"))
+
+    page.on("websocket", on_socket)
+    page.on("console", lambda message: print(f"{label} console: {message.text}"))
 
 
 def main() -> None:
@@ -115,6 +131,7 @@ def main() -> None:
     users = [
         User(f"room-member-count-{suffix}-1", f"room-member-count-{suffix}-1@example.com"),
         User(f"room-member-count-{suffix}-2", f"room-member-count-{suffix}-2@example.com"),
+        User(f"room-member-count-{suffix}-3", f"room-member-count-{suffix}-3@example.com"),
     ]
     room_name = f"room-member-count-{suffix}"
     contexts: list[BrowserContext] = []
@@ -130,8 +147,13 @@ def main() -> None:
                 contexts.append(context)
                 register_user(context, user)
 
-            creator, guest = [context.new_page() for context in contexts]
+            creator, guest, observer = [context.new_page() for context in contexts]
+            debug_websocket(creator, "creator")
+            debug_websocket(guest, "guest")
+            debug_websocket(observer, "observer")
             login(creator, users[0])
+            login(observer, users[2])
+            observer.wait_for_timeout(2000)
             creator.get_by_role("button", name="＋ 新しいルームを作成").click()
             expect(creator.get_by_role("heading", name="ルーム作成")).to_be_visible()
             creator.locator('input[type="text"]').nth(0).fill(room_name)
@@ -146,10 +168,14 @@ def main() -> None:
             room_id = create_response.value.json()["id"]
             expect(creator.get_by_role("button", name="ホームへ")).to_be_visible()
             expect_member_count(creator, 1)
+            creator.wait_for_timeout(1000)
+            expect(observer.get_by_role("heading", name=room_name, exact=True)).to_be_visible()
+            expect_member_count(observer, 1)
 
             login(guest, users[1])
             enter_room(guest, room_name)
             expect_member_count(creator, 2)
+            expect_member_count(observer, 2)
 
             with guest.expect_response(
                 lambda response: response.request.method == "DELETE"
@@ -159,9 +185,10 @@ def main() -> None:
                 guest.get_by_role("button", name="ホームへ").click()
             expect(guest.get_by_text("ルーム一覧")).to_be_visible()
             expect_member_count(creator, 1)
+            expect_member_count(observer, 1)
 
             print(
-                "Realtime member-count verification: PASS "
+                "Realtime room-list/member-count verification: PASS "
                 f"(room={room_name}, room_id={room_id}, counts=1->2->1)"
             )
         except (AssertionError, TimeoutError):

@@ -38,6 +38,7 @@ import wrap/room.{
   connect_to_room_list,
   get_rooms,
   presence_from_json,
+  room_created_from_json,
 }
 import wrap/session as session_api
 import wrap/api.{type ApiError, ApiError}
@@ -103,16 +104,24 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     LogoutCompleted(Error(ApiError(message))) ->
       #(Model(..model, messages: [message]), effect.none())
     WsMessageReceived(message) -> {
-      case presence_from_json(message) {
-        Ok(presence) ->
+      case room_created_from_json(message) {
+        Ok(room) ->
           #(
-            Model(
-              ..model,
-              rooms: list.map(model.rooms, update_room_member_count(_, presence)),
-            ),
-            effect.none(),
+            Model(..model, rooms: add_or_replace_room(model.rooms, room)),
+            connect_to_room_list([room.room_id], WsMessageReceived),
           )
-        Error(_) -> #(model, effect.none())
+        Error(_) ->
+          case presence_from_json(message) {
+            Ok(presence) ->
+              #(
+                Model(
+                  ..model,
+                  rooms: list.map(model.rooms, update_room_member_count(_, presence)),
+                ),
+                effect.none(),
+              )
+            Error(_) -> #(model, effect.none())
+          }
       }
     }
     _ -> #(model, effect.none())
@@ -262,5 +271,18 @@ fn update_room_member_count(room: RoomInfo, presence: Presence) -> RoomInfo {
         joinable: room.status == "OPEN" && member_count < room.max_number_of_member,
       )
     }
+  }
+}
+
+fn add_or_replace_room(rooms: List(RoomInfo), new_room: RoomInfo) -> List(RoomInfo) {
+  case list.any(rooms, fn(room) { room.room_id == new_room.room_id }) {
+    True ->
+      list.map(rooms, fn(room) {
+        case room.room_id == new_room.room_id {
+          True -> new_room
+          False -> room
+        }
+      })
+    False -> [new_room, ..rooms]
   }
 }

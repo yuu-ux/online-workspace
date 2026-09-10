@@ -91,6 +91,18 @@ public class OnlinePresenceService {
 		}
 	}
 
+	public void publishRoomJoined(String email, long roomId, RoomMember member) {
+		if (member != null) {
+			publish(
+				email,
+				"room:user_joined",
+				true,
+				new ActivePresence(roomId, member.userId()),
+				member
+			);
+		}
+	}
+
 	private boolean addSession(String email, String sessionId) {
 		AtomicBoolean firstSession = new AtomicBoolean();
 		sessionsByUser.compute(email, (ignored, sessions) -> {

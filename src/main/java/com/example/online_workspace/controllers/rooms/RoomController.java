@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,9 +32,11 @@ import com.example.online_workspace.services.RoomService.UpdateRoomCommand;
 public class RoomController {
 
 	private final RoomService service;
+	private final SimpMessagingTemplate messagingTemplate;
 
-	public RoomController(RoomService service) {
+	public RoomController(RoomService service, SimpMessagingTemplate messagingTemplate) {
 		this.service = service;
+		this.messagingTemplate = messagingTemplate;
 	}
 
 	@PostMapping
@@ -42,7 +45,13 @@ public class RoomController {
 		@Valid @RequestBody CreateRoomRequest request,
 		Authentication authentication
 	) {
-		return RoomDetailResponse.from(service.create(authentication.getName(), request.toCommand()));
+		RoomDetailResponse response =
+			RoomDetailResponse.from(service.create(authentication.getName(), request.toCommand()));
+		messagingTemplate.convertAndSend(
+			"/topic/rooms",
+			new RoomCreatedEvent("room:created", response)
+		);
+		return response;
 	}
 
 	@GetMapping("/{roomId}")
@@ -154,5 +163,8 @@ public class RoomController {
 	}
 
 	public record UserSummaryResponse(long id, String name, String iconUrl) {
+	}
+
+	public record RoomCreatedEvent(String type, RoomDetailResponse payload) {
 	}
 }

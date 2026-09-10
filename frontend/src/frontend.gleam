@@ -271,6 +271,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       )
     }
 
+    Home(home_model), HomeMsg(other) -> {
+      let #(updated_home_model, update_effect) = home.update(home_model, other)
+      #(
+        Model(..model, current_page: Home(updated_home_model)),
+        update_effect |> effect.map(HomeMsg),
+      )
+    }
+
     // -- login --
 
     Login(login_model), LoginMsg(login.ToHome) -> {

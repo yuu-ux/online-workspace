@@ -1,4 +1,5 @@
 let socket = null;
+let messageDispatch = null;
 
 function sockFrame(stompFrame) {
   return JSON.stringify([stompFrame]);
@@ -15,6 +16,19 @@ function subscribeChat(connection, roomId) {
         "SUBSCRIBE",
         "id:sub-room-messages",
         `destination:/user/queue/rooms/${roomId}/messages`,
+        "ack:auto",
+      ])
+    )
+  );
+}
+
+function subscribePresence(connection, roomId) {
+  connection.send(
+    sockFrame(
+      stompFrame([
+        "SUBSCRIBE",
+        `id:sub-room-presence-${roomId}`,
+        `destination:/topic/rooms/${roomId}/presence`,
         "ack:auto",
       ])
     )
@@ -85,7 +99,26 @@ function parseStompPresenceMessage(frame) {
   }
 }
 
+function parseStompRoomCreatedMessage(frame) {
+  const separator = frame.indexOf("\n\n");
+  if (separator < 0) return null;
+
+  const bodyWithNull = frame.slice(separator + 2);
+  const body = bodyWithNull.endsWith("\0")
+    ? bodyWithNull.slice(0, -1)
+    : bodyWithNull;
+
+  try {
+    const event = JSON.parse(body);
+    if (event.type !== "room:created" || !event.payload) return null;
+    return JSON.stringify({ type: "room:created", payload: event.payload });
+  } catch (_) {
+    return null;
+  }
+}
+
 function open_ws(roomIds, chatRoomId, dispatch) {
+  messageDispatch = dispatch;
   if (
     socket &&
     (socket.readyState === WebSocket.CONNECTING ||
@@ -93,6 +126,9 @@ function open_ws(roomIds, chatRoomId, dispatch) {
   ) {
     if (socket.readyState === WebSocket.OPEN && chatRoomId !== null) {
       subscribeChat(socket, chatRoomId);
+      subscribePresence(socket, chatRoomId);
+    } else if (socket.readyState === WebSocket.OPEN) {
+      roomIds.forEach((roomId) => subscribePresence(socket, roomId));
     }
     return;
   }
@@ -121,17 +157,20 @@ function open_ws(roomIds, chatRoomId, dispatch) {
         if (chatRoomId !== null) {
           subscribeChat(connection, chatRoomId);
         }
-        roomIds.forEach((roomId) => {
+        if (chatRoomId === null) {
           connection.send(
             sockFrame(
               stompFrame([
                 "SUBSCRIBE",
-                `id:sub-room-presence-${roomId}`,
-                `destination:/topic/rooms/${roomId}/presence`,
+                "id:sub-room-created",
+                "destination:/topic/rooms",
                 "ack:auto",
               ])
             )
           );
+        }
+        roomIds.forEach((roomId) => {
+          subscribePresence(connection, roomId);
         });
         continue;
       }
@@ -139,8 +178,13 @@ function open_ws(roomIds, chatRoomId, dispatch) {
       if (frame.startsWith("MESSAGE")) {
         const parsed = parseStompChatMessage(frame);
         const presence = parsed === null ? parseStompPresenceMessage(frame) : null;
-        if (parsed !== null) dispatch(parsed);
-        if (presence !== null) dispatch(presence);
+        const roomCreated =
+          parsed === null && presence === null
+            ? parseStompRoomCreatedMessage(frame)
+            : null;
+        if (parsed !== null && messageDispatch !== null) messageDispatch(parsed);
+        if (presence !== null && messageDispatch !== null) messageDispatch(presence);
+        if (roomCreated !== null && messageDispatch !== null) messageDispatch(roomCreated);
       }
     }
   };
@@ -154,8 +198,8 @@ export function connect_ws(roomId, dispatch) {
   open_ws([roomId], roomId, dispatch);
 }
 
-export function connect_room_list(roomIds, dispatch) {
-  open_ws(roomIds, null, dispatch);
+export function connect_room_list(roomIdsJson, dispatch) {
+  open_ws(JSON.parse(roomIdsJson), null, dispatch);
 }
 
 export function send_ws(message) {

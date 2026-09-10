@@ -50,7 +50,9 @@ public class RoomMembershipService {
 		long userId = requireUserId(userEmail);
 		JoinPolicy room = lockOpenRoom(roomId);
 
-		return joinLockedRoom(room, userId, joinedAt);
+		RoomMember member = joinLockedRoom(room, userId, joinedAt);
+		presence.publishRoomJoined(userEmail, roomId, member);
+		return member;
 	}
 
 	@Transactional
