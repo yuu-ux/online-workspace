@@ -64,6 +64,27 @@ pub fn own_profile_does_not_render_friend_control_test() {
   |> should.equal(False)
 }
 
+pub fn loaded_friendship_status_checks_friend_control_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let target = UserInfo("friend", UserId("2"))
+  let #(model, _) = userinfo.init(session, target)
+  let profile = user_wrap.UserProfile(
+    name: "friend",
+    icon_url: "",
+    is_public: True,
+    bio: "",
+    work_category: "",
+    friendship: "FRIEND",
+  )
+
+  let #(updated_model, _) = userinfo.update(
+    model,
+    userinfo.ProfileLoaded(Ok(profile)),
+  )
+
+  updated_model.is_friend |> should.equal(True)
+}
+
 pub fn friend_page_displays_list_limit_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
   let model = friend.Model(

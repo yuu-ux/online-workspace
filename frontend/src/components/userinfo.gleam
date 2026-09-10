@@ -77,7 +77,16 @@ fn init_with_friend_status(
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     ProfileLoaded(Ok(profile)) ->
-      #(Model(..model, profile: Some(profile), loading: False, messages: []), effect.none())
+      #(
+        Model(
+          ..model,
+          profile: Some(profile),
+          is_friend: profile.friendship == "FRIEND",
+          loading: False,
+          messages: [],
+        ),
+        effect.none(),
+      )
 
     ProfileLoaded(Error(user_wrap.GetUserProfileApiErr(api.ApiError(message)))) ->
       #(Model(..model, profile: None, loading: False, messages: [message]), effect.none())
