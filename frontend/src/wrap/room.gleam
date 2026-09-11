@@ -1,7 +1,9 @@
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
+import gleam/list
 import gleam/option
+import gleam/string
 import lustre/effect
 import types/room.{
   Cat1,
@@ -313,6 +315,10 @@ pub type Presence {
   )
 }
 
+pub type RoomMemberCount {
+  RoomMemberCount(room_id: RoomId, current_members: Int)
+}
+
 // ---------------------------------------------------------
 // 1. FFI (JavaScriptの関数をインポート)
 // ---------------------------------------------------------
@@ -320,6 +326,9 @@ pub type Presence {
 /// 接続する
 @external(javascript, "./../ffi/ws.js", "connect_ws")
 fn do_connect(room_id: Int, dispatch: fn(String) -> Nil) -> Nil
+
+@external(javascript, "./../ffi/ws.js", "connect_room_list")
+fn do_connect_room_list(room_ids_json: String, dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
@@ -338,6 +347,21 @@ pub fn connect_to_server(room_id: RoomId, m: fn(String) -> msg) -> effect.Effect
 
     // JS側の接続関数を呼び出す
     do_connect(id, js_callback)
+  })
+}
+
+pub fn connect_to_room_list(room_ids: List(RoomId), m: fn(String) -> msg) -> effect.Effect(msg) {
+  let ids = list.map(room_ids, fn(room_id) {
+    let RoomId(id) = room_id
+    id
+  })
+  let ids_string = list.map(ids, int.to_string) |> string.join(",")
+  let ids_json = "[" <> ids_string <> "]"
+  effect.from(fn(dispatch) {
+    let js_callback = fn(received_text: String) {
+      dispatch(m(received_text))
+    }
+    do_connect_room_list(ids_json, js_callback)
   })
 }
 
@@ -380,4 +404,23 @@ pub fn presence_from_json(json_string: String) -> Result(Presence, json.DecodeEr
     )
   }
   json.parse(from: json_string, using: presence_decoder)
+}
+
+pub fn room_member_count_from_json(
+  json_string: String,
+) -> Result(RoomMemberCount, json.DecodeError) {
+  let member_count_decoder = {
+    use room_id <- decode.field("room_id", decode.int)
+    use current_members <- decode.field("current_members", decode.int)
+    decode.success(RoomMemberCount(RoomId(room_id), current_members))
+  }
+  json.parse(from: json_string, using: member_count_decoder)
+}
+
+pub fn room_created_from_json(json_string: String) -> Result(RoomInfo, json.DecodeError) {
+  let room_created_decoder = {
+    use room <- decode.field("payload", room_info_decoder())
+    decode.success(room)
+  }
+  json.parse(from: json_string, using: room_created_decoder)
 }

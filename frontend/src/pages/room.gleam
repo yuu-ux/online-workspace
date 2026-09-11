@@ -27,6 +27,7 @@ import wrap/room.{
   join_room,
   leave_room,
   presence_from_json,
+  room_member_count_from_json,
 }
 
 pub type InputType {
@@ -195,30 +196,46 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     LeaveCompleted -> #(model, effect.none())
 
     WsMessageReceived(message) -> {
-      case chat_from_json(message) {
-        Ok(chat) if chat.room_id == model.room_id -> {
-          #(Model(..model, chat_list: [chat, ..model.chat_list]), effect.none())
-        }
+      case room_member_count_from_json(message) {
+        Ok(member_count) if member_count.room_id == model.room_id ->
+          #(
+            Model(
+              ..model,
+              room_detail:
+                update_member_count(model.room_detail, member_count.current_members),
+            ),
+            effect.none(),
+          )
         Ok(_) -> #(model, effect.none())
-        Error(_) -> {
-          case presence_from_json(message) {
-            Ok(presence) if presence.room_id == model.room_id -> {
-              let without_user =
-                list.filter(model.member_list, fn(member) {
-                  member.user_id != presence.user_id
-                })
-              let members = case presence.online {
-                True -> [
-                  UserInfo(name: presence.user, user_id: presence.user_id),
-                  ..without_user
-                ]
-                False -> without_user
-              }
-              #(Model(..model, member_list: members), effect.none())
+        Error(_) ->
+          case chat_from_json(message) {
+            Ok(chat) if chat.room_id == model.room_id -> {
+              #(Model(..model, chat_list: [chat, ..model.chat_list]), effect.none())
             }
-            _ -> #(model, effect.none())
+            Ok(_) -> #(model, effect.none())
+            Error(_) -> {
+              case presence_from_json(message) {
+                Ok(presence) if presence.room_id == model.room_id -> {
+                  let without_user =
+                    list.filter(model.member_list, fn(member) {
+                      member.user_id != presence.user_id
+                    })
+                  let members = case presence.online {
+                    True -> [
+                      UserInfo(name: presence.user, user_id: presence.user_id),
+                      ..without_user
+                    ]
+                    False -> without_user
+                  }
+                  #(
+                    Model(..model, member_list: members),
+                    effect.none(),
+                  )
+                }
+                _ -> #(model, effect.none())
+              }
+            }
           }
-        }
       }
     }
   }
@@ -330,4 +347,14 @@ fn work_style_to_string(work_style: room_t.WorkStyleType) -> String {
 
 fn int_to_string(value: Int) -> String {
   int.to_string(value)
+}
+
+fn update_member_count(
+  detail: Option(room_t.RoomDetail),
+  member_count: Int,
+) -> Option(room_t.RoomDetail) {
+  case detail {
+    Some(room) -> Some(room_t.RoomDetail(..room, current_members: member_count))
+    None -> None
+  }
 }

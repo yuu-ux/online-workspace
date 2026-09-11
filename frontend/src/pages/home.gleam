@@ -33,7 +33,13 @@ import types/room.{
   RoomInfo
 } as room_t
 
-import wrap/room.{get_rooms}
+import wrap/room.{
+  type RoomMemberCount,
+  connect_to_room_list,
+  get_rooms,
+  room_member_count_from_json,
+  room_created_from_json,
+}
 import wrap/session as session_api
 import wrap/api.{type ApiError, ApiError}
 import components/rooms.{room_list_view}
@@ -56,6 +62,7 @@ pub type Msg {
   LeftRoom
   RoomsLoaded(Result(List(RoomInfo), ApiError))
   LogoutCompleted(Result(Nil, ApiError))
+  WsMessageReceived(String)
 }
 
 
@@ -83,13 +90,45 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, messages: ["このルームは満員のため入室できません。"]), effect.none())
     LeftRoom -> #(Model(..model, messages: ["退室しました。"]), effect.none())
     RoomsLoaded(Ok(rooms)) ->
-      #(Model(..model, rooms: rooms), effect.none())
+      #(
+        Model(..model, rooms: rooms),
+        connect_to_room_list(
+          list.map(rooms, fn(room) { room.room_id }),
+          WsMessageReceived,
+        ),
+      )
     RoomsLoaded(Error(ApiError(message))) ->
       #(Model(..model, messages: [message]), effect.none())
     LogoutCompleted(Ok(_)) ->
       #(Model(session: Guest, rooms: [], messages: []), effect.none())
     LogoutCompleted(Error(ApiError(message))) ->
       #(Model(..model, messages: [message]), effect.none())
+    WsMessageReceived(message) -> {
+      case room_member_count_from_json(message) {
+        Ok(member_count) ->
+          #(
+            Model(
+              ..model,
+              rooms: list.map(model.rooms, update_room_member_count(_, member_count)),
+            ),
+            effect.none(),
+          )
+        Error(_) ->
+          case room_created_from_json(message) {
+            Ok(room) -> {
+              let updated_rooms = add_or_replace_room(model.rooms, room)
+              #(
+                Model(..model, rooms: updated_rooms),
+                connect_to_room_list(
+                  list.map(updated_rooms, fn(current_room) { current_room.room_id }),
+                  WsMessageReceived,
+                ),
+              )
+            }
+            Error(_) -> #(model, effect.none())
+          }
+      }
+    }
     _ -> #(model, effect.none())
   }
 }
@@ -220,4 +259,32 @@ fn authenticated_content(model: Model) -> element.Element(Msg) {
     ui.error_messages(model.messages),
     room_list_view(model.rooms, ToRoom)
   ])
+}
+
+fn update_room_member_count(room: RoomInfo, member_count: RoomMemberCount) -> RoomInfo {
+  case room.room_id == member_count.room_id {
+    False -> room
+    True -> {
+      RoomInfo(
+        ..room,
+        current_members: member_count.current_members,
+        joinable:
+          room.status == "OPEN"
+          && member_count.current_members < room.max_number_of_member,
+      )
+    }
+  }
+}
+
+fn add_or_replace_room(rooms: List(RoomInfo), new_room: RoomInfo) -> List(RoomInfo) {
+  case list.any(rooms, fn(room) { room.room_id == new_room.room_id }) {
+    True ->
+      list.map(rooms, fn(room) {
+        case room.room_id == new_room.room_id {
+          True -> new_room
+          False -> room
+        }
+      })
+    False -> [new_room, ..rooms]
+  }
 }

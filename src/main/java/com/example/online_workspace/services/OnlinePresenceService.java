@@ -64,12 +64,18 @@ public class OnlinePresenceService {
 		String email = usersBySession.remove(event.getSessionId());
 		if (email != null && removeSession(email, event.getSessionId())) {
 			ActivePresence presence = repository.findActivePresence(email);
+			RoomMember member = presence == null
+				? null
+				: repository.findActiveMember(presence.roomId(), presence.userId());
 			if (presence != null && repository.leaveActiveMembership(
 				presence.roomId(),
 				presence.userId(),
 				Instant.now()
 			) == 1) {
-				publish(email, "room:user_left", false, presence);
+				if (member != null) {
+					publish(email, "room:user_left", false, presence, member);
+				}
+				publishRoomMemberCountChanged(presence.roomId());
 			}
 		}
 	}
@@ -89,6 +95,29 @@ public class OnlinePresenceService {
 				member
 			);
 		}
+	}
+
+	public void publishRoomJoined(String email, long roomId, RoomMember member) {
+		if (member != null) {
+			publish(
+				email,
+				"room:user_joined",
+				true,
+				new ActivePresence(roomId, member.userId()),
+				member
+			);
+		}
+	}
+
+	public void publishRoomMemberCountChanged(long roomId) {
+		RoomMemberCount payload = new RoomMemberCount(
+			roomId,
+			repository.countActiveMembers(roomId)
+		);
+		messagingTemplate.convertAndSend(
+			"/topic/rooms/" + roomId + "/presence",
+			new RoomMemberCountEvent("room:member_count_changed", payload)
+		);
 	}
 
 	private boolean addSession(String email, String sessionId) {
@@ -144,6 +173,10 @@ public class OnlinePresenceService {
 		);
 		RoomPresenceEvent event = new RoomPresenceEvent(type, payload);
 		String destination = "/queue/rooms/" + presence.roomId() + "/presence";
+		messagingTemplate.convertAndSend(
+			"/topic/rooms/" + presence.roomId() + "/presence",
+			event
+		);
 		repository.findActiveMemberEmails(presence.roomId())
 			.forEach(memberEmail -> messagingTemplate.convertAndSendToUser(memberEmail, destination, event));
 	}
@@ -159,5 +192,11 @@ public class OnlinePresenceService {
 	}
 
 	public record RoomPresenceEvent(String type, RoomPresence payload) {
+	}
+
+	public record RoomMemberCount(long roomId, int currentMembers) {
+	}
+
+	public record RoomMemberCountEvent(String type, RoomMemberCount payload) {
 	}
 }
