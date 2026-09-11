@@ -315,6 +315,10 @@ pub type Presence {
   )
 }
 
+pub type RoomMemberCount {
+  RoomMemberCount(room_id: RoomId, current_members: Int)
+}
+
 // ---------------------------------------------------------
 // 1. FFI (JavaScriptの関数をインポート)
 // ---------------------------------------------------------
@@ -400,6 +404,17 @@ pub fn presence_from_json(json_string: String) -> Result(Presence, json.DecodeEr
     )
   }
   json.parse(from: json_string, using: presence_decoder)
+}
+
+pub fn room_member_count_from_json(
+  json_string: String,
+) -> Result(RoomMemberCount, json.DecodeError) {
+  let member_count_decoder = {
+    use room_id <- decode.field("room_id", decode.int)
+    use current_members <- decode.field("current_members", decode.int)
+    decode.success(RoomMemberCount(RoomId(room_id), current_members))
+  }
+  json.parse(from: json_string, using: member_count_decoder)
 }
 
 pub fn room_created_from_json(json_string: String) -> Result(RoomInfo, json.DecodeError) {
