@@ -5,6 +5,7 @@ import java.time.Instant;
 public record RoomListItem(
 	long id,
 	String name,
+	String description,
 	long categoryId,
 	String categoryName,
 	String categoryDescription,

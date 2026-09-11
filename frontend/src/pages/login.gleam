@@ -167,7 +167,7 @@ fn form_section(model: Model) -> element.Element(Msg) {
 /// フッターリンク群
 fn footer_links() -> element.Element(Msg) {
   div(
-    [class("mt-8 flex flex-wrap justify-center gap-6 text-sm text-gray-500")],
+    [class("flex flex-wrap items-center gap-5 text-sm text-[#6f6a61]")],
     [
       btn.to_home_btn_component(ToHome),
       btn.to_privacypolicy_btn_component(ToPrivacyPolicy),

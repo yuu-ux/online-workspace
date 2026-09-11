@@ -55,10 +55,10 @@ test("SockJS/STOMPで接続してメッセージを変換できる", () => {
     "subscription:sub-room-messages",
     "message-id:007",
     "",
-    "{\"type\":\"chat:message\",\"payload\":{\"roomId\":42,\"sender\":{\"name\":\"Alice\"},\"content\":\"hello\"}}\u0000",
+    "{\"type\":\"chat:message\",\"payload\":{\"roomId\":42,\"sender\":{\"name\":\"Alice\"},\"content\":\"hello\",\"sentAt\":\"2026-09-10T05:32:00Z\"}}\u0000",
   ].join("\n");
   first.onmessage?.({ data: `a[${JSON.stringify(stompMessage)}]` });
-  assert.deepEqual(received, ['{"type":"msg","room_id":42,"user":"Alice","message":"hello"}']);
+  assert.deepEqual(received, ['{"type":"msg","room_id":42,"user":"Alice","message":"hello","sent_at":"2026-09-10T05:32:00Z","icon_url":""}']);
 
   const presenceMessage = [
     "MESSAGE",

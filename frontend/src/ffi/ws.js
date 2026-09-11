@@ -62,6 +62,8 @@ function parseStompChatMessage(frame) {
       room_id: event.payload.roomId,
       user: event.payload.sender?.name || "unknown",
       message: event.payload.content || "",
+      sent_at: event.payload.sentAt || "",
+      icon_url: event.payload.sender?.iconUrl || "",
     });
   } catch (_) {
     return null;

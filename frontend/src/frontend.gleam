@@ -137,6 +137,16 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     // mypage other
 
+    MyPage(page), MyPageMsg(mypage.FriendMsg(friend.ToUserInfo(user_info))) -> {
+      let #(detail, next_effect) = userinfofromfriend.init(page.session, user_info)
+      #(Model(..model, current_page: UserInfoFromFriend(detail)), effect.map(next_effect, UserInfoFromFriendMsg))
+    }
+
+    MyPage(page), MyPageMsg(mypage.FriendMsg(friend.SearchSubmitted)) -> {
+      let #(results, next_effect) = search.init(page.session, page.friends.search_word)
+      #(Model(..model, current_page: Search(results)), effect.map(next_effect, SearchMsg))
+    }
+
     MyPage(mypage_model), MyPageMsg(other) -> {
       let #(update_mypage_model, update_effect) = mypage.update(mypage_model, other)
       #(Model(..model, current_page: MyPage(update_mypage_model)), update_effect |> effect.map(MyPageMsg))
@@ -163,6 +173,18 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(
         Model(..model, current_page: UserInfoFromFriend(update_user_info_model)),
         update_effect |> effect.map(UserInfoFromFriendMsg),
+      )
+    }
+
+    Friend(friend_model), FriendMsg(friend.SearchSubmitted) -> {
+      let #(updated_friend_model, _) = friend.update(friend_model, friend.SearchSubmitted)
+      let #(init_search_model, init_effect) = search.init(
+        updated_friend_model.session,
+        updated_friend_model.search_word,
+      )
+      #(
+        Model(..model, current_page: Search(init_search_model)),
+        init_effect |> effect.map(SearchMsg),
       )
     }
 
@@ -408,10 +430,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // -- userinfofromfriend --
 
     UserInfoFromFriend(userinfofromfriend_model), UserInfoFromFriendMsg(userinfofromfriend.ToFriend) -> {
-      let #(init_friend_model, friend_effect) = friend.init(userinfofromfriend_model.user_info_component.session)
+      let #(init_friend_model, friend_effect) = mypage.init(userinfofromfriend_model.user_info_component.session)
       #(
-        Model(..model, current_page: Friend(init_friend_model)),
-        friend_effect |> effect.map(FriendMsg),
+        Model(..model, current_page: MyPage(init_friend_model)),
+        friend_effect |> effect.map(MyPageMsg),
       )
     }
 
@@ -464,10 +486,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, current_page: Home(init_home_model)), effect.none())
     }
 
-    Search(search_model), SearchMsg(search.ToMyPage) -> {
-      let #(init_mypage_model, init_effect) = mypage.init(search_model.session)
+    Search(search_model), SearchMsg(search.ToFriend) -> {
+      let #(init_friend_model, init_effect) = mypage.init(search_model.session)
       #(
-        Model(..model, current_page: MyPage(init_mypage_model)),
+        Model(..model, current_page: MyPage(init_friend_model)),
         init_effect |> effect.map(MyPageMsg),
       )
     }
@@ -506,8 +528,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     UserInfoFromSearch(userinfo_model), UserInfoFromSearchMsg(userinfofromsearch.ToFriend) -> {
-      let #(init_friend_model, _) = friend.init(userinfo_model.user_info_component.session)
-      #(Model(..model, current_page: Friend(init_friend_model)), effect.none())
+      let #(page, next_effect) = mypage.init(userinfo_model.user_info_component.session)
+      #(Model(..model, current_page: MyPage(page)), effect.map(next_effect, MyPageMsg))
     }
 
 

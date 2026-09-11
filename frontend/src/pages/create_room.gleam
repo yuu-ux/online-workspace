@@ -13,8 +13,6 @@ import types/room.{
   DescriptionType,
   RoomId,
   Cat1,
-  Cat2,
-  Cat3,
   CasualChat,
   Quiet,
   Public,
@@ -29,7 +27,6 @@ import wrap/api.{type ApiError, ApiError}
 pub type InputType {
   RoomName
   Description
-  Category
   WorkStyle
   MaxNumOfMember
 }
@@ -39,7 +36,6 @@ pub type Model {
     session: Session,
     current_roomname_input: String,
     current_description_input: String,
-    current_category_input: String,
     current_workstyle_input: String,
     current_maxnumofmember_input: String,
     messages: List(String)
@@ -61,7 +57,6 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
       session: session,
       current_roomname_input: "",
       current_description_input: "",
-      current_category_input: "category 1",
       current_workstyle_input: "Quiet",
       current_maxnumofmember_input: "12",
       messages: []),
@@ -94,10 +89,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           Model(..model, current_description_input: text)
         }
 
-        Category -> {
-          Model(..model, current_category_input: text)
-        }
-
         WorkStyle -> {
           Model(..model, current_workstyle_input: text)
         }
@@ -117,15 +108,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
       let description = DescriptionType(model.current_description_input)
 
-      let category = case model.current_category_input {
-        "category 1" -> { Ok(Cat1) }
-        "category 2" -> { Ok(Cat2) }
-        "category 3" -> { Ok(Cat3) }
-        _ -> {
-          Error(Nil)
-        }
-      }
-
       let work_style = case model.current_workstyle_input {
         "Casual Chat" -> {
           Ok(CasualChat)
@@ -140,19 +122,19 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
       let max_number_of_member = int.parse(model.current_maxnumofmember_input)
 
-      case category, work_style, max_number_of_member {
-        Ok(category), Ok(work_style), Ok(max_members) -> #(
+      case work_style, max_number_of_member {
+        Ok(work_style), Ok(max_members) -> #(
           Model(..model, messages: []),
           create_room(
             room_name,
             description,
-            category,
+            Cat1,
             work_style,
             max_members,
             RoomCreated,
           ),
         )
-        _, _, _ ->
+        _, _ ->
           #(Model(..model, messages: ["入力内容を確認してください"]), effect.none())
       }
     }
@@ -227,17 +209,7 @@ fn form_section(model: Model) -> element.Element(Msg) {
       fn(val) { InputUpdated(Description, val) }
     ),
 
-    // 3. カテゴリ（セレクトボックス）
-    ui.select_box(
-      "カテゴリ",
-      model.current_category_input,
-      [
-        #("category 1", "未分類")
-      ],
-      fn(val) { InputUpdated(Category, val) }
-    ),
-
-    // 4. ワークスタイル（セレクトボックス）
+    // 3. ワークスタイル（セレクトボックス）
     ui.select_box(
       "作業スタイル",
       model.current_workstyle_input,
@@ -248,7 +220,7 @@ fn form_section(model: Model) -> element.Element(Msg) {
       fn(val) { InputUpdated(WorkStyle, val) }
     ),
 
-    // 5. 最大人数（数値入力）
+    // 4. 最大人数（数値入力）
     ui.number_input(
       "最大参加人数",
       model.current_maxnumofmember_input,

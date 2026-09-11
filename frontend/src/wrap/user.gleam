@@ -222,6 +222,21 @@ pub fn get_friends(
 }
 
 /// フレンドを追加する
+pub fn get_friends_with_icons(
+  to_msg: fn(Result(List(#(UserInfo, String)), api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  let item = {
+    use user <- decode.then(friend_user_decoder())
+    use icon <- decode.subfield(["user", "iconUrl"], decode.optional(decode.string))
+    decode.success(#(user, option.unwrap(icon, "")))
+  }
+  let decoder = {
+    use items <- decode.field("items", decode.list(item))
+    decode.success(items)
+  }
+  api.json_request("GET", "/api/v1/friends?page=0&size=50", "", decoder, to_msg)
+}
+
 pub fn add_friend(
   user_id: UserId,
   to_msg: fn(Result(Nil, api.ApiError)) -> msg,

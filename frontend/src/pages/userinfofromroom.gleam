@@ -52,13 +52,13 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
 pub fn view(model: Model) -> element.Element(Msg) {
   let user_info_elem = userinfo.view(model.user_info_component) |> element.map(UserInfo)
-  div([class("bg-gray-50")], [
-    user_info_elem,
-    div([class("mx-auto max-w-2xl px-4 pb-6 sm:px-8")], [
+  div([class("min-h-screen bg-[#f7f5f0]")], [
+    div([class("px-4 py-4 sm:px-8")], [
       button([
-        class("w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"),
+        class("text-sm font-medium text-[#58745a] hover:underline"),
         on_click(ToRoom(model.backroomid)),
-      ], [text("ルームに戻る")]),
+      ], [text("← チャットに戻る")]),
     ]),
+    user_info_elem,
   ])
 }
