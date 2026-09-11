@@ -207,7 +207,7 @@ pub fn leave_room(
 
 pub fn get_room_members(
   room_id: RoomId,
-  to_msg: fn(Result(List(UserInfo), api.ApiError)) -> msg,
+  to_msg: fn(Result(List(RoomMember), api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   api.json_request(
     "GET",
@@ -249,10 +249,15 @@ fn room_path(room_id: RoomId) -> String {
   int.to_string(id)
 }
 
-fn room_member_decoder() -> decode.Decoder(UserInfo) {
+pub type RoomMember {
+  RoomMember(name: String, user_id: UserId, icon_url: String)
+}
+
+fn room_member_decoder() -> decode.Decoder(RoomMember) {
   use id <- decode.subfield(["user", "id"], decode.int)
   use name <- decode.subfield(["user", "name"], decode.string)
-  decode.success(UserInfo(name: name, user_id: UserId(int.to_string(id))))
+  use icon <- decode.subfield(["user", "iconUrl"], decode.optional(decode.string))
+  decode.success(RoomMember(name, UserId(int.to_string(id)), option.unwrap(icon, "")))
 }
 
 fn message_list_decoder() -> decode.Decoder(List(Chat)) {
@@ -264,12 +269,16 @@ fn message_decoder() -> decode.Decoder(Chat) {
   use room_id <- decode.field("roomId", decode.int)
   use user <- decode.subfield(["sender", "name"], decode.string)
   use message <- decode.field("content", decode.string)
+  use sent_at <- decode.field("sentAt", decode.string)
+  use icon <- decode.subfield(["sender", "iconUrl"], decode.optional(decode.string))
   decode.success(
     Chat(
       msg_type: "msg",
       room_id: RoomId(room_id),
       user: user,
       message: message,
+      sent_at: sent_at,
+      icon_url: option.unwrap(icon, ""),
     ),
   )
 }
@@ -303,6 +312,8 @@ pub type Chat {
     room_id: RoomId,
     user: String,
     message: String,
+    sent_at: String,
+    icon_url: String,
   )
 }
 
@@ -312,6 +323,7 @@ pub type Presence {
     user_id: UserId,
     user: String,
     online: Bool,
+    icon_url: String,
   )
 }
 
@@ -378,11 +390,15 @@ pub fn chat_from_json(json_string: String) -> Result(Chat, json.DecodeError) {
     use room_id <- decode.field("room_id", decode.int)
     use user <- decode.field("user", decode.string)
     use message <- decode.field("message", decode.string)
+    use sent_at <- decode.field("sent_at", decode.string)
+    use icon_url <- decode.field("icon_url", decode.string)
     decode.success(Chat(
       msg_type: msg_type,
       room_id: RoomId(room_id),
       user: user,
-      message: message
+      message: message,
+      sent_at: sent_at,
+      icon_url: icon_url,
     ))
   }
   json.parse(from: json_string, using: chat_decoder)
@@ -394,12 +410,14 @@ pub fn presence_from_json(json_string: String) -> Result(Presence, json.DecodeEr
     use user_id <- decode.field("user_id", decode.int)
     use user <- decode.field("user", decode.string)
     use online <- decode.field("online", decode.bool)
+    use icon_url <- decode.optional_field("icon_url", "", decode.string)
     decode.success(
       Presence(
         room_id: RoomId(room_id),
         user_id: UserId(int.to_string(user_id)),
         user: user,
         online: online,
+        icon_url: icon_url,
       ),
     )
   }

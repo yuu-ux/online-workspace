@@ -4,6 +4,10 @@ import lustre/element.{type Element, text}
 import lustre/element/html.{div, h2, input, label, p, select, textarea, option}
 import lustre/event.{on_input}
 
+pub fn input_classes() -> String {
+  "h-11 min-w-0 rounded-md border-2 border-[#c8c1b5] bg-transparent px-3 py-2 text-sm text-slate-800 placeholder:text-[#9a958c] transition-colors focus:border-[#58745a] focus:outline-none"
+}
+
 // --- セクション単位のコンポーネント ---
 
 /// テキストエリア（複数行入力）
@@ -14,14 +18,14 @@ pub fn text_area(
   on_change: fn(String) -> a,
 ) -> Element(a) {
   div([], [
-    label([class("block text-sm font-medium text-gray-700 mb-1")], [text(label_text)]),
+    label([class("mb-1 block text-sm font-medium text-slate-700")], [text(label_text)]),
     textarea(
       [
         placeholder(placeholder_text),
         value(current_value),
         on_input(on_change),
         // text_input と同じ美しい枠線とリング、高さを固定(rows-4相当)
-        class("w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none h-32")
+        class("h-32 w-full resize-none rounded-md border-2 border-[#c8c1b5] bg-transparent px-3 py-2 text-sm text-slate-800 placeholder:text-[#9a958c] transition-colors focus:border-[#58745a] focus:outline-none")
       ],
       current_value
     )
@@ -36,13 +40,13 @@ pub fn select_box(
   on_change: fn(String) -> a,
 ) -> Element(a) {
   div([], [
-    label([class("block text-sm font-medium text-gray-700 mb-1")], [text(label_text)]),
+    label([class("mb-1 block text-sm font-medium text-slate-700")], [text(label_text)]),
     select(
       [
         value(current_value),
         on_input(on_change),
         // ブラウザデフォルトの矢印を使いつつ、枠線などを整える
-        class("w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors")
+        class("w-full " <> input_classes())
       ],
       // 選択肢のリストから option タグを生成
       list.map(options_list, fn(opt) {
@@ -60,12 +64,12 @@ pub fn number_input(
   on_change: fn(String) -> a,
 ) -> Element(a) {
   div([], [
-    label([class("block text-sm font-medium text-gray-700 mb-1")], [text(label_text)]),
+    label([class("mb-1 block text-sm font-medium text-slate-700")], [text(label_text)]),
     input([
       type_("number"),
       value(current_value),
       on_input(on_change),
-      class("w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors")
+      class("w-full " <> input_classes())
     ])
   ])
 }
@@ -81,15 +85,14 @@ pub fn centered_card_layout(
 ) -> Element(a) {
   div(
     // 画面全体（背景と中央寄せ）
-    [class("min-h-screen bg-gray-50 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8")],
+    [class("flex min-h-screen flex-col bg-[#f7f5f0] px-4 py-5 sm:px-8")],
     [
+      div([class("self-start")], [footer_element]),
       // 中央の白いカード
       div(
-        [class("max-w-md w-full bg-white rounded-xl shadow-lg p-8 space-y-8")],
+        [class("mx-auto mt-10 w-full max-w-md space-y-6 pb-10")],
         card_children
-      ),
-      // フッターリンク
-      footer_element
+      )
     ]
   )
 }
@@ -100,23 +103,22 @@ pub fn centered_text_card_layout(
   footer_element: Element(a),
 ) -> Element(a) {
   div(
-    [class("min-h-screen bg-gray-50 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8")],
+    [class("flex min-h-screen flex-col bg-[#f7f5f0] px-4 py-5 sm:px-8")],
     [
+      div([class("self-start")], [footer_element]),
       div(
-        // text-center と space-y-6 がポイント
-        [class("max-w-md w-full bg-white rounded-xl shadow-lg p-8 space-y-6 text-center")],
+        [class("mx-auto mt-10 w-full max-w-md space-y-6 pb-10")],
         card_children
-      ),
-      footer_element
+      )
     ]
   )
 }
 
 /// タイトルとサブタイトルのセクション
 pub fn header_section(title: String, subtitle: String) -> Element(a) {
-  div([class("text-center")], [
-    h2([class("text-3xl font-extrabold text-gray-900")], [text(title)]),
-    p([class("mt-2 text-sm text-gray-600")], [text(subtitle)])
+  div([], [
+    h2([class("text-2xl font-semibold text-slate-900")], [text(title)]),
+    p([class("mt-2 text-sm text-[#6f6a61]")], [text(subtitle)])
   ])
 }
 
@@ -125,7 +127,16 @@ pub fn error_messages(messages: List(String)) -> Element(a) {
   div(
     [class("flex flex-col gap-2")],
     list.map(messages, fn(msg) {
-      div([class("bg-red-50 text-red-600 text-sm p-3 rounded-md border border-red-200")], [text(msg)])
+      div([class("rounded-md border border-[#e8c9c1] bg-[#fff3f0] p-3 text-sm text-[#9a4a3c]")], [text(msg)])
+    })
+  )
+}
+
+pub fn success_messages(messages: List(String)) -> Element(a) {
+  div(
+    [class("flex flex-col gap-2")],
+    list.map(messages, fn(msg) {
+      div([class("rounded-md border border-[#c9dcc7] bg-[#f0f6ee] p-3 text-sm text-[#36553b]")], [text(msg)])
     })
   )
 }
@@ -134,10 +145,10 @@ pub fn error_messages(messages: List(String)) -> Element(a) {
 pub fn divider_with_text(label_text: String) -> Element(a) {
   div([class("relative my-6")], [
     div([class("absolute inset-0 flex items-center")], [
-      div([class("w-full border-t border-gray-200")], [])
+      div([class("w-full border-t border-[#e5ded2]")], [])
     ]),
     div([class("relative flex justify-center text-sm")], [
-      p([class("px-2 bg-white text-gray-500")], [text(label_text)])
+      p([class("bg-[#fffdf9] px-2 text-[#847e74]")], [text(label_text)])
     ])
   ])
 }
@@ -153,14 +164,13 @@ pub fn text_input(
   on_change: fn(String) -> a,
 ) -> Element(a) {
   div([], [
-    label([class("block text-sm font-medium text-gray-700 mb-1")], [text(label_text)]),
+    label([class("mb-1 block text-sm font-medium text-slate-700")], [text(label_text)]),
     input([
       type_(input_type),
       placeholder(placeholder_text),
       value(current_value),
       on_input(on_change),
-      class("w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors")
+      class("w-full " <> input_classes())
     ])
   ])
 }
-

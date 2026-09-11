@@ -8,13 +8,9 @@ import lustre/event.{on_click}
 
 import types/room.{
   type RoomInfo,
-  type CategoryType,
   type WorkStyleType,
   type RoomId,
   RoomNameType,
-  Cat1,
-  Cat2,
-  Cat3,
   CasualChat,
   Quiet,
 }
@@ -26,11 +22,11 @@ import types/room.{
 pub fn room_list_view(room_info_list: List(RoomInfo), to_room: fn(RoomId) -> a) -> element.Element(a) {
   div(
     // 画面全体に余白を取り、レスポンシブなグリッドレイアウトを設定
-    [class("p-6")], 
+    [class("p-0")],
     [
       div(
         // 画面幅に応じて、1列 -> 2列 -> 3列 とカードが並ぶようにする
-        [class("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6")],
+        [class("divide-y divide-[#dedbd2] border-y border-[#dedbd2]")],
         list.map(room_info_list, room_card(_, to_room))
       )
     ]
@@ -47,19 +43,21 @@ fn room_card(room_info: RoomInfo, to_room: fn(RoomId) -> a) -> element.Element(a
 
   div(
     // カード全体のスタイル：白背景、角丸、薄い影、ホバーで少し浮き上がるアニメーション
-    [class("bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-5 flex flex-col")],
+    [class("grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-3 py-5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-5")],
     [
-      // --- 上部：ルーム名とカテゴリバッジ ---
-      div([class("flex justify-between items-start mb-4")], [
-        h3([class("text-lg font-bold text-gray-900 truncate pr-4")], [
+      // --- 上部：ルーム名と作業スタイル ---
+      div([class("min-w-0 space-y-2")], [
+        h3([class("break-words text-lg font-semibold text-slate-900")], [
           text(room_name_str)
         ]),
-        category_badge(room_info.category)
+        div([class("flex flex-wrap items-center gap-3 text-sm text-[#6f6a61]")], [
+          text(work_style_to_string(room_info.work_style)),
+          span([class("text-xs text-[#847e74]")], [text("作成 " <> format_created_at_jst(room_info.created_at))]),
+        ]),
       ]),
 
       // --- 中部：詳細情報（ワークスタイルや人数） ---
-      div([class("flex-1 space-y-3 mb-6")], [
-        info_row("作業スタイル", work_style_to_string(room_info.work_style)),
+      div([class("row-start-2 text-sm sm:row-auto")], [
         info_row(
           "参加人数",
           int.to_string(room_info.current_members)
@@ -67,7 +65,6 @@ fn room_card(room_info: RoomInfo, to_room: fn(RoomId) -> a) -> element.Element(a
             <> int.to_string(room_info.max_number_of_member)
             <> " 人",
         ),
-        info_row("作成日時", format_created_at_jst(room_info.created_at)),
       ]),
 
       // --- 下部：入室ボタン ---
@@ -81,15 +78,15 @@ fn join_button(room_info: RoomInfo, to_room: fn(RoomId) -> a) -> element.Element
     True ->
       button(
         [
-          class("w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition-colors duration-200"),
+          class("col-start-2 row-start-1 rounded-md bg-[#58745a] px-5 py-2 text-sm font-semibold text-white hover:bg-[#46614a] sm:col-start-3"),
           on_click(to_room(room_info.room_id)),
         ],
-        [text("このルームに入室する")],
+        [text("入室")],
       )
     False ->
       button(
         [
-          class("w-full py-2.5 px-4 bg-gray-300 text-gray-600 font-semibold rounded-lg cursor-not-allowed"),
+          class("col-start-2 row-start-1 max-w-32 cursor-not-allowed rounded-md bg-[#e5e0d7] px-4 py-2 text-sm text-[#8d887f] sm:col-start-3"),
           disabled(True),
           aria_disabled(True),
         ],
@@ -114,30 +111,15 @@ fn format_created_at_jst(value: String) -> String
 /// 情報の行を綺麗に並べるヘルパー
 fn info_row(label: String, value: String) -> element.Element(a) {
   div([class("flex items-center text-sm")], [
-    span([class("text-gray-500 w-24")], [text(label)]),
-    span([class("font-medium text-gray-800")], [text(value)])
+    span([class("mr-2 text-xs text-[#847e74]")], [text(label)]),
+    span([class("font-medium text-slate-800")], [text(value)])
   ])
-}
-
-/// カテゴリをカラフルな「バッジ」として表示するコンポーネント
-fn category_badge(cat: CategoryType) -> element.Element(a) {
-  // カテゴリによってバッジの色を変える
-  let #(bg_color, text_color, label) = case cat {
-    Cat1 -> #("bg-blue-100", "text-blue-800", "カテゴリ1")
-    Cat2 -> #("bg-green-100", "text-green-800", "カテゴリ2")
-    Cat3 -> #("bg-purple-100", "text-purple-800", "カテゴリ3")
-  }
-  
-  span(
-    [class("px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap " <> bg_color <> " " <> text_color)],
-    [text(label)]
-  )
 }
 
 /// ワークスタイルを文字列に変換（冗長なcaseをここにまとめる）
 fn work_style_to_string(style: WorkStyleType) -> String {
   case style {
-    CasualChat -> "雑談OK (Casual)"
-    Quiet      -> "もくもく (Quiet)"
+    CasualChat -> "雑談OK"
+    Quiet      -> "もくもく"
   }
 }

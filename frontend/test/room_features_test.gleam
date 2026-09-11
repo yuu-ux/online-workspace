@@ -46,7 +46,7 @@ pub fn room_leave_error_is_rendered_test() {
 
 pub fn room_list_decodes_joinability_and_metadata_test() {
   let decoded = json.parse(
-    "{\"id\":1,\"name\":\"集中ルーム\",\"category\":{\"id\":1},\"workStyle\":\"FOCUS\",\"maxMembers\":4,\"currentMembers\":2,\"status\":\"OPEN\",\"createdBy\":{\"id\":10,\"name\":\"Alice\",\"iconUrl\":null},\"joinable\":true,\"joinRestriction\":null,\"createdAt\":\"2026-09-10T00:00:00Z\"}",
+    "{\"id\":1,\"name\":\"集中ルーム\",\"description\":\"静かに作業します\",\"category\":{\"id\":1},\"workStyle\":\"FOCUS\",\"maxMembers\":4,\"currentMembers\":2,\"status\":\"OPEN\",\"createdBy\":{\"id\":10,\"name\":\"Alice\",\"iconUrl\":null},\"joinable\":true,\"joinRestriction\":null,\"createdAt\":\"2026-09-10T00:00:00Z\"}",
     room_api.room_info_decoder(),
   )
 

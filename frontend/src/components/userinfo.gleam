@@ -8,6 +8,7 @@ import lustre/event.{on, on_check}
 import lustre/element/html.{div, h1, img, input, p, span, text}
 import types/session.{type Session} as session_t
 import types/user.{type UserInfo}
+import components/ui
 import wrap/api as api
 import wrap/user as user_wrap
 
@@ -182,25 +183,21 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 pub fn view(model: Model) -> element.Element(Msg) {
   let profile_view = case model.profile {
     Some(profile) -> [
-      div([attribute.class("flex items-center gap-4 border-b border-gray-100 pb-5")], [
+      div([attribute.class("flex items-center gap-5 border-b border-[#dedbd2] pb-6")], [
         icon_view(profile.icon_url, model.icon_load_failed),
         div([], [
           h1([attribute.class("text-2xl font-bold text-gray-900")], [text(profile.name)]),
-          p([attribute.class("mt-1 text-sm text-gray-500")], [
-            text("ユーザープロフィール"),
-          ]),
         ]),
       ]),
       div([attribute.class("mt-5 grid gap-3 sm:grid-cols-2")], [
         profile_row("公開設定", bool_to_label(profile.is_public)),
         profile_row("フレンド状態", string_or_fallback(profile.friendship, "非公開")),
-        div([attribute.class("rounded-lg bg-gray-50 p-4 sm:col-span-2")], [
+        div([attribute.class("border-b border-[#e2dfd7] py-4 sm:col-span-2")], [
           div([attribute.class("text-xs font-medium text-gray-500")], [text("自己紹介")]),
-          p([attribute.class("mt-1 break-words text-sm text-gray-800")], [
-            text(string_or_fallback(profile.bio, "非公開")),
-          ]),
+        p([attribute.class("mt-1 break-words text-sm text-gray-800")], [
+          text(string_or_fallback(profile.bio, "非公開")),
         ]),
-        profile_row("作業カテゴリ", string_or_fallback(profile.work_category, "非公開")),
+      ]),
       ]),
     ]
     None -> []
@@ -211,7 +208,7 @@ pub fn view(model: Model) -> element.Element(Msg) {
       if current_user.user_id == model.user_info.user_id -> []
 
     session_t.Authenticated(_, _) -> [
-      div([attribute.class("mt-6 flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50 p-4")], [
+      div([attribute.class("mt-6 flex items-center justify-between gap-4 border-t border-[#dedbd2] py-5")], [
         div([], [
           div([attribute.class("font-semibold text-gray-900")], [text("フレンド")]),
           p([attribute.class("mt-1 text-xs text-gray-600")], [
@@ -221,7 +218,8 @@ pub fn view(model: Model) -> element.Element(Msg) {
         input([
           attribute.type_("checkbox"),
           attribute.checked(model.is_friend),
-          attribute.class("h-5 w-5 accent-blue-600"),
+          attribute.class("h-5 w-5 accent-[#58745a]"),
+          attribute.attribute("aria-label", "フレンド登録"),
           on_check(FriendOnChecked),
         ]),
       ]),
@@ -230,20 +228,10 @@ pub fn view(model: Model) -> element.Element(Msg) {
   }
 
   div(
-    [attribute.class("min-h-screen bg-gray-50 p-4 font-sans sm:p-6")],
+    [attribute.class("bg-[#f7f5f0] px-4 py-6 font-sans sm:px-8 sm:py-10")],
     [
-      div([attribute.class("mx-auto max-w-2xl rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8")], [
-        div([attribute.class("mb-5 flex items-center justify-between")], [
-          h1([attribute.class("text-lg font-semibold text-gray-900")], [text("フレンド詳細")]),
-          span([attribute.class("rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600")], [
-            text("プロフィール"),
-          ]),
-        ]),
-        div([attribute.class("space-y-3")], list.map(model.messages, fn(message) {
-          div([attribute.class("rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700")], [
-            text(message),
-          ])
-        })),
+      div([attribute.class("mx-auto max-w-2xl")], [
+        ui.error_messages(model.messages),
         div([attribute.class("py-4 text-center text-sm text-gray-500")], case model.loading {
           True -> [text("プロフィールを読み込んでいます...")]
           False -> []
@@ -256,7 +244,7 @@ pub fn view(model: Model) -> element.Element(Msg) {
 }
 
 fn profile_row(label: String, value: String) -> element.Element(Msg) {
-  div([attribute.class("rounded-lg bg-gray-50 p-4")], [
+  div([attribute.class("border-b border-[#e2dfd7] py-4")], [
     div([attribute.class("text-xs font-medium text-gray-500")], [text(label)]),
     div([attribute.class("mt-1 break-words text-sm font-semibold text-gray-900")], [text(value)]),
   ])

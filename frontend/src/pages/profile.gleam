@@ -11,6 +11,7 @@ import wrap/api.{type ApiError, ApiError}
 import wrap/user as user_wrap
 import components/input
 import components/btn
+import components/ui
 
 pub type Model {
   Model(
@@ -21,8 +22,13 @@ pub type Model {
     work_category_id: Int,
     is_public: Bool,
     loading: Bool,
-    messages: List(String)
+    messages: List(Message)
   )
+}
+
+pub type Message {
+  ErrorMessage(String)
+  SuccessMessage(String)
 }
 
 pub type Msg {
@@ -89,7 +95,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       )
 
     ProfileLoaded(Error(user_wrap.MyProfileApiErr(ApiError(message)))) ->
-      #(Model(..model, loading: False, messages: [message]), effect.none())
+      #(Model(..model, loading: False, messages: [ErrorMessage(message)]), effect.none())
 
     ProfileSaved(Ok(profile)) ->
       #(
@@ -101,21 +107,21 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           work_category_id: profile.work_category_id,
           is_public: profile.is_public,
           loading: False,
-          messages: ["プロフィールを保存しました"],
+          messages: [SuccessMessage("プロフィールを保存しました")],
         ),
         effect.none(),
       )
 
     ProfileSaved(Error(ApiError(message))) ->
-      #(Model(..model, loading: False, messages: [message]), effect.none())
+      #(Model(..model, loading: False, messages: [ErrorMessage(message)]), effect.none())
   }
 }
 
 pub fn view (model: Model) -> element.Element(Msg) {
   case model.session {
     session.Guest -> {
-      div([attribute.class("flex min-h-screen items-center justify-center bg-gray-50 p-5")], [
-        div([attribute.class("rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm")], [
+      div([attribute.class("flex min-h-screen items-center justify-center bg-[#f7f5f0] p-5")], [
+        div([attribute.class("p-8 text-center")], [
           h1([attribute.class("mb-3 text-xl font-bold text-gray-900")], [text("プロフィール編集")]),
           p([attribute.class("mb-6 text-gray-600")], [text("ログインしてください")]),
           btn.to_home_btn_component(ToHome),
@@ -124,20 +130,21 @@ pub fn view (model: Model) -> element.Element(Msg) {
     }
 
     session.Authenticated(_, _) -> {
-      div([attribute.class("min-h-screen bg-gray-50 p-4 font-sans sm:p-6")], [
+      div([attribute.class("min-h-screen bg-[#f7f5f0] p-4 font-sans sm:p-6")], [
+        div([attribute.class("mb-6")], [button([attribute.class("text-sm font-medium text-[#58745a] hover:underline"), on_click(ToMyPage)], [text("← マイページに戻る")])]),
         div([attribute.class("mx-auto max-w-2xl")], [
           div([attribute.class("mb-5")], [
-            h1([attribute.class("text-2xl font-bold text-gray-900")], [text("プロフィール編集")]),
+            h1([attribute.class("text-2xl font-semibold text-gray-900")], [text("プロフィール編集")]),
             p([attribute.class("mt-1 text-sm text-gray-500")], [
               text("プロフィール情報と公開設定を変更できます"),
             ]),
           ]),
-          div([attribute.class("rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8")], [
+          div([attribute.class("border-t border-[#dedbd2] py-6")], [
             div([attribute.class("space-y-5")], [
               field("名前", input.normal_input(InputName, model.name)),
               field("アイコンURL", input.normal_input(InputIconUrl, model.icon_url)),
               field("自己紹介", input.normal_input(InputBio, model.bio)),
-              div([attribute.class("flex items-center justify-between rounded-lg border border-gray-200 p-4")], [
+              div([attribute.class("flex items-center justify-between border-y border-[#dedbd2] py-4")], [
                 div([], [
                   div([attribute.class("font-semibold text-gray-900")], [text("公開設定")]),
                   p([attribute.class("mt-1 text-xs text-gray-500")], [
@@ -146,8 +153,8 @@ pub fn view (model: Model) -> element.Element(Msg) {
                 ]),
                 button([
                   attribute.class(case model.is_public {
-                    True -> "rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-200"
-                    False -> "rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-200"
+                    True -> "rounded-md bg-[#edf3eb] px-4 py-2 text-sm font-semibold text-[#36553b] transition hover:bg-[#dce8da]"
+                    False -> "rounded-md bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-200"
                   }),
                   on_click(TogglePublic(toggle(model.is_public))),
                 ], [
@@ -155,20 +162,17 @@ pub fn view (model: Model) -> element.Element(Msg) {
                 ]),
               ]),
             ]),
-            div([attribute.class("mt-6 space-y-3")], list.map(model.messages, fn(message) {
-              div([attribute.class("rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700")], [
-                text(message),
-              ])
+            div([attribute.class("mt-6")], list.map(model.messages, fn(message) {
+              case message {
+                ErrorMessage(error) -> ui.error_messages([error])
+                SuccessMessage(success) -> ui.success_messages([success])
+              }
             })),
             div([attribute.class("mt-6 flex flex-col gap-3 sm:flex-row-reverse")], [
               button([
-                attribute.class("rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"),
+                attribute.class("rounded-md bg-[#58745a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#46614a] disabled:cursor-not-allowed disabled:opacity-60"),
                 on_click(SaveClicked),
               ], [text(case model.loading { True -> "保存中..." False -> "プロフィールを保存" })]),
-              button([
-                attribute.class("rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"),
-                on_click(ToMyPage),
-              ], [text("マイページに戻る")]),
             ]),
           ]),
         ]),
@@ -190,5 +194,3 @@ fn toggle(value: Bool) -> Bool {
     False -> True
   }
 }
-
-
