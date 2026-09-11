@@ -74,6 +74,7 @@ services:
       - ./src:/app/src
       - gradle_cache:/root/.gradle
       - app_logs:/var/log/app
+      - avatar_data:/app/data/avatars
     depends_on:
       db:
         condition: service_healthy
@@ -103,3 +104,4 @@ volumes:
   frontend_lustre:
   gradle_cache:
   app_logs:
+  avatar_data:

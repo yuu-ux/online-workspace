@@ -591,12 +591,33 @@ pub fn profile_page_uses_shared_error_message_style_test() {
     work_category_id: 0,
     is_public: True,
     loading: False,
+    avatar_upload_pending: False,
     messages: [profile.ErrorMessage("error")],
   )
 
   profile.view(model)
   |> element.to_string
   |> string.contains("bg-[#fff3f0]")
+  |> should.equal(True)
+}
+
+pub fn profile_page_renders_avatar_file_input_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let model = profile.Model(
+    session: session,
+    name: "Alice",
+    icon_url: "",
+    bio: "",
+    work_category_id: 0,
+    is_public: True,
+    loading: False,
+    avatar_upload_pending: False,
+    messages: [],
+  )
+
+  profile.view(model)
+  |> element.to_string
+  |> string.contains("avatar-file")
   |> should.equal(True)
 }
 

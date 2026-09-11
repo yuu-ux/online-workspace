@@ -263,6 +263,72 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
+  /users/me/avatar:
+    post:
+      tags: [Users]
+      summary: 自分のアイコン画像をアップロードする
+      operationId: uploadMyAvatar
+      security:
+        - sessionAuth: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 2MB以下のPNGまたはJPEG
+      responses:
+        '200':
+          description: アップロードした画像の取得URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvatarResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Users]
+      summary: 自分のアイコン画像を削除する
+      operationId: deleteMyAvatar
+      security:
+        - sessionAuth: []
+          csrfToken: []
+      responses:
+        '204':
+          description: アイコン画像を削除した
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /users/{userId}/avatar:
+    get:
+      tags: [Users]
+      summary: ユーザーのアイコン画像を取得する
+      operationId: getUserAvatar
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: アイコン画像
+          content:
+            image/png: {}
+            image/jpeg: {}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /users/me:
     delete:
       tags: [Users]
@@ -973,6 +1039,15 @@ components:
           format: uri
           maxLength: 500
           nullable: true
+
+    AvatarResponse:
+      type: object
+      required: [iconUrl]
+      properties:
+        iconUrl:
+          type: string
+          maxLength: 500
+          description: 同一originから取得できるアイコン画像URL
 
     UserProfile:
       description: 公開設定に応じたプロフィール。非公開時は名前とアイコン、および閲覧者とのフレンド状態のみ返す。

@@ -4,12 +4,12 @@ import lustre/event.{on_click}
 import lustre/attribute
 import lustre/element
 import lustre/effect
-import lustre/element/html.{button, div, h1, label, p, text}
+import lustre/element/html.{button, div, h1, input, label, p, text}
 
 import types/session.{type Session}
 import wrap/api.{type ApiError, ApiError}
 import wrap/user as user_wrap
-import components/input
+import components/input as input_components
 import components/btn
 import components/ui
 
@@ -22,6 +22,7 @@ pub type Model {
     work_category_id: Int,
     is_public: Bool,
     loading: Bool,
+    avatar_upload_pending: Bool,
     messages: List(Message)
   )
 }
@@ -35,19 +36,19 @@ pub type Msg {
   ToHome
   ToMyPage
   InputName(String)
-  InputIconUrl(String)
   InputBio(String)
   TogglePublic(Bool)
   SaveClicked
   ProfileLoaded(Result(user_wrap.MyProfile, user_wrap.MyProfileErr))
   ProfileSaved(Result(user_wrap.MyProfile, ApiError))
+  AvatarUploaded(Result(String, ApiError))
 }
 
 pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
   #(
     Model(
       session: session, name: "", icon_url: "", bio: "", work_category_id: 0, is_public: True,
-      loading: True, messages: []),
+      loading: True, avatar_upload_pending: False, messages: []),
     user_wrap.get_my_profile(ProfileLoaded)
   )
 }
@@ -62,13 +63,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     InputName(value) -> #(Model(..model, name: value), effect.none())
-    InputIconUrl(value) -> #(Model(..model, icon_url: value), effect.none())
     InputBio(value) -> #(Model(..model, bio: value), effect.none())
     TogglePublic(value) -> #(Model(..model, is_public: value), effect.none())
 
     SaveClicked ->
       #(
-        Model(..model, loading: True, messages: []),
+        Model(..model, loading: True, avatar_upload_pending: user_wrap.has_selected_avatar(), messages: []),
         user_wrap.update_my_profile(
           model.name,
           model.icon_url,
@@ -89,6 +89,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           work_category_id: profile.work_category_id,
           is_public: profile.is_public,
           loading: False,
+          avatar_upload_pending: False,
           messages: [],
         ),
         effect.none(),
@@ -98,21 +99,45 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, loading: False, messages: [ErrorMessage(message)]), effect.none())
 
     ProfileSaved(Ok(profile)) ->
-      #(
-        Model(
-          ..model,
-          name: profile.name,
-          icon_url: profile.icon_url,
-          bio: profile.bio,
-          work_category_id: profile.work_category_id,
-          is_public: profile.is_public,
-          loading: False,
-          messages: [SuccessMessage("プロフィールを保存しました")],
-        ),
-        effect.none(),
-      )
+      case model.avatar_upload_pending {
+        True ->
+          #(
+            Model(
+              ..model,
+              name: profile.name,
+              icon_url: profile.icon_url,
+              bio: profile.bio,
+              work_category_id: profile.work_category_id,
+              is_public: profile.is_public,
+              loading: True,
+              avatar_upload_pending: False,
+              messages: [],
+            ),
+            user_wrap.upload_my_avatar(AvatarUploaded),
+          )
+        False ->
+          #(
+            Model(
+              ..model,
+              name: profile.name,
+              icon_url: profile.icon_url,
+              bio: profile.bio,
+              work_category_id: profile.work_category_id,
+              is_public: profile.is_public,
+              loading: False,
+              messages: [SuccessMessage("プロフィールを保存しました")],
+            ),
+            effect.none(),
+          )
+      }
 
     ProfileSaved(Error(ApiError(message))) ->
+      #(Model(..model, loading: False, avatar_upload_pending: False, messages: [ErrorMessage(message)]), effect.none())
+
+    AvatarUploaded(Ok(icon_url)) ->
+      #(Model(..model, icon_url: icon_url, loading: False, messages: [SuccessMessage("プロフィールを保存しました")]), effect.none())
+
+    AvatarUploaded(Error(ApiError(message))) ->
       #(Model(..model, loading: False, messages: [ErrorMessage(message)]), effect.none())
   }
 }
@@ -141,9 +166,15 @@ pub fn view (model: Model) -> element.Element(Msg) {
           ]),
           div([attribute.class("border-t border-[#dedbd2] py-6")], [
             div([attribute.class("space-y-5")], [
-              field("名前", input.normal_input(InputName, model.name)),
-              field("アイコンURL", input.normal_input(InputIconUrl, model.icon_url)),
-              field("自己紹介", input.normal_input(InputBio, model.bio)),
+              field("名前", input_components.normal_input(InputName, model.name)),
+              field("アイコン", input([
+                attribute.attribute("id", "avatar-file"),
+                attribute.attribute("type", "file"),
+                attribute.attribute("accept", "image/png,image/jpeg"),
+                attribute.class("w-full " <> ui.input_classes() <> " file:mr-3 file:rounded-md file:border-0 file:bg-[#edf3eb] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#36553b]"),
+              ])),
+              p([attribute.class("-mt-3 text-xs text-gray-500")], [text("PNGまたはJPEG、2MB以下。保存時にアップロードします。")]),
+              field("自己紹介", input_components.normal_input(InputBio, model.bio)),
               div([attribute.class("flex items-center justify-between border-y border-[#dedbd2] py-4")], [
                 div([], [
                   div([attribute.class("font-semibold text-gray-900")], [text("公開設定")]),

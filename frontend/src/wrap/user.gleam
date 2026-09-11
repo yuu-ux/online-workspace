@@ -138,6 +138,26 @@ pub fn get_my_profile(
   )
 }
 
+pub fn has_selected_avatar() -> Bool {
+	api.has_selected_file("avatar-file")
+}
+
+pub fn upload_my_avatar(
+	to_msg: fn(Result(String, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+	api.upload_request(
+		"avatar-file",
+		"/api/v1/users/me/avatar",
+		avatar_response_decoder(),
+		to_msg,
+	)
+}
+
+fn avatar_response_decoder() -> decode.Decoder(String) {
+	use icon_url <- decode.field("iconUrl", decode.string)
+	decode.success(icon_url)
+}
+
 fn my_profile_decoder() -> decode.Decoder(MyProfile) {
   use name <- decode.field("name", decode.string)
   use icon_url <- decode.optional_field("iconUrl", option.None, decode.optional(decode.string))
