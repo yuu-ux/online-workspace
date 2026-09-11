@@ -34,7 +34,7 @@ pub fn view(_model: Model) -> element.Element(Msg) {
       ]),
       div([class("space-y-4")], [
         section("1. 適用", [
-          "この利用規約（以下「本規約」といいます。）は、42 Tokyo（以下「運営者」といいます。）が提供するオンラインコミュニケーションサービス（以下「本サービス」といいます。）の利用条件を定めるものです。",
+          "この利用規約（以下「本規約」といいます。）は、online-workspace 開発チーム（以下「運営者」といいます。）が提供するオンラインコミュニケーションサービス（以下「本サービス」といいます。）の利用条件を定めるものです。",
           "ユーザーは、本規約に同意したうえで本サービスを利用してください。",
         ]),
         section("2. アカウント", [
@@ -79,7 +79,7 @@ pub fn view(_model: Model) -> element.Element(Msg) {
           "本規約は日本法に準拠します。本サービスまたは本規約に関して紛争が生じた場合は、法令に従って解決します。",
         ]),
         section("11. 問い合わせ窓口", [
-          "運営者: 42 Tokyo / 問い合わせ先: kisaragi.12056 at gmail.com",
+          "運営者: online-workspace 開発チーム / 問い合わせ先: kisaragi.12056 at gmail.com",
         ]),
       ]),
       div([class("mt-8")], [btn.to_home_btn_component(ToHome)]),
