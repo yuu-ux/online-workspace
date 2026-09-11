@@ -110,7 +110,7 @@ class ProfileControllerIntegrationTests {
 			.andExpect(status().isUnprocessableEntity())
 			.andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
 			.andExpect(jsonPath("$.fieldErrors[0].field").value("iconUrl"))
-			.andExpect(jsonPath("$.fieldErrors[0].message").value("アイコンURLはhttpsで入力してください。"));
+			.andExpect(jsonPath("$.fieldErrors[0].message").value("アイコン情報はhttpsで入力してください。"));
 	}
 
 	@Test

@@ -132,7 +132,7 @@ pub fn view (model: Model) -> element.Element(Msg) {
         text("プロフィール編集"),
         div([], [text("名前")]),
         input.normal_input(InputName, model.name),
-        div([], [text("アイコンURL")]),
+        div([], [text("アイコン情報")]),
         input.normal_input(InputIconUrl, model.icon_url),
         div([], [text("自己紹介")]),
         input.normal_input(InputBio, model.bio),
