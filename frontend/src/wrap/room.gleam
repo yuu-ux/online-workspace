@@ -87,6 +87,7 @@ fn rooms_decoder() -> decode.Decoder(List(RoomInfo)) {
 pub fn room_info_decoder() -> decode.Decoder(RoomInfo) {
   use id <- decode.field("id", decode.int)
   use name <- decode.field("name", decode.string)
+  use description <- decode.field("description", decode.string)
   use category_id <- decode.field(
     "category",
     category_id_decoder(),
@@ -104,6 +105,7 @@ pub fn room_info_decoder() -> decode.Decoder(RoomInfo) {
   use created_at <- decode.field("createdAt", decode.string)
   decode.success(RoomInfo(
     roomname: RoomNameType(name),
+    description: DescriptionType(description),
     visibility: Public,
     category: category_from_id(category_id),
     work_style: case work_style {

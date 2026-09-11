@@ -3,7 +3,7 @@ import gleam/list
 import gleam/option.{type Option, Some}
 import lustre/attribute.{aria_disabled, class, disabled}
 import lustre/element.{text}
-import lustre/element/html.{button, div, span, h3}
+import lustre/element/html.{button, div, span, h3, p}
 import lustre/event.{on_click}
 
 import types/room.{
@@ -11,6 +11,7 @@ import types/room.{
   type WorkStyleType,
   type RoomId,
   RoomNameType,
+  DescriptionType,
   CasualChat,
   Quiet,
 }
@@ -40,6 +41,9 @@ fn room_card(room_info: RoomInfo, to_room: fn(RoomId) -> a) -> element.Element(a
   let room_name_str = case room_info.roomname {
     RoomNameType(a) -> a
   }
+  let room_description_str = case room_info.description {
+    DescriptionType(description) -> description
+  }
 
   div(
     // カード全体のスタイル：白背景、角丸、薄い影、ホバーで少し浮き上がるアニメーション
@@ -49,6 +53,9 @@ fn room_card(room_info: RoomInfo, to_room: fn(RoomId) -> a) -> element.Element(a
       div([class("min-w-0 space-y-2")], [
         h3([class("break-words text-lg font-semibold text-slate-900")], [
           text(room_name_str)
+        ]),
+        p([class("break-words text-sm leading-relaxed text-[#6f6a61]")], [
+          text(room_description_str)
         ]),
         div([class("flex flex-wrap items-center gap-3 text-sm text-[#6f6a61]")], [
           text(work_style_to_string(room_info.work_style)),

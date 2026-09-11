@@ -165,6 +165,7 @@ pub fn home_member_count_event_updates_room_member_count_test() {
     rooms: [
       room_t.RoomInfo(
         roomname: room_t.RoomNameType("Room"),
+        description: room_t.DescriptionType("Description"),
         visibility: room_t.Public,
         category: room_t.Cat1,
         work_style: room_t.Quiet,
@@ -200,6 +201,7 @@ pub fn home_duplicate_member_count_events_are_idempotent_test() {
     rooms: [
       room_t.RoomInfo(
         roomname: room_t.RoomNameType("Room"),
+        description: room_t.DescriptionType("Description"),
         visibility: room_t.Public,
         category: room_t.Cat1,
         work_style: room_t.Quiet,
@@ -730,6 +732,7 @@ pub fn full_room_does_not_transition_from_home_test() {
     rooms: [
       room_t.RoomInfo(
         roomname: room_t.RoomNameType("Full room"),
+        description: room_t.DescriptionType("Description"),
         visibility: room_t.Public,
         category: room_t.Cat1,
         work_style: room_t.Quiet,

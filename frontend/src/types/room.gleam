@@ -33,6 +33,7 @@ pub type RoomId {
 pub type RoomInfo {
   RoomInfo(
     roomname: RoomNameType,
+    description: DescriptionType,
     visibility: VisibilityType,
     category: CategoryType,
     work_style: WorkStyleType,

@@ -54,6 +54,7 @@ pub fn room_list_decodes_joinability_and_metadata_test() {
     Ok(info) -> {
       info.current_members |> should.equal(2)
       info.max_number_of_member |> should.equal(4)
+      info.description |> should.equal(room_t.DescriptionType("静かに作業します"))
       info.joinable |> should.equal(True)
       info.created_at |> should.equal("2026-09-10T00:00:00Z")
     }
@@ -64,6 +65,7 @@ pub fn room_list_decodes_joinability_and_metadata_test() {
 pub fn full_room_is_rendered_as_unavailable_test() {
   let info = room_t.RoomInfo(
     roomname: room_t.RoomNameType("満員ルーム"),
+    description: room_t.DescriptionType("説明文"),
     visibility: room_t.Public,
     category: room_t.Cat1,
     work_style: room_t.Quiet,
@@ -80,6 +82,7 @@ pub fn full_room_is_rendered_as_unavailable_test() {
   |> element.to_string
   |> fn(html) {
     html |> string.contains("満員のため入室できません") |> should.equal(True)
+    html |> string.contains("説明文") |> should.equal(True)
     html |> string.contains("2026-09-10 09:00") |> should.equal(True)
   }
 }
