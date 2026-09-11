@@ -1,5 +1,5 @@
 import gleam/list
-import lustre/attribute.{class, placeholder, type_, value}
+import lustre/attribute.{attribute, class, placeholder, type_, value}
 import lustre/element.{type Element, text}
 import lustre/element/html.{div, h2, input, label, p, select, textarea, option}
 import lustre/event.{on_input}
@@ -67,6 +67,8 @@ pub fn number_input(
     label([class("mb-1 block text-sm font-medium text-slate-700")], [text(label_text)]),
     input([
       type_("number"),
+      attribute("min", "2"),
+      attribute("max", "12"),
       value(current_value),
       on_input(on_change),
       class("w-full " <> input_classes())

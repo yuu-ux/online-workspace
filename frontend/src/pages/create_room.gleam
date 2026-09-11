@@ -64,6 +64,10 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
   )
 }
 
+fn valid_member_limit(value: Int) -> Bool {
+  value >= 2 && value <= 12
+}
+
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     ToHome -> {
@@ -123,17 +127,23 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let max_number_of_member = int.parse(model.current_maxnumofmember_input)
 
       case work_style, max_number_of_member {
-        Ok(work_style), Ok(max_members) -> #(
-          Model(..model, messages: []),
-          create_room(
-            room_name,
-            description,
-            Cat1,
-            work_style,
-            max_members,
-            RoomCreated,
-          ),
-        )
+        Ok(work_style), Ok(max_members) -> {
+          case valid_member_limit(max_members) {
+            True -> #(
+              Model(..model, messages: []),
+              create_room(
+                room_name,
+                description,
+                Cat1,
+                work_style,
+                max_members,
+                RoomCreated,
+              ),
+            )
+            False ->
+              #(Model(..model, messages: ["入力内容を確認してください"]), effect.none())
+          }
+        }
         _, _ ->
           #(Model(..model, messages: ["入力内容を確認してください"]), effect.none())
       }
