@@ -61,4 +61,7 @@ docker/nginx/certs/
 ### Codex worktrees ###
 .codex/worktrees/
 
+### Environment configuration ###
 .env
+.env.*
+!.env.sample

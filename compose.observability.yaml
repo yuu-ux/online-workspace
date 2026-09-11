@@ -8,7 +8,7 @@ services:
       - elasticsearch_data:/usr/share/elasticsearch/data
       - elasticsearch_certs:/usr/share/elasticsearch/config/certs
     ports:
-      - "9200:9200"
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
     healthcheck:
       test:
         [
@@ -66,7 +66,7 @@ services:
       ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}
       ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: /usr/share/kibana/config/certs/http_ca.crt
     ports:
-      - "5601:5601"
+      - "${KIBANA_PORT:-5601}:5601"
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -77,9 +77,9 @@ services:
     image: prom/prometheus:v3.14.0
     command:
       - --config.file=/etc/prometheus/prometheus.yaml
-      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - ./docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
       - prometheus_data:/prometheus

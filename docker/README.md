@@ -8,14 +8,18 @@ CA検証付きHTTPSでElasticsearchへ接続します。`ELASTIC_PASSWORD` は�
 スナップショットを取得する運用を別途用意してください。このCompose設定は
 外部オブジェクトストレージへのアーカイブを自動では行いません。
 
-## 1. Elasticsearchのパスワードを設定する
+## 1. 環境変数を設定する
 
-`.env` に十分に強いパスワードを設定し、Composeへ読み込ませます。
+プロジェクトルートで `.env.sample` を `.env` にコピーし、コメントを確認しながら
+すべての `change-this-*` を変更します。
 
 ```bash
-printf 'ELASTIC_PASSWORD=%s\n' '<strong-password>' >> .env
+cp .env.sample .env
+# .envを編集して、パスワードとAPIキーを変更する
 set -a && source .env && set +a
 ```
+
+`.env` はGit管理対象外です。実際のパスワードやAPIキーをコミットしないでください。
 
 ## 2. Composeを起動する
 
@@ -36,8 +40,7 @@ docker compose \
 Elasticsearch検索、Kibanaヘルスを順に確認します。
 
 ```bash
-ELASTIC_PASSWORD='<strong-password>' \
-  bash scripts/tests/172/elk_validation.sh
+bash scripts/tests/172/elk_validation.sh
 ```
 
 ## 4. Kibanaでログを検索する

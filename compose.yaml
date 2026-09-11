@@ -4,8 +4,8 @@ services:
     container_name: online-workspace-proxy
     restart: unless-stopped
     ports:
-      - "8088:80"
-      - "8443:443"
+      - "${PROXY_HTTP_PORT:-8088}:80"
+      - "${PROXY_HTTPS_PORT:-8443}:443"
     volumes:
       - ./docker/nginx/config:/etc/nginx/conf.d:ro
       - ./docker/nginx/certs:/etc/nginx/tls:ro
@@ -19,7 +19,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     container_name: online-workspace-frontend
     working_dir: /app
     user: "0:0"
@@ -44,7 +44,7 @@ services:
     container_name: online-workspace-ws-mock
     working_dir: /app
     ports:
-      - "8081:8081"
+      - "${WS_MOCK_PORT:-8081}:8081"
     volumes:
       - ./mock-server:/app
     command: run --allow-net server.ts
@@ -57,13 +57,13 @@ services:
     ports:
       - "${BACKEND_HOST_PORT:-8080}:8080"
     environment:
-      DB_URL: jdbc:postgresql://db:5432/postgres
-      DB_USERNAME: postgres
-      DB_PASSWORD: password
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-postgres}
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       SESSION_COOKIE_HTTP_ONLY: ${SESSION_COOKIE_HTTP_ONLY:-true}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       SESSION_COOKIE_SAME_SITE: ${SESSION_COOKIE_SAME_SITE:-lax}
-      MANAGEMENT_API_KEY: ${MANAGEMENT_API_KEY:-}
+      MANAGEMENT_API_KEY: ${MANAGEMENT_API_KEY:?MANAGEMENT_API_KEY is required}
       LOGGING_FILE_NAME: /var/log/app/application.log
     volumes:
       - ./build.gradle:/app/build.gradle:ro
@@ -83,15 +83,19 @@ services:
     container_name: online-workspace-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

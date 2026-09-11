@@ -37,20 +37,23 @@ controllers/
 
 ### Docker Compose で起動
 
-開発時は proxy / backend / frontend / db / maildev をまとめて起動できます。
+初回は `.env.sample` をコピーし、パスワードとAPIキーを変更してください。
+`.env` はGit管理対象外です。
 
 ```bash
+cp .env.sample .env
+# .envを編集して、change-this-* の値を変更する
 ./scripts/generate-local-tls.sh
 docker compose up
 ```
 
 起動後のURL:
 
-- Proxy: https://localhost:8443（自己署名証明書）
-- HTTP redirect: http://localhost:8088
-- Backend: http://localhost:8080
+- Proxy: https://localhost:${PROXY_HTTPS_PORT:-8443}（自己署名証明書）
+- HTTP redirect: http://localhost:${PROXY_HTTP_PORT:-8088}
+- Backend: http://localhost:${BACKEND_HOST_PORT:-8080}
 - MailDev: http://localhost:1080
-- PostgreSQL: localhost:5432
+- PostgreSQL: localhost:${POSTGRES_HOST_PORT:-5432}
 
 コンテナ構成:
 
@@ -65,10 +68,10 @@ HTTPS / WSS、Cookie、CSRF、CORS、セキュリティヘッダー、監査ロ�
 
 ### Backend 単体で起動
 
-1. PostgreSQL を起動し、接続情報を環境変数で設定します（未設定時はデフォルト値を利用）。
+1. PostgreSQL を起動し、接続情報を環境変数で設定します。Composeを使う場合は `.env` の値が使われます。
    - `DB_URL` (default: `jdbc:postgresql://localhost:5432/postgres`)
    - `DB_USERNAME` (default: `postgres`)
-   - `DB_PASSWORD` (default: `password`)
+   - `DB_PASSWORD` (`.env` の `POSTGRES_PASSWORD`)
    - `MAIL_HOST` (default: `localhost`)
    - `MAIL_PORT` (default: `1025`)
 2. アプリを起動します。
@@ -103,11 +106,11 @@ Prometheus形式では各メトリクス名のドットがアンダースコア�
 
 ### Prometheus / Grafana
 
-監視構成は API キーと Grafana 管理者パスワードを設定して起動します。
+監視構成は `.env` の `MANAGEMENT_API_KEY` と `GRAFANA_ADMIN_PASSWORD` を使用します。
 
 ```bash
-MANAGEMENT_API_KEY="change-me" GRAFANA_ADMIN_PASSWORD="change-me" \
-  docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
+set -a && source .env && set +a
+docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
 ```
 
 起動後のURL:
