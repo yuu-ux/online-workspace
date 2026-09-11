@@ -1,119 +1,23 @@
-# ELK 起動・ログ確認手順
+# ELK 起動・検証手順
 
-## 1. コンテナを起動する
+この構成では、Elasticsearchが生成するHTTP CAを共有し、LogstashとKibanaが
+CA検証付きHTTPSでElasticsearchへ接続します。`ELASTIC_PASSWORD` は必須です。
 
-```bash
-docker compose \
-  -f compose.yaml \
-  -f compose.observability.yaml \
-  up -d
-```
+ログは `online-workspace-*` に保存され、ILMで30日後に削除されます。30日を超えて
+保存する必要がある場合は、削除前にElasticsearch Snapshot Repositoryへ
+スナップショットを取得する運用を別途用意してください。このCompose設定は
+外部オブジェクトストレージへのアーカイブを自動では行いません。
 
-## 2. Elasticsearch のパスワードを確認・設定する
+## 1. Elasticsearchのパスワードを設定する
 
-Elasticsearch 初回起動時に、`elastic` ユーザーのパスワードがログへ出力されます。
-
-まず、Elasticsearch のログからパスワードを確認します。
+`.env` に十分に強いパスワードを設定し、Composeへ読み込ませます。
 
 ```bash
-docker compose \
-  -f compose.observability.yaml \
-  logs elasticsearch
-```
-
-パスワードが確認できない場合は、以下のコマンドで `elastic` ユーザーのパスワードを再設定します。
-
-```bash
-docker compose \
-  -f compose.observability.yaml \
-  exec elasticsearch \
-  bin/elasticsearch-reset-password -u elastic
-```
-
-表示されたパスワードを `.env` に設定します。
-
-```env
-ELASTIC_PASSWORD=<elastic ユーザーのパスワード>
-```
-
-## 3. `.env` を環境変数として読み込む
-
-```bash
+printf 'ELASTIC_PASSWORD=%s\n' '<strong-password>' >> .env
 set -a && source .env && set +a
 ```
 
-読み込めていることを確認します。
-
-```bash
-echo "$ELASTIC_PASSWORD"
-```
-
-## 4. Logstash を再起動する
-
-Logstash は `ELASTIC_PASSWORD` を使用して Elasticsearch に接続するため、パスワード設定後に Logstash を再作成します。
-
-```bash
-docker compose \
-  -f compose.yaml \
-  -f compose.observability.yaml \
-  up -d --force-recreate logstash
-```
-
-## 5. Elasticsearch にログが保存されていることを確認する
-
-```bash
-curl -k \
-  -u elastic:"$ELASTIC_PASSWORD" \
-  'https://localhost:9200/_cat/indices?v'
-```
-
-以下のような `online-workspace-*` の index が存在すれば、ログが Elasticsearch に保存されています。
-
-```text
-online-workspace-2026.08.20
-```
-
-## 6. Kibana の初期設定を行う
-
-Kibana が未設定の場合のみ、enrollment token を生成します。
-
-```bash
-docker compose \
-  -f compose.observability.yaml \
-  exec elasticsearch \
-  bin/elasticsearch-create-enrollment-token --scope kibana
-```
-
-生成された token を Kibana の初期設定画面に入力します。
-
-```text
-http://localhost:5601
-```
-
-## 7. Kibana にログインする
-
-```text
-ユーザー名: elastic
-パスワード: .env の ELASTIC_PASSWORD
-```
-
-## 8. Kibana でログを確認する
-
-Kibana の **Discover** を開きます。
-
-Data View が未作成の場合は、以下のパターンで作成します。
-
-```text
-online-workspace-*
-```
-
-作成後、Discover からアプリケーションログを確認できます。
-
-## 補足
-
-`elasticsearch_data` volume が残っている場合、Elasticsearch のパスワードや Kibana の初期設定は基本的に保持されます。
-
-その場合、次回以降は以下のコマンドで起動するだけで確認できます。
+## 2. Composeを起動する
 
 ```bash
 docker compose \
@@ -122,8 +26,33 @@ docker compose \
   up -d
 ```
 
-Kibana:
+`elk-policy` がILMポリシーとインデックステンプレートを登録します。
+既存の `elasticsearch_data` volume を使う場合、パスワードは初回作成時の値が
+維持されるため、`.env` と一致させてください。
 
-```text
-http://localhost:5601
+## 3. 自動検証を実行する
+
+以下は認証、TLS、ILMポリシー、アプリケーションログのLogstash転送、
+Elasticsearch検索、Kibanaヘルスを順に確認します。
+
+```bash
+ELASTIC_PASSWORD='<strong-password>' \
+  bash scripts/tests/172/elk_validation.sh
+```
+
+## 4. Kibanaでログを検索する
+
+`http://localhost:5601` を開き、ユーザー `elastic` と `ELASTIC_PASSWORD` で
+ログインします。DiscoverでData View `online-workspace-*` を作成し、検証スクリプト
+が表示した `elk-validation-...` を検索してください。
+
+## 補足
+
+初回設定後は、以下の起動だけで構成を再利用できます。
+
+```bash
+docker compose \
+  -f compose.yaml \
+  -f compose.observability.yaml \
+  up -d
 ```

@@ -3,27 +3,75 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.1
     environment:
       discovery.type: single-node
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+      - elasticsearch_certs:/usr/share/elasticsearch/config/certs
     ports:
       - "9200:9200"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail --silent --cacert /usr/share/elasticsearch/config/certs/http_ca.crt -u elastic:$${ELASTIC_PASSWORD} https://localhost:9200/_cluster/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   logstash:
     image: docker.elastic.co/logstash/logstash:9.5.1
     environment:
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}
     volumes:
       - ./docker/elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
       - app_logs:/var/log/app:ro
+      - logstash_data:/usr/share/logstash/data
+      - elasticsearch_certs:/usr/share/logstash/config/certs:ro
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
+
+  elk-policy:
+    image: curlimages/curl:8.16.0
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}
+    volumes:
+      - ./docker/elk/elasticsearch:/config:ro
+      - elasticsearch_certs:/certs:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        curl --fail --silent --show-error \
+          --cacert /certs/http_ca.crt \
+          -u "elastic:$${ELASTIC_PASSWORD}" \
+          -X PUT https://elasticsearch:9200/_ilm/policy/online-workspace-logs \
+          -H 'Content-Type: application/json' \
+          --data-binary @/config/ilm-policy.json
+        curl --fail --silent --show-error \
+          --cacert /certs/http_ca.crt \
+          -u "elastic:$${ELASTIC_PASSWORD}" \
+          -X PUT https://elasticsearch:9200/_index_template/online-workspace-logs \
+          -H 'Content-Type: application/json' \
+          --data-binary @/config/index-template.json
 
   kibana:
     image: docker.elastic.co/kibana/kibana:9.5.1
+    environment:
+      ELASTICSEARCH_HOSTS: https://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}
+      ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: /usr/share/kibana/config/certs/http_ca.crt
     ports:
       - "5601:5601"
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - elasticsearch_certs:/usr/share/kibana/config/certs:ro
 
   prometheus:
     image: prom/prometheus:v3.14.0
@@ -66,5 +114,7 @@ secrets:
 
 volumes:
   elasticsearch_data:
+  elasticsearch_certs:
+  logstash_data:
   prometheus_data:
   grafana_data:
