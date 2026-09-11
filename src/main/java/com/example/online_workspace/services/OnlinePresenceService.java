@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+import com.example.online_workspace.repositories.FriendRepository;
+import com.example.online_workspace.repositories.FriendRepository.FriendPresenceRecipient;
 import com.example.online_workspace.repositories.RoomMembershipRepository;
 import com.example.online_workspace.repositories.RoomMembershipRepository.ActivePresence;
 import com.example.online_workspace.models.RoomMember;
@@ -27,13 +29,16 @@ public class OnlinePresenceService {
 	private final Map<String, String> usersBySession = new ConcurrentHashMap<>();
 	private final Map<String, Set<String>> sessionsByUser = new ConcurrentHashMap<>();
 	private final RoomMembershipRepository repository;
+	private final FriendRepository friendRepository;
 	private final SimpMessagingTemplate messagingTemplate;
 
 	public OnlinePresenceService(
 		RoomMembershipRepository repository,
+		FriendRepository friendRepository,
 		SimpMessagingTemplate messagingTemplate
 	) {
 		this.repository = repository;
+		this.friendRepository = friendRepository;
 		this.messagingTemplate = messagingTemplate;
 	}
 
@@ -54,6 +59,7 @@ public class OnlinePresenceService {
 			}
 		}
 		if (addSession(email, sessionId)) {
+			publishFriendPresence(email, true);
 			publish(email, "room:user_joined", true);
 		}
 	}
@@ -63,6 +69,7 @@ public class OnlinePresenceService {
 	public void disconnected(SessionDisconnectEvent event) {
 		String email = usersBySession.remove(event.getSessionId());
 		if (email != null && removeSession(email, event.getSessionId())) {
+			publishFriendPresence(email, false);
 			ActivePresence presence = repository.findActivePresence(email);
 			RoomMember member = presence == null
 				? null
@@ -83,6 +90,19 @@ public class OnlinePresenceService {
 	public boolean isOnline(String email) {
 		return email != null && !email.isBlank()
 			&& sessionsByUser.containsKey(EmailNormalizer.normalize(email));
+	}
+
+	private void publishFriendPresence(String email, boolean online) {
+		for (FriendPresenceRecipient recipient : friendRepository.findActiveFriendPresenceRecipients(email)) {
+			messagingTemplate.convertAndSendToUser(
+				recipient.recipientEmail(),
+				"/queue/friends/presence",
+				new FriendPresenceEvent(
+					"friend:presence_changed",
+					new FriendPresence(recipient.sourceUserId(), online)
+				)
+			);
+		}
 	}
 
 	public void publishRoomLeft(String email, long roomId, long userId, RoomMember member) {
@@ -192,6 +212,12 @@ public class OnlinePresenceService {
 	}
 
 	public record RoomPresenceEvent(String type, RoomPresence payload) {
+	}
+
+	public record FriendPresence(long userId, boolean online) {
+	}
+
+	public record FriendPresenceEvent(String type, FriendPresence payload) {
 	}
 
 	public record RoomMemberCount(long roomId, int currentMembers) {

@@ -2,6 +2,7 @@ let socket = null;
 let messageDispatch = null;
 let desiredRoomIds = [];
 let desiredChatRoomId = null;
+let desiredFriendPresence = false;
 let activeSubscriptionIds = new Set();
 
 function sockFrame(stompFrame) {
@@ -57,6 +58,21 @@ function subscribeRoomCreated(connection) {
   activeSubscriptionIds.add(id);
 }
 
+function subscribeFriendPresence(connection) {
+  const id = "sub-friend-presence";
+  connection.send(
+    sockFrame(
+      stompFrame([
+        "SUBSCRIBE",
+        `id:${id}`,
+        "destination:/user/queue/friends/presence",
+        "ack:auto",
+      ])
+    )
+  );
+  activeSubscriptionIds.add(id);
+}
+
 function applySubscriptions(connection) {
   activeSubscriptionIds.forEach((id) => {
     connection.send(sockFrame(stompFrame(["UNSUBSCRIBE", `id:${id}`])));
@@ -65,10 +81,11 @@ function applySubscriptions(connection) {
 
   if (desiredChatRoomId !== null) {
     subscribeChat(connection, desiredChatRoomId);
-  } else {
+  } else if (desiredRoomIds.length > 0) {
     subscribeRoomCreated(connection);
   }
   desiredRoomIds.forEach((roomId) => subscribePresence(connection, roomId));
+  if (desiredFriendPresence) subscribeFriendPresence(connection);
 }
 
 function parseSockJsMessages(raw) {
@@ -182,21 +199,39 @@ function parseStompRoomCreatedMessage(frame) {
   }
 }
 
-function open_ws(roomIds, chatRoomId, dispatch) {
+function parseStompFriendPresenceMessage(frame) {
+  const separator = frame.indexOf("\n\n");
+  if (separator < 0) return null;
+
+  const bodyWithNull = frame.slice(separator + 2);
+  const body = bodyWithNull.endsWith("\0")
+    ? bodyWithNull.slice(0, -1)
+    : bodyWithNull;
+
+  try {
+    const event = JSON.parse(body);
+    if (event.type !== "friend:presence_changed" || !event.payload) return null;
+    return JSON.stringify({
+      type: "friend_presence",
+      user_id: event.payload.userId,
+      online: event.payload.online,
+    });
+  } catch (_) {
+    return null;
+  }
+}
+
+function open_ws(roomIds, chatRoomId, dispatch, friendPresence = false) {
   messageDispatch = dispatch;
   desiredRoomIds = [...new Set(roomIds)];
   desiredChatRoomId = chatRoomId;
+  desiredFriendPresence = friendPresence;
   if (
     socket &&
     (socket.readyState === WebSocket.CONNECTING ||
       socket.readyState === WebSocket.OPEN)
   ) {
-    if (socket.readyState === WebSocket.OPEN && chatRoomId !== null) {
-      subscribeChat(socket, chatRoomId);
-      subscribePresence(socket, chatRoomId);
-    } else if (socket.readyState === WebSocket.OPEN) {
-      roomIds.forEach((roomId) => subscribePresence(socket, roomId));
-    }
+    if (socket.readyState === WebSocket.OPEN) applySubscriptions(socket);
     return;
   }
 
@@ -237,10 +272,15 @@ function open_ws(roomIds, chatRoomId, dispatch) {
           parsed === null && presence === null && memberCount === null
             ? parseStompRoomCreatedMessage(frame)
             : null;
+        const friendPresence =
+          parsed === null && presence === null && memberCount === null && roomCreated === null
+            ? parseStompFriendPresenceMessage(frame)
+            : null;
         if (parsed !== null && messageDispatch !== null) messageDispatch(parsed);
         if (presence !== null && messageDispatch !== null) messageDispatch(presence);
         if (memberCount !== null && messageDispatch !== null) messageDispatch(memberCount);
         if (roomCreated !== null && messageDispatch !== null) messageDispatch(roomCreated);
+        if (friendPresence !== null && messageDispatch !== null) messageDispatch(friendPresence);
       }
     }
   };
@@ -256,6 +296,10 @@ export function connect_ws(roomId, dispatch) {
 
 export function connect_room_list(roomIdsJson, dispatch) {
   open_ws(JSON.parse(roomIdsJson), null, dispatch);
+}
+
+export function connect_friend_presence(dispatch) {
+  open_ws([], null, dispatch, true);
 }
 
 export function send_ws(message) {
@@ -275,5 +319,6 @@ export function close_ws() {
   messageDispatch = null;
   desiredRoomIds = [];
   desiredChatRoomId = null;
+  desiredFriendPresence = false;
   activeSubscriptionIds.clear();
 }

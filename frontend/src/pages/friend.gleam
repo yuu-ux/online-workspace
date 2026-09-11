@@ -10,18 +10,19 @@ import lustre/attribute
 import lustre/element
 import lustre/effect
 import gleam/io
-import lustre/element/html.{button, div, h1, h2, img, input, p, text}
+import lustre/element/html.{button, div, h1, h2, img, input, p, span, text}
 
-import types/user.{type UserInfo, type UserId} as user_t
+import types/user.{FriendInfo, type FriendInfo, type UserInfo, type UserId} as user_t
 import types/session.{type Session, Guest, Authenticated}
 
 import wrap/api.{type ApiError, ApiError}
 import wrap/user.{get_friends_with_icons}
+import wrap/room.{connect_to_friend_presence, friend_presence_from_json}
 
 pub type Model {
   Model(
     session: Session,
-    friends: List(UserInfo),
+    friends: List(FriendInfo),
     icons: List(#(UserInfo, String)),
     search_word: String,
     messages: List(String)
@@ -35,7 +36,9 @@ pub type Msg {
   SearchInputChanged(String)
   SearchSubmitted
   FriendsLoaded(Result(List(UserInfo), ApiError))
-  ProfilesLoaded(Result(List(#(UserInfo, String)), ApiError))
+  ProfilesLoaded(Result(List(#(FriendInfo, String)), ApiError))
+  FriendWsMessage(String)
+  FriendPresenceChanged(UserId, Bool)
   IconFailed(UserId)
 }
 
@@ -58,7 +61,10 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
           icons: [],
           search_word: "",
           messages: []),
-        get_friends_with_icons(ProfilesLoaded),
+        effect.batch([
+          get_friends_with_icons(ProfilesLoaded),
+          connect_to_friend_presence(FriendWsMessage),
+        ]),
       )
     }
   }
@@ -68,8 +74,31 @@ pub fn init(session: Session) -> #(Model, effect.Effect(Msg)) {
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     ProfilesLoaded(Ok(profiles)) ->
-      #(Model(..model, friends: list.map(profiles, fn(item) { item.0 }), icons: profiles, messages: []), effect.none())
+      #(
+        Model(
+          ..model,
+          friends: list.map(profiles, fn(item) { item.0 }),
+          icons: list.map(profiles, fn(item) { #(item.0.user, item.1) }),
+          messages: [],
+        ),
+        effect.none(),
+      )
     ProfilesLoaded(Error(error)) -> update(model, FriendsLoaded(Error(error)))
+    FriendWsMessage(message) ->
+      case friend_presence_from_json(message) {
+        Ok(presence) -> update(model, FriendPresenceChanged(presence.user_id, presence.online))
+        Error(_) -> #(model, effect.none())
+      }
+    FriendPresenceChanged(user_id, online) ->
+      #(
+        Model(..model, friends: list.map(model.friends, fn(friend) {
+          case friend.user.user_id == user_id {
+            True -> FriendInfo(friend.user, online)
+            False -> friend
+          }
+        })),
+        effect.none(),
+      )
     IconFailed(id) ->
       #(Model(..model, icons: list.map(model.icons, fn(item) {
         case item.0.user_id == id {
@@ -98,7 +127,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     FriendsLoaded(Ok(friends)) -> {
-      #(Model(..model, friends: friends, messages: []), effect.none())
+      #(
+        Model(..model, friends: list.map(friends, fn(user) { FriendInfo(user, False) }), messages: []),
+        effect.none(),
+      )
     }
 
     FriendsLoaded(Error(ApiError(message))) -> {
@@ -171,13 +203,13 @@ fn search_form(search_word: String) -> element.Element(Msg) {
   ])
 }
 
-fn span_count(friends: List(UserInfo)) -> element.Element(Msg) {
+fn span_count(friends: List(FriendInfo)) -> element.Element(Msg) {
   div([attribute.class("text-sm text-[#6f6a61]")], [
     text(int.to_string(list.length(friends)) <> " / 50人"),
   ])
 }
 
-fn friend_list(friends: List(UserInfo), icons: List(#(UserInfo, String))) -> element.Element(Msg) {
+fn friend_list(friends: List(FriendInfo), icons: List(#(UserInfo, String))) -> element.Element(Msg) {
   case friends {
     [] ->
       div([attribute.class("border-y border-[#dedbd2] py-12 text-center")], [
@@ -192,20 +224,37 @@ fn friend_list(friends: List(UserInfo), icons: List(#(UserInfo, String))) -> ele
           div([attribute.class("flex items-center justify-between border-b border-[#dedbd2] py-4")], [
             div([attribute.class("flex min-w-0 items-center gap-3")], [
               div([attribute.class("h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-200")], {
-                let url = icons |> list.find(fn(item) { item.0.user_id == friend.user_id }) |> result.map(fn(item) { item.1 }) |> result.unwrap("")
+                let url = icons |> list.find(fn(item) { item.0.user_id == friend.user.user_id }) |> result.map(fn(item) { item.1 }) |> result.unwrap("")
                 case url {
                   "" -> []
-                  _ -> [img([attribute.src(url), attribute.alt(""), attribute.class("h-full w-full object-cover"), on("error", decode.success(IconFailed(friend.user_id)))])]
+                  _ -> [img([attribute.src(url), attribute.alt(""), attribute.class("h-full w-full object-cover"), on("error", decode.success(IconFailed(friend.user.user_id)))])]
                 }
               }),
-              div([attribute.class("break-words font-medium text-gray-900")], [text(friend.name)]),
+              div([attribute.class("min-w-0")], [
+                div([attribute.class("break-words font-medium text-gray-900")], [text(friend.user.name)]),
+                span([attribute.class(status_classes(friend.online))], [text(status_label(friend.online))]),
+              ]),
             ]),
             button([
               attribute.class(btn.navigation_button_classes() <> " px-3 py-1.5 text-xs"),
-              on_click(ToUserInfo(friend)),
+              on_click(ToUserInfo(friend.user)),
             ], [text("詳細を見る")]),
           ])
         })),
       ])
+  }
+}
+
+fn status_classes(online: Bool) -> String {
+  case online {
+    True -> "text-xs text-[#58745a]"
+    False -> "text-xs text-[#8a857c]"
+  }
+}
+
+fn status_label(online: Bool) -> String {
+  case online {
+    True -> "オンライン"
+    False -> "オフライン"
   }
 }
