@@ -52,6 +52,7 @@ public class RoomMembershipService {
 
 		RoomMember member = joinLockedRoom(room, userId, joinedAt);
 		presence.publishRoomJoined(userEmail, roomId, member);
+		presence.publishRoomMemberCountChanged(roomId);
 		return member;
 	}
 
@@ -68,6 +69,7 @@ public class RoomMembershipService {
 			throw conflict("The room membership could not be ended");
 		}
 		presence.publishRoomLeft(userEmail, roomId, userId, member);
+		presence.publishRoomMemberCountChanged(roomId);
 	}
 
 	private RoomMember joinLockedRoom(JoinPolicy room, long userId, Instant joinedAt) {

@@ -9,6 +9,7 @@ import types/room as room_t
 import types/session
 import wrap/session as session_api
 import wrap/api as api
+import wrap/room as room_api
 
 import pages/home
 import pages/login
@@ -259,7 +260,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     Home(home_model), HomeMsg(home.LogoutCompleted(response)) -> {
       let #(update_home_model, update_effect) = home.update(home_model, home.LogoutCompleted(response))
       case response {
-        Ok(_) -> clear_current_room_id()
+        Ok(_) -> {
+          room_api.close_ws()
+          clear_current_room_id()
+        }
         Error(_) -> Nil
       }
       #(

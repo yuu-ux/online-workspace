@@ -29,7 +29,7 @@ class FakeWebSocket {
 
 globalThis.WebSocket = FakeWebSocket;
 
-const { close_ws, connect_ws, send_ws } = await import("./ws.js");
+const { close_ws, connect_room_list, connect_ws, send_ws } = await import("./ws.js");
 
 test("SockJS/STOMPで接続してメッセージを変換できる", () => {
   const received = [];
@@ -70,7 +70,35 @@ test("SockJS/STOMPで接続してメッセージを変換できる", () => {
   first.onmessage?.({ data: `a[${JSON.stringify(presenceMessage)}]` });
   assert.deepEqual(received[1], '{"type":"presence","room_id":42,"user_id":7,"user":"Bob","icon_url":"","online":true}');
 
+  const memberCountMessage = [
+    "MESSAGE",
+    "subscription:sub-room-presence-42",
+    "message-id:009",
+    "",
+    "{\"type\":\"room:member_count_changed\",\"payload\":{\"roomId\":42,\"currentMembers\":2}}\u0000",
+  ].join("\n");
+  first.onmessage?.({ data: `a[${JSON.stringify(memberCountMessage)}]` });
+  assert.deepEqual(received[2], '{"type":"room:member_count_changed","room_id":42,"current_members":2}');
+
   close_ws();
   connect_ws(42, () => {});
   assert.equal(FakeWebSocket.instances.length, 2);
+  close_ws();
+});
+
+test("接続中にルームへ移動した場合も移動先の購読を登録する", () => {
+  connect_room_list("[10,11]", () => {});
+  const connection = FakeWebSocket.instances[FakeWebSocket.instances.length - 1];
+
+  connect_ws(42, () => {});
+  connection.readyState = FakeWebSocket.OPEN;
+  connection.onmessage?.({ data: "o" });
+  connection.onmessage?.({ data: 'a["CONNECTED\\nversion:1.2\\n\\n\\u0000"]' });
+
+  assert.ok(connection.sent.some((message) => message.includes("/user/queue/rooms/42/messages")));
+  assert.ok(connection.sent.some((message) => message.includes("/topic/rooms/42/presence")));
+  assert.equal(connection.sent.some((message) => message.includes("/topic/rooms/10/presence")), false);
+  assert.equal(connection.sent.some((message) => message.includes("destination:/topic/rooms\\n")), false);
+
+  close_ws();
 });

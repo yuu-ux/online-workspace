@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.mockito.ArgumentCaptor;
@@ -102,6 +103,7 @@ class RoomMembershipServiceTests {
 	void leavesRoomWhenLastWebSocketConnectionDisconnects() {
 		service.join(10L, "member@example.com");
 		Message<byte[]> tab = connected("member-1", "member@example.com");
+		clearInvocations(messagingTemplate);
 
 		presence.disconnected(new SessionDisconnectEvent(this, tab, "member-1", CloseStatus.NORMAL));
 
@@ -113,6 +115,26 @@ class RoomMembershipServiceTests {
 			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NOT NULL",
 			Integer.class
 		)).isOne();
+
+		ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+		verify(messagingTemplate, times(2)).convertAndSend(
+			eq("/topic/rooms/10/presence"),
+			events.capture()
+		);
+		assertThat(events.getAllValues())
+			.anySatisfy(event -> {
+				assertThat(event).isInstanceOf(OnlinePresenceService.RoomPresenceEvent.class);
+				OnlinePresenceService.RoomPresenceEvent presenceEvent =
+					(OnlinePresenceService.RoomPresenceEvent) event;
+				assertThat(presenceEvent.type()).isEqualTo("room:user_left");
+			});
+		assertThat(events.getAllValues())
+			.anySatisfy(event -> {
+				assertThat(event).isInstanceOf(OnlinePresenceService.RoomMemberCountEvent.class);
+				OnlinePresenceService.RoomMemberCountEvent countEvent =
+					(OnlinePresenceService.RoomMemberCountEvent) event;
+				assertThat(countEvent.payload().currentMembers()).isEqualTo(1);
+			});
 	}
 
 	@Test
@@ -126,6 +148,37 @@ class RoomMembershipServiceTests {
 			"SELECT COUNT(*) FROM room_members WHERE room_id = 10 AND user_id = 2 AND left_at IS NULL",
 			Integer.class
 		)).isOne();
+	}
+
+	@Test
+	void publishesCurrentMemberCountWhenMembershipChanges() {
+		service.join(10L, "member@example.com");
+
+		ArgumentCaptor<Object> joinEvents = ArgumentCaptor.forClass(Object.class);
+		verify(messagingTemplate, times(2)).convertAndSend(
+			eq("/topic/rooms/10/presence"),
+			joinEvents.capture()
+		);
+		assertThat(joinEvents.getAllValues())
+			.anySatisfy(event -> {
+				assertThat(event).isInstanceOf(OnlinePresenceService.RoomMemberCountEvent.class);
+				OnlinePresenceService.RoomMemberCountEvent count =
+					(OnlinePresenceService.RoomMemberCountEvent) event;
+				assertThat(count.type()).isEqualTo("room:member_count_changed");
+				assertThat(count.payload().roomId()).isEqualTo(10L);
+				assertThat(count.payload().currentMembers()).isEqualTo(2);
+			});
+
+		clearInvocations(messagingTemplate);
+		service.leave(10L, "member@example.com");
+
+		ArgumentCaptor<OnlinePresenceService.RoomMemberCountEvent> leaveEvent =
+			ArgumentCaptor.forClass(OnlinePresenceService.RoomMemberCountEvent.class);
+		verify(messagingTemplate).convertAndSend(
+			eq("/topic/rooms/10/presence"),
+			leaveEvent.capture()
+		);
+		assertThat(leaveEvent.getValue().payload().currentMembers()).isEqualTo(1);
 	}
 
 	@Test
