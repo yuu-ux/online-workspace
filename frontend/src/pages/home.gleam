@@ -34,10 +34,10 @@ import types/room.{
 } as room_t
 
 import wrap/room.{
-  type Presence,
+  type RoomMemberCount,
   connect_to_room_list,
   get_rooms,
-  presence_from_json,
+  room_member_count_from_json,
   room_created_from_json,
 }
 import wrap/session as session_api
@@ -104,22 +104,27 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     LogoutCompleted(Error(ApiError(message))) ->
       #(Model(..model, messages: [message]), effect.none())
     WsMessageReceived(message) -> {
-      case room_created_from_json(message) {
-        Ok(room) ->
+      case room_member_count_from_json(message) {
+        Ok(member_count) ->
           #(
-            Model(..model, rooms: add_or_replace_room(model.rooms, room)),
-            connect_to_room_list([room.room_id], WsMessageReceived),
+            Model(
+              ..model,
+              rooms: list.map(model.rooms, update_room_member_count(_, member_count)),
+            ),
+            effect.none(),
           )
         Error(_) ->
-          case presence_from_json(message) {
-            Ok(presence) ->
+          case room_created_from_json(message) {
+            Ok(room) -> {
+              let updated_rooms = add_or_replace_room(model.rooms, room)
               #(
-                Model(
-                  ..model,
-                  rooms: list.map(model.rooms, update_room_member_count(_, presence)),
+                Model(..model, rooms: updated_rooms),
+                connect_to_room_list(
+                  list.map(updated_rooms, fn(current_room) { current_room.room_id }),
+                  WsMessageReceived,
                 ),
-                effect.none(),
               )
+            }
             Error(_) -> #(model, effect.none())
           }
       }
@@ -261,19 +266,16 @@ fn authenticated_content(model: Model) -> element.Element(Msg) {
   ])
 }
 
-fn update_room_member_count(room: RoomInfo, presence: Presence) -> RoomInfo {
-  case room.room_id == presence.room_id {
+fn update_room_member_count(room: RoomInfo, member_count: RoomMemberCount) -> RoomInfo {
+  case room.room_id == member_count.room_id {
     False -> room
     True -> {
-      let member_count = case presence.online {
-        True -> room.current_members + 1
-        False if room.current_members > 0 -> room.current_members - 1
-        False -> 0
-      }
       RoomInfo(
         ..room,
-        current_members: member_count,
-        joinable: room.status == "OPEN" && member_count < room.max_number_of_member,
+        current_members: member_count.current_members,
+        joinable:
+          room.status == "OPEN"
+          && member_count.current_members < room.max_number_of_member,
       )
     }
   }

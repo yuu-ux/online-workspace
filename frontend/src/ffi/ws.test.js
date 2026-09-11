@@ -70,6 +70,16 @@ test("SockJS/STOMPで接続してメッセージを変換できる", () => {
   first.onmessage?.({ data: `a[${JSON.stringify(presenceMessage)}]` });
   assert.deepEqual(received[1], '{"type":"presence","room_id":42,"user_id":7,"user":"Bob","icon_url":"","online":true}');
 
+  const memberCountMessage = [
+    "MESSAGE",
+    "subscription:sub-room-presence-42",
+    "message-id:009",
+    "",
+    "{\"type\":\"room:member_count_changed\",\"payload\":{\"roomId\":42,\"currentMembers\":2}}\u0000",
+  ].join("\n");
+  first.onmessage?.({ data: `a[${JSON.stringify(memberCountMessage)}]` });
+  assert.deepEqual(received[2], '{"type":"room:member_count_changed","room_id":42,"current_members":2}');
+
   close_ws();
   connect_ws(42, () => {});
   assert.equal(FakeWebSocket.instances.length, 2);

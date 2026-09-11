@@ -101,6 +101,33 @@ function parseStompPresenceMessage(frame) {
   }
 }
 
+function parseStompRoomMemberCountMessage(frame) {
+  const separator = frame.indexOf("\n\n");
+  if (separator < 0) return null;
+
+  const bodyWithNull = frame.slice(separator + 2);
+  const body = bodyWithNull.endsWith("\0")
+    ? bodyWithNull.slice(0, -1)
+    : bodyWithNull;
+
+  try {
+    const event = JSON.parse(body);
+    if (
+      event.type !== "room:member_count_changed" ||
+      !event.payload
+    ) {
+      return null;
+    }
+    return JSON.stringify({
+      type: "room:member_count_changed",
+      room_id: event.payload.roomId,
+      current_members: event.payload.currentMembers,
+    });
+  } catch (_) {
+    return null;
+  }
+}
+
 function parseStompRoomCreatedMessage(frame) {
   const separator = frame.indexOf("\n\n");
   if (separator < 0) return null;
@@ -180,12 +207,17 @@ function open_ws(roomIds, chatRoomId, dispatch) {
       if (frame.startsWith("MESSAGE")) {
         const parsed = parseStompChatMessage(frame);
         const presence = parsed === null ? parseStompPresenceMessage(frame) : null;
-        const roomCreated =
+        const memberCount =
           parsed === null && presence === null
+            ? parseStompRoomMemberCountMessage(frame)
+            : null;
+        const roomCreated =
+          parsed === null && presence === null && memberCount === null
             ? parseStompRoomCreatedMessage(frame)
             : null;
         if (parsed !== null && messageDispatch !== null) messageDispatch(parsed);
         if (presence !== null && messageDispatch !== null) messageDispatch(presence);
+        if (memberCount !== null && messageDispatch !== null) messageDispatch(memberCount);
         if (roomCreated !== null && messageDispatch !== null) messageDispatch(roomCreated);
       }
     }

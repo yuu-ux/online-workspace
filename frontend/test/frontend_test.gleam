@@ -51,7 +51,7 @@ pub fn room_presence_updates_member_list_test() {
   left_model.member_list |> should.equal([room_wrap.RoomMember("Alice", UserId("2"), "")])
 }
 
-pub fn room_presence_updates_member_count_test() {
+pub fn room_presence_does_not_update_member_count_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
   let #(model, _) = room.init(session, room_t.RoomId(10))
   let detail = room_t.RoomDetail(
@@ -83,7 +83,7 @@ pub fn room_presence_updates_member_count_test() {
     ),
   )
   case joined_model.room_detail {
-    Some(updated_detail) -> updated_detail.current_members |> should.equal(2)
+    Some(updated_detail) -> updated_detail.current_members |> should.equal(1)
     None -> should.fail()
   }
 
@@ -95,6 +95,38 @@ pub fn room_presence_updates_member_count_test() {
   )
   case left_model.room_detail {
     Some(updated_detail) -> updated_detail.current_members |> should.equal(1)
+    None -> should.fail()
+  }
+}
+
+pub fn room_member_count_event_updates_member_count_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = room.init(session, room_t.RoomId(10))
+  let detail = room_t.RoomDetail(
+    room_id: room_t.RoomId(10),
+    roomname: room_t.RoomNameType("Room"),
+    description: room_t.DescriptionType("Description"),
+    category: room_t.Cat1,
+    work_style: room_t.Quiet,
+    max_number_of_member: 3,
+    current_members: 1,
+    status: "OPEN",
+    created_by: UserInfo("Alice", UserId("2")),
+    joinable: True,
+    join_restriction: None,
+    member: True,
+    created_at: "2026-09-10T00:00:00Z",
+    updated_at: "2026-09-10T00:00:00Z",
+  )
+  let model = room.Model(..model, room_detail: Some(detail))
+  let #(updated_model, _) = room.update(
+    model,
+    room.WsMessageReceived(
+      "{\"type\":\"room:member_count_changed\",\"room_id\":10,\"current_members\":2}",
+    ),
+  )
+  case updated_model.room_detail {
+    Some(updated_detail) -> updated_detail.current_members |> should.equal(2)
     None -> should.fail()
   }
 }
@@ -123,7 +155,7 @@ pub fn friend_loaded_message_updates_friend_page_test() {
   }
 }
 
-pub fn home_presence_updates_room_member_count_test() {
+pub fn home_presence_does_not_update_room_member_count_test() {
   let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
   let room_id = room_t.RoomId(10)
   let model = home.Model(
@@ -151,6 +183,42 @@ pub fn home_presence_updates_room_member_count_test() {
     model,
     home.WsMessageReceived(
       "{\"type\":\"presence\",\"room_id\":10,\"user_id\":2,\"user\":\"Alice\",\"online\":true}",
+    ),
+  )
+  case updated_model.rooms {
+    [room, ..] -> room.current_members |> should.equal(1)
+    [] -> should.fail()
+  }
+}
+
+pub fn home_member_count_event_updates_room_member_count_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let room_id = room_t.RoomId(10)
+  let model = home.Model(
+    session: session,
+    rooms: [
+      room_t.RoomInfo(
+        roomname: room_t.RoomNameType("Room"),
+        description: room_t.DescriptionType("Room description"),
+        visibility: room_t.Public,
+        category: room_t.Cat1,
+        work_style: room_t.Quiet,
+        max_number_of_member: 3,
+        room_id: room_id,
+        current_members: 1,
+        status: "OPEN",
+        joinable: True,
+        join_restriction: None,
+        created_at: "2026-09-10T00:00:00Z",
+      ),
+    ],
+    messages: [],
+  )
+
+  let #(updated_model, _) = home.update(
+    model,
+    home.WsMessageReceived(
+      "{\"type\":\"room:member_count_changed\",\"room_id\":10,\"current_members\":2}",
     ),
   )
   case updated_model.rooms {
