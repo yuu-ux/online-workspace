@@ -333,6 +333,10 @@ pub type RoomMemberCount {
   RoomMemberCount(room_id: RoomId, current_members: Int)
 }
 
+pub type FriendPresence {
+  FriendPresence(user_id: UserId, online: Bool)
+}
+
 // ---------------------------------------------------------
 // 1. FFI (JavaScriptの関数をインポート)
 // ---------------------------------------------------------
@@ -343,6 +347,9 @@ fn do_connect(room_id: Int, dispatch: fn(String) -> Nil) -> Nil
 
 @external(javascript, "./../ffi/ws.js", "connect_room_list")
 fn do_connect_room_list(room_ids_json: String, dispatch: fn(String) -> Nil) -> Nil
+
+@external(javascript, "./../ffi/ws.js", "connect_friend_presence")
+fn do_connect_friend_presence(dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
@@ -376,6 +383,15 @@ pub fn connect_to_room_list(room_ids: List(RoomId), m: fn(String) -> msg) -> eff
       dispatch(m(received_text))
     }
     do_connect_room_list(ids_json, js_callback)
+  })
+}
+
+pub fn connect_to_friend_presence(m: fn(String) -> msg) -> effect.Effect(msg) {
+  effect.from(fn(dispatch) {
+    let js_callback = fn(received_text: String) {
+      dispatch(m(received_text))
+    }
+    do_connect_friend_presence(js_callback)
   })
 }
 
@@ -435,6 +451,17 @@ pub fn room_member_count_from_json(
     decode.success(RoomMemberCount(RoomId(room_id), current_members))
   }
   json.parse(from: json_string, using: member_count_decoder)
+}
+
+pub fn friend_presence_from_json(
+  json_string: String,
+) -> Result(FriendPresence, json.DecodeError) {
+  let friend_presence_decoder = {
+    use user_id <- decode.field("user_id", decode.int)
+    use online <- decode.field("online", decode.bool)
+    decode.success(FriendPresence(UserId(int.to_string(user_id)), online))
+  }
+  json.parse(from: json_string, using: friend_presence_decoder)
 }
 
 pub fn room_created_from_json(json_string: String) -> Result(RoomInfo, json.DecodeError) {

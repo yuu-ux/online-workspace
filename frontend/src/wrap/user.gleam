@@ -4,7 +4,7 @@ import gleam/json
 import gleam/option
 import gleam/result
 import lustre/effect
-import types/user.{type UserId, UserId, type UserInfo, UserInfo}
+import types/user.{type FriendInfo, FriendInfo, type UserId, UserId, type UserInfo, UserInfo}
 import types/session.{type Session, Token}
 import types/room.{type RoomId}
 import wrap/api
@@ -243,18 +243,24 @@ pub fn get_friends(
 
 /// フレンドを追加する
 pub fn get_friends_with_icons(
-  to_msg: fn(Result(List(#(UserInfo, String)), api.ApiError)) -> msg,
+  to_msg: fn(Result(List(#(FriendInfo, String)), api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   let item = {
-    use user <- decode.then(friend_user_decoder())
+    use friend <- decode.then(friend_info_decoder())
     use icon <- decode.subfield(["user", "iconUrl"], decode.optional(decode.string))
-    decode.success(#(user, option.unwrap(icon, "")))
+    decode.success(#(friend, option.unwrap(icon, "")))
   }
   let decoder = {
     use items <- decode.field("items", decode.list(item))
     decode.success(items)
   }
   api.json_request("GET", "/api/v1/friends?page=0&size=50", "", decoder, to_msg)
+}
+
+fn friend_info_decoder() -> decode.Decoder(FriendInfo) {
+  use user <- decode.then(friend_user_decoder())
+  use online <- decode.field("online", decode.bool)
+  decode.success(FriendInfo(user, online))
 }
 
 pub fn add_friend(

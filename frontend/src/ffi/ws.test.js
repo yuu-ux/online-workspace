@@ -29,7 +29,13 @@ class FakeWebSocket {
 
 globalThis.WebSocket = FakeWebSocket;
 
-const { close_ws, connect_room_list, connect_ws, send_ws } = await import("./ws.js");
+const {
+  close_ws,
+  connect_friend_presence,
+  connect_room_list,
+  connect_ws,
+  send_ws,
+} = await import("./ws.js");
 
 test("SockJS/STOMPで接続してメッセージを変換できる", () => {
   const received = [];
@@ -99,6 +105,46 @@ test("接続中にルームへ移動した場合も移動先の購読を登録�
   assert.ok(connection.sent.some((message) => message.includes("/topic/rooms/42/presence")));
   assert.equal(connection.sent.some((message) => message.includes("/topic/rooms/10/presence")), false);
   assert.equal(connection.sent.some((message) => message.includes("destination:/topic/rooms\\n")), false);
+
+  close_ws();
+});
+
+test("フレンドのオンライン状態を購読して変換できる", () => {
+  const received = [];
+  connect_friend_presence((payload) => received.push(payload));
+  const connection = FakeWebSocket.instances[FakeWebSocket.instances.length - 1];
+
+  connection.readyState = FakeWebSocket.OPEN;
+  connection.onmessage?.({ data: "o" });
+  connection.onmessage?.({ data: 'a["CONNECTED\\nversion:1.2\\n\\n\\u0000"]' });
+
+  assert.ok(connection.sent.some((message) => message.includes("/user/queue/friends/presence")));
+
+  const presenceMessage = [
+    "MESSAGE",
+    "subscription:sub-friend-presence",
+    "message-id:010",
+    "",
+    '{"type":"friend:presence_changed","payload":{"userId":7,"online":true}}\u0000',
+  ].join("\n");
+  connection.onmessage?.({ data: `a[${JSON.stringify(presenceMessage)}]` });
+
+  assert.deepEqual(received, ['{"type":"friend_presence","user_id":7,"online":true}']);
+  close_ws();
+});
+
+test("接続済みソケットの画面遷移で購読を入れ替えられる", () => {
+  connect_friend_presence(() => {});
+  const connection = FakeWebSocket.instances[FakeWebSocket.instances.length - 1];
+  connection.readyState = FakeWebSocket.OPEN;
+  connection.onmessage?.({ data: "o" });
+  connection.onmessage?.({ data: 'a["CONNECTED\\nversion:1.2\\n\\n\\u0000"]' });
+
+  connect_room_list("[10]", () => {});
+
+  assert.ok(connection.sent.some((message) => message.includes("UNSUBSCRIBE\\nid:sub-friend-presence")));
+  assert.ok(connection.sent.some((message) => message.includes("/topic/rooms/10/presence")));
+  assert.equal(connection.sent.some((message) => message.includes("/user/queue/friends/presence")), true);
 
   close_ws();
 });

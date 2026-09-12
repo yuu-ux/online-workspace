@@ -17,7 +17,7 @@ import components/userinfo
 import wrap/api.{ApiError}
 import types/session.{Authenticated, Token}
 import types/room as room_t
-import types/user.{UserInfo, UserId}
+import types/user.{FriendInfo, UserInfo, UserId}
 import wrap/user as user_wrap
 import wrap/room as room_wrap
 
@@ -151,7 +151,7 @@ pub fn friend_loaded_message_updates_friend_page_test() {
   case updated_model.current_page {
     frontend.Friend(updated_friend_model) ->
       updated_friend_model.friends |> should.equal([
-        UserInfo("test", UserId("1")),
+        FriendInfo(UserInfo("test", UserId("1")), False),
       ])
     _ -> should.fail()
   }
