@@ -116,9 +116,15 @@ MANAGEMENT_API_KEY="change-me" GRAFANA_ADMIN_PASSWORD="change-me" \
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000（ユーザー名は `admin`。`GRAFANA_ADMIN_USER` で変更可能）
 
-Grafana の匿名アクセスは無効です。Prometheus データソースと
-`Online Workspace Monitoring` ダッシュボード、および5xx率が5分間5%を超えた場合の
-アラートルールは起動時に自動設定されます。
+Grafana の匿名アクセスは無効です。Prometheus データソース、
+`Online Workspace Monitoring` ダッシュボード、および次のアラートは起動時に自動設定されます。
+
+- 5xx率が5分間5%を超えた
+- Backendのメトリクスを2分間取得できない
+
+通知メールを送信する場合は `GRAFANA_SMTP_ENABLED=true`、`GRAFANA_SMTP_HOST`、
+`GRAFANA_ALERT_EMAIL` を設定します。SMTP認証が必要な場合は
+`GRAFANA_SMTP_USER` と `GRAFANA_SMTP_PASSWORD` も設定してください。
 メトリクスの保持期間は15日です。
 
 ## フロントエンド開発方針
