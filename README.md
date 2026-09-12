@@ -37,9 +37,13 @@ controllers/
 
 ### Docker Compose で起動
 
+初回は `.env.example` をコピーし、パスワードとAPIキーを変更してください。
+`.env` はGit管理対象外です。
 proxy イメージのビルド時にフロントエンドを本番用にビルドし、生成された静的ファイルを nginx から配信します。
 
 ```bash
+cp .env.example .env
+# .envを編集して、change-this-* の値を変更する
 docker compose up --build
 ```
 
@@ -47,11 +51,10 @@ docker compose up --build
 
 起動後のURL:
 
-- Proxy: https://localhost:8443（自己署名証明書）
-- HTTP redirect: http://localhost:8088
-- Backend: http://localhost:8080
-- MailDev: http://localhost:1080
-- PostgreSQL: localhost:5432
+- Proxy: https://localhost:${PROXY_HTTPS_PORT:-8443}（自己署名証明書）
+- HTTP redirect: http://localhost:${PROXY_HTTP_PORT:-8088}
+- Backend: http://localhost:${BACKEND_HOST_PORT:-8080}
+- PostgreSQL: localhost:${POSTGRES_HOST_PORT:-5432}
 
 コンテナ構成:
 
@@ -65,10 +68,10 @@ HTTPS / WSS、Cookie、CSRF、CORS、セキュリティヘッダー、監査ロ�
 
 ### Backend 単体で起動
 
-1. PostgreSQL を起動し、接続情報を環境変数で設定します（未設定時はデフォルト値を利用）。
+1. PostgreSQL を起動し、接続情報を環境変数で設定します。Composeでは `.env` の値が使われます。
    - `DB_URL` (default: `jdbc:postgresql://localhost:5432/postgres`)
    - `DB_USERNAME` (default: `postgres`)
-   - `DB_PASSWORD` (default: `password`)
+   - `DB_PASSWORD`（必須。`.env` を使う場合は `POSTGRES_PASSWORD` の値を指定）
    - `MAIL_HOST` (default: `localhost`)
    - `MAIL_PORT` (default: `1025`)
 2. アプリを起動します。
@@ -78,7 +81,8 @@ HTTPS / WSS、Cookie、CSRF、CORS、セキュリティヘッダー、監査ロ�
 本番でも `SESSION_COOKIE_SECURE=true` を設定します。
 
 ```bash
-SESSION_COOKIE_SECURE=false ./gradlew bootRun
+set -a && source .env && set +a
+DB_PASSWORD="$POSTGRES_PASSWORD" SESSION_COOKIE_SECURE=false ./gradlew bootRun
 ```
 
 初回起動時に Flyway がマイグレーションを実行します。
@@ -103,12 +107,11 @@ Prometheus形式では各メトリクス名のドットがアンダースコア�
 
 ### Prometheus / Grafana
 
-監視構成は API キーと Grafana 管理者パスワードを設定して起動します。
+監視構成は `.env` の `MANAGEMENT_API_KEY` と `GRAFANA_ADMIN_PASSWORD` を使用します。
 
 ```bash
-MANAGEMENT_API_KEY="change-me" GRAFANA_ADMIN_PASSWORD="change-me" \
-  GRAFANA_ALERT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." \
-  docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
+set -a && source .env && set +a
+docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
 ```
 
 起動後のURL:
