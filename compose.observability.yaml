@@ -91,7 +91,7 @@ services:
   grafana:
     image: grafana/grafana:13.2.0
     ports:
-      - "3000:3000"
+      - "${GRAFANA_PORT:-3000}:3000"
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
