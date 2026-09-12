@@ -66,6 +66,8 @@ docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafa
 
 本プロジェクトでは、ChatGPTやGitHub CopilotなどのAIツールを補助的に利用しました。主な用途は次のとおりです。
 
+コーディングは主にAIコーディングエージェントを用いて実装しましたが、レビュー時には必ず人の目を通し、アーキテクチャとの乖離が発生しないように確認しました。また、バックエンドとフロントエンドのつなぎ込みにもAIを活用しました。
+
 - Nginxの設定とDockerfileの初期セットアップの補助
 - ELKスタックとSpring Bootバックエンドの統合に関するトラブルシューティングのアイデア出し
 - バックエンドの単体テスト用ボイラープレートコードの生成
