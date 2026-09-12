@@ -335,7 +335,7 @@ pub fn view(model: Model) -> element.Element(Msg) {
         False -> []
       }
       div(
-        [class("flex h-dvh flex-col overflow-hidden bg-[#f7f5f0] font-sans")],
+        [class("flex h-dvh flex-col overflow-hidden bg-[#f7f5f0] pb-14 font-sans")],
         list.flatten([
           [
             div([class("shrink-0 px-4 pt-4 sm:px-8")], [

@@ -54,6 +54,7 @@ pub type Model {
     current_page: Page,
     session: session.Session,
     notification: Option(String),
+    pending_legal_page: Option(footer.Msg),
   )
 }
 
@@ -93,6 +94,7 @@ fn init(_flag) -> #(Model, effect.Effect(Msg)) {
       current_page: Home(init_home_model),
       session: session.Guest,
       notification: None,
+      pending_legal_page: None,
       ), 
     session_api.get_session(SessionLoaded)
   )
@@ -116,6 +118,18 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     _, SessionLoaded(Error(_)) -> #(model, effect.none())
 
+    Room(room_model), FooterMsg(destination) -> {
+      let #(updated_room_model, room_effect) = room.update(room_model, room.ToHome)
+      #(
+        Model(
+          ..model,
+          current_page: Room(updated_room_model),
+          pending_legal_page: Some(destination),
+        ),
+        room_effect |> effect.map(RoomMsg),
+      )
+    }
+
     _, FooterMsg(footer.ToPrivacyPolicy) -> {
       let #(init_privacy_policy_model, _) = privacypolicy.init(model.session)
       #(Model(..model, current_page: PrivacyPolicy(init_privacy_policy_model)), effect.none())
@@ -132,7 +146,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToHome)
       let #(init_home_model, home_effect) = home.init(update_mypage_model.session)
       #(
-        Model(session: update_mypage_model.session, current_page: Home(init_home_model), notification: model.notification),
+        Model(
+          session: update_mypage_model.session,
+          current_page: Home(init_home_model),
+          notification: model.notification,
+          pending_legal_page: None,
+        ),
         home_effect |> effect.map(HomeMsg),
       )
     }
@@ -141,7 +160,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToFriend)
       let #(init_friend_model, friend_effect) = friend.init(update_mypage_model.session)
       #(
-        Model(session: update_mypage_model.session, current_page: Friend(init_friend_model), notification: model.notification),
+        Model(
+          session: update_mypage_model.session,
+          current_page: Friend(init_friend_model),
+          notification: model.notification,
+          pending_legal_page: None,
+        ),
         friend_effect |> effect.map(FriendMsg),
       )
     }
@@ -150,7 +174,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToProfile)
       let #(init_profile_model, init_effect) = profile.init(update_mypage_model.session)
       #(
-        Model(session: init_profile_model.session, current_page: Profile(init_profile_model), notification: model.notification),
+        Model(
+          session: init_profile_model.session,
+          current_page: Profile(init_profile_model),
+          notification: model.notification,
+          pending_legal_page: None,
+        ),
         init_effect |> effect.map(ProfileMsg),
       )
     }
@@ -327,6 +356,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           session: update_home_model.session,
           current_page: Home(update_home_model),
           notification: notification,
+          pending_legal_page: None,
         ),
         update_effect |> effect.map(HomeMsg),
       )
@@ -346,7 +376,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_login_model, _) = login.update(login_model, login.ToHome)
       let #(init_home_model, home_effect) = home.init(update_login_model.session)
       #(
-        Model(session: update_login_model.session, current_page: Home(init_home_model), notification: Some("ログインしました。")),
+        Model(
+          session: update_login_model.session,
+          current_page: Home(init_home_model),
+          notification: Some("ログインしました。"),
+          pending_legal_page: None,
+        ),
         effect.batch([
           home_effect |> effect.map(HomeMsg),
           room_api.connect_to_notifications(NotificationReceived),
@@ -393,7 +428,15 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     Register(register_model), RegisterMsg(register.ToHome) -> {
       let #(init_register_model, _) = register.update(register_model, register.ToHome)
       let #(init_home_model, _) = home.init(init_register_model.session)
-      #(Model(session: init_register_model.session, current_page: Home(init_home_model), notification: model.notification), effect.none())
+      #(
+        Model(
+          session: init_register_model.session,
+          current_page: Home(init_home_model),
+          notification: model.notification,
+          pending_legal_page: None,
+        ),
+        effect.none(),
+      )
     }
 
     Register(_register_model), RegisterMsg(register.ToPrivacyPolicy) -> {
@@ -419,7 +462,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(init_create_room_model, _) = create_room.update(create_room_model, create_room.ToHome)
       let #(init_home_model, home_effect) = home.init(init_create_room_model.session)
       #(
-        Model(session: init_create_room_model.session, current_page: Home(init_home_model), notification: model.notification),
+        Model(
+          session: init_create_room_model.session,
+          current_page: Home(init_home_model),
+          notification: model.notification,
+          pending_legal_page: None,
+        ),
         home_effect |> effect.map(HomeMsg),
       )
     }
@@ -448,18 +496,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       )
     }
 
-    Room(room_model), RoomMsg(room.LeaveCompleted) -> {
-      clear_current_room_id()
-      let #(init_home_model, home_effect) = home.init(room_model.session)
-      let #(updated_home_model, _) = home.update(init_home_model, home.LeftRoom)
-      #(
-        Model(session: room_model.session, current_page: Home(updated_home_model), notification: model.notification),
-        effect.batch([
-          home_effect |> effect.map(HomeMsg),
-          room_api.connect_to_notifications(NotificationReceived),
-        ]),
-      )
-    }
+    Room(room_model), RoomMsg(room.LeaveCompleted) ->
+      continue_after_room_leave(model, room_model)
 
     Room(room_model), RoomMsg(room.ToUserInfo(user_info)) -> {
       let #(update_user_info_model, update_effect) = userinfofromroom.init(
@@ -646,13 +684,66 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   }
 }
 
+fn continue_after_room_leave(
+  model: Model,
+  room_model: room.Model,
+) -> #(Model, effect.Effect(Msg)) {
+  clear_current_room_id()
+
+  case model.pending_legal_page {
+    Some(footer.ToPrivacyPolicy) -> {
+      let #(privacy_policy_model, _) = privacypolicy.init(model.session)
+      #(
+        Model(
+          ..model,
+          current_page: PrivacyPolicy(privacy_policy_model),
+          pending_legal_page: None,
+        ),
+        effect.none(),
+      )
+    }
+    Some(footer.ToTermsOfService) -> {
+      let #(terms_model, _) = terms_of_service.init(model.session)
+      #(
+        Model(
+          ..model,
+          current_page: TermsOfService(terms_model),
+          pending_legal_page: None,
+        ),
+        effect.none(),
+      )
+    }
+    None -> {
+      let #(init_home_model, home_effect) = home.init(room_model.session)
+      let #(updated_home_model, _) = home.update(init_home_model, home.LeftRoom)
+      #(
+        Model(
+          session: room_model.session,
+          current_page: Home(updated_home_model),
+          notification: model.notification,
+          pending_legal_page: None,
+        ),
+        effect.batch([
+          home_effect |> effect.map(HomeMsg),
+          room_api.connect_to_notifications(NotificationReceived),
+        ]),
+      )
+    }
+  }
+}
+
 fn restore_page(current_session: session.Session) -> #(Model, effect.Effect(Msg)) {
   case current_session {
     session.Guest -> {
       clear_current_room_id()
       let #(home_model, home_effect) = home.init(current_session)
       #(
-        Model(session: current_session, current_page: Home(home_model), notification: None),
+        Model(
+          session: current_session,
+          current_page: Home(home_model),
+          notification: None,
+          pending_legal_page: None,
+        ),
         home_effect |> effect.map(HomeMsg),
       )
     }
@@ -661,7 +752,12 @@ fn restore_page(current_session: session.Session) -> #(Model, effect.Effect(Msg)
         Some(room_id) -> {
           let #(room_model, room_effect) = room.init(current_session, room_id)
           #(
-            Model(session: current_session, current_page: Room(room_model), notification: None),
+            Model(
+              session: current_session,
+              current_page: Room(room_model),
+              notification: None,
+              pending_legal_page: None,
+            ),
             effect.batch([
               room_effect |> effect.map(RoomMsg),
               room_api.connect_to_notifications(NotificationReceived),
@@ -672,7 +768,12 @@ fn restore_page(current_session: session.Session) -> #(Model, effect.Effect(Msg)
           clear_current_room_id()
           let #(home_model, home_effect) = home.init(current_session)
           #(
-            Model(session: current_session, current_page: Home(home_model), notification: None),
+            Model(
+              session: current_session,
+              current_page: Home(home_model),
+              notification: None,
+              pending_legal_page: None,
+            ),
             effect.batch([
               home_effect |> effect.map(HomeMsg),
               room_api.connect_to_notifications(NotificationReceived),

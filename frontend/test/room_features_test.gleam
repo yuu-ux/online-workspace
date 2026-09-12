@@ -44,6 +44,16 @@ pub fn room_leave_error_is_rendered_test() {
   |> should.equal(True)
 }
 
+pub fn authenticated_room_reserves_space_for_fixed_footer_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(model, _) = room.init(session, room_t.RoomId(1))
+
+  room.view(model)
+  |> element.to_string
+  |> string.contains("pb-14")
+  |> should.equal(True)
+}
+
 pub fn room_list_decodes_joinability_and_metadata_test() {
   let decoded = json.parse(
     "{\"id\":1,\"name\":\"集中ルーム\",\"description\":\"静かに作業します\",\"category\":{\"id\":1},\"workStyle\":\"FOCUS\",\"maxMembers\":4,\"currentMembers\":2,\"status\":\"OPEN\",\"createdBy\":{\"id\":10,\"name\":\"Alice\",\"iconUrl\":null},\"joinable\":true,\"joinRestriction\":null,\"createdAt\":\"2026-09-10T00:00:00Z\"}",

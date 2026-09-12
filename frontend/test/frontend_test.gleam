@@ -43,6 +43,7 @@ pub fn global_footer_opens_privacy_policy_test() {
     current_page: frontend.Home(home_model),
     session: session,
     notification: None,
+    pending_legal_page: None,
   )
 
   let #(updated_model, _) = frontend.update(
@@ -63,6 +64,7 @@ pub fn global_footer_opens_terms_of_service_test() {
     current_page: frontend.Home(home_model),
     session: session,
     notification: None,
+    pending_legal_page: None,
   )
 
   let #(updated_model, _) = frontend.update(
@@ -72,6 +74,41 @@ pub fn global_footer_opens_terms_of_service_test() {
 
   case updated_model.current_page {
     frontend.TermsOfService(_) -> should.equal(True, True)
+    _ -> should.fail()
+  }
+}
+
+pub fn room_footer_waits_for_teardown_before_opening_legal_page_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(room_model, _) = room.init(session, room_t.RoomId(1))
+  let model = frontend.Model(
+    current_page: frontend.Room(room.Model(..room_model, joined: True)),
+    session: session,
+    notification: None,
+    pending_legal_page: None,
+  )
+
+  let #(leaving_model, _) = frontend.update(
+    model,
+    frontend.FooterMsg(footer.ToPrivacyPolicy),
+  )
+
+  case leaving_model.current_page {
+    frontend.Room(_) -> should.equal(True, True)
+    _ -> should.fail()
+  }
+  case leaving_model.pending_legal_page {
+    Some(footer.ToPrivacyPolicy) -> should.equal(True, True)
+    _ -> should.fail()
+  }
+
+  let #(legal_model, _) = frontend.update(
+    leaving_model,
+    frontend.RoomMsg(room.LeaveCompleted),
+  )
+
+  case legal_model.current_page {
+    frontend.PrivacyPolicy(_) -> should.equal(True, True)
     _ -> should.fail()
   }
 }
@@ -191,6 +228,7 @@ pub fn friend_loaded_message_updates_friend_page_test() {
     current_page: frontend.Friend(friend_model),
     session: session,
     notification: None,
+    pending_legal_page: None,
   )
 
   let #(updated_model, _) = frontend.update(
@@ -523,6 +561,7 @@ pub fn friend_search_submission_opens_search_results_test() {
     current_page: frontend.Friend(friend_model),
     session: session,
     notification: None,
+    pending_legal_page: None,
   )
 
   let #(updated_model, _) = frontend.update(
@@ -562,6 +601,7 @@ pub fn search_page_back_link_opens_friend_management_test() {
     current_page: frontend.Search(search_model),
     session: session,
     notification: None,
+    pending_legal_page: None,
   )
 
   let #(updated_model, _) = frontend.update(
@@ -826,6 +866,7 @@ pub fn full_room_does_not_transition_from_home_test() {
     current_page: frontend.Home(home_model),
     session: session,
     notification: None,
+    pending_legal_page: None,
   )
 
   let #(updated_model, _) =
@@ -846,6 +887,7 @@ pub fn notification_updates_global_model_test() {
     current_page: frontend.Home(home_model),
     session: session,
     notification: None,
+    pending_legal_page: None,
   )
 
   let #(updated_model, _) = frontend.update(
@@ -868,6 +910,7 @@ pub fn login_shows_success_notification_test() {
     current_page: frontend.Login(login_model),
     session: session,
     notification: None,
+    pending_legal_page: None,
   )
 
   let #(updated_model, _) = frontend.update(model, frontend.LoginMsg(login.ToHome))
@@ -885,6 +928,7 @@ pub fn logout_shows_success_notification_test() {
     current_page: frontend.Home(home_model),
     session: session,
     notification: None,
+    pending_legal_page: None,
   )
 
   let #(updated_model, _) = frontend.update(
