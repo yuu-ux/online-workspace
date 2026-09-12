@@ -157,16 +157,16 @@ users
 
 | 機能 | 内容 | 担当者 |
 | --- | --- | --- |
-| 認証 | 登録、ログイン、ログアウト、セッション、CSRFトークン | `yehara`, `yonuma` |
-| プロフィール管理 | 公開設定、自己紹介、作業カテゴリ、アイコン管理 | `yehara`, `yonuma` |
-| ユーザー検索 | 名前によるページネーション付き検索と公開プロフィール | `yonuma` |
-| ルーム管理 | 作成、一覧、絞り込み、詳細、更新、終了 | `yehara`, `yonuma` |
-| ルーム参加 | 参加、退出、参加者一覧、人数制限、アクセス制御 | `yehara`, `yonuma` |
-| チャット | ページネーション付き履歴とメッセージ検証 | `yehara`, `tmuranak` |
-| リアルタイム更新 | チャット、在席状態、参加人数、ルーム作成、フレンド状態 | `yehara`, `tmuranak`, `yonuma` |
-| フレンド管理 | 追加、一覧、解除、オンライン状態 | `yehara`, `yonuma` |
-| 公開API | OpenAPIで定義したセッション/API key認証とレート制限付きREST API | `yehara` |
-| 可観測性 | ヘルスチェック、Prometheus、Grafana、アラート、ELKログ | `yehara` |
+| 認証 | 登録、ログイン、ログアウト、セッション、CSRFトークン | `yehara`, `yonuma`, `kofujita` |
+| プロフィール管理 | 公開設定、自己紹介、作業カテゴリ、アイコン管理 | `yehara`, `yonuma`, `kofujita` |
+| ユーザー検索 | 名前によるページネーション付き検索と公開プロフィール | `yonuma`, `kofujita` |
+| ルーム管理 | 作成、一覧、絞り込み、詳細、更新、終了 | `yehara`, `yonuma`, `kofujita` |
+| ルーム参加 | 参加、退出、参加者一覧、人数制限、アクセス制御 | `yehara`, `yonuma`, `kofujita` |
+| チャット | ページネーション付き履歴とメッセージ検証 | `yehara`, `tmuranak`, `kofujita` |
+| リアルタイム更新 | チャット、在席状態、参加人数、ルーム作成、フレンド状態 | `yehara`, `tmuranak`, `yonuma`, `kofujita` |
+| フレンド管理 | 追加、一覧、解除、オンライン状態 | `yehara`, `yonuma`, `kofujita` |
+| 公開API | OpenAPIで定義したセッション/API key認証とレート制限付きREST API | `yehara`, `kofujita` |
+| 可観測性 | ヘルスチェック、Prometheus、Grafana、アラート、ELKログ | `yehara`, `kofujita` |
 
 ## モジュール
 
