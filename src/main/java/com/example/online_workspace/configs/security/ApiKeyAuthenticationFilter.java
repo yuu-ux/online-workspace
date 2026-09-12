@@ -22,7 +22,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
 	static final String HEADER_NAME = "X-API-Key";
-	private static final Pattern TARGET_PATH = Pattern.compile("^/api/v1/rooms(?:/[^/]+)?/?$");
+	private static final Pattern TARGET_PATH = Pattern.compile("^/api/v1/public/rooms(?:/[^/]+)?/?$");
 	private static final Set<String> TARGET_METHODS = Set.of("GET", "POST", "PUT", "DELETE");
 
 	private final byte[] expectedApiKey;
@@ -64,10 +64,6 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 		HttpServletResponse response,
 		FilterChain filterChain
 	) throws ServletException, IOException {
-		if (request.getHeader(HEADER_NAME) == null) {
-			filterChain.doFilter(request, response);
-			return;
-		}
 		if (!hasValidApiKey(request)) {
 			apiErrorWriter.write(
 				request,

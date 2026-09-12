@@ -1,6 +1,7 @@
 package com.example.online_workspace.configs.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -49,9 +50,21 @@ class ApiKeyRateLimitIntegrationTests {
 		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rooms", Integer.class)).isEqualTo(2);
 	}
 
+	@Test
+	void requiresApiKeyEvenForAuthenticatedSession() throws Exception {
+		mockMvc.perform(createRoom().with(user("creator@example.com")))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("INVALID_API_KEY"));
+
+		assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rooms", Integer.class)).isZero();
+	}
+
 	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder createRoom(String apiKey) {
-		return post("/api/v1/rooms")
-			.header(ApiKeyAuthenticationFilter.HEADER_NAME, apiKey)
+		return createRoom().header(ApiKeyAuthenticationFilter.HEADER_NAME, apiKey);
+	}
+
+	private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder createRoom() {
+		return post("/api/v1/public/rooms")
 			.contentType(MediaType.APPLICATION_JSON)
 			.content("""
 				{

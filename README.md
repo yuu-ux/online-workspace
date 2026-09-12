@@ -43,9 +43,11 @@ controllers/
 ```bash
 cp .env.sample .env
 # .envを編集して、change-this-* の値を変更する
-./scripts/generate-local-tls.sh
+./docker/nginx/generate-local-tls.sh
 docker compose up
 ```
+
+自己署名証明書は `proxy` コンテナの起動時に自動生成されます。
 
 起動後のURL:
 
@@ -118,8 +120,13 @@ docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafa
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000（ユーザー名は `admin`。`GRAFANA_ADMIN_USER` で変更可能）
 
-Grafana の匿名アクセスは無効です。Prometheus データソースと
-`Online Workspace Monitoring` ダッシュボードは起動時に自動設定されます。
+Grafana の匿名アクセスは無効です。Prometheus データソース、
+`Online Workspace Monitoring` ダッシュボード、および次のアラートは起動時に自動設定されます。
+
+- 5xx率が5分間5%を超えた
+- Backendのメトリクスを2分間取得できない
+
+通知先のDiscord Webhook URLは `GRAFANA_ALERT_DISCORD_WEBHOOK_URL` で設定します。
 メトリクスの保持期間は15日です。
 
 ## フロントエンド開発方針
@@ -174,6 +181,6 @@ Backend 起動後、次のURLで `docs/openapi.yaml` を表示できる。
 - Swagger UI: https://localhost:8443/swagger-ui.html
 - OpenAPI YAML: https://localhost:8443/openapi.yaml
 
-認証が必要な API を `Try it out` で確認する場合は、先に同じブラウザで https://localhost:8443/login からログインする。session cookie は同一 origin のリクエストに自動で付与される。API key 認証は Swagger UI 右上の `Authorize` から `X-API-Key` を設定する。
+ブラウザ向け API を `Try it out` で確認する場合は、先に同じブラウザで https://localhost:8443/login からログインする。session cookie は同一 origin のリクエストに自動で付与される。`/api/v1/public/rooms` 以下の公開 API はセッション認証では利用できないため、Swagger UI 右上の `Authorize` から `X-API-Key` を設定する。
 
-状態を変更する API では CSRF token が必要になる。Swagger UI は `XSRF-TOKEN` cookie の値を `X-CSRF-TOKEN` header として送信する設定になっている。
+セッション認証で状態を変更する API では CSRF token が必要になる。Swagger UI は `XSRF-TOKEN` cookie の値を `X-CSRF-TOKEN` header として送信する設定になっている。API key 必須の公開 API では CSRF token は不要。

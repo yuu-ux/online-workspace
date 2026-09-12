@@ -7,6 +7,9 @@ import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
 
 import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +30,7 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.online_workspace.models.RoomMember;
+import com.example.online_workspace.repositories.FriendRepository;
 import com.example.online_workspace.repositories.RoomMembershipRepository;
 
 @MybatisTest
@@ -36,6 +40,7 @@ class RoomMembershipServiceTests {
 	@Autowired
 	private RoomMembershipRepository membershipRepository;
 
+	private FriendRepository friendRepository;
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
@@ -46,8 +51,58 @@ class RoomMembershipServiceTests {
 	@BeforeEach
 	void setUp() {
 		messagingTemplate = mock(SimpMessagingTemplate.class);
-		presence = new OnlinePresenceService(membershipRepository, messagingTemplate);
+		friendRepository = mock(FriendRepository.class);
+		presence = new OnlinePresenceService(membershipRepository, friendRepository, messagingTemplate);
 		service = new RoomMembershipService(membershipRepository, presence);
+	}
+
+	@Test
+	void notifiesFriendsWhenUserBecomesOnline() {
+		when(friendRepository.findActiveFriendPresenceRecipients("member@example.com"))
+			.thenReturn(List.of(new FriendRepository.FriendPresenceRecipient(2L, "creator@example.com")));
+
+		connected("member-1", "member@example.com");
+
+		ArgumentCaptor<OnlinePresenceService.FriendPresenceEvent> event =
+			ArgumentCaptor.forClass(OnlinePresenceService.FriendPresenceEvent.class);
+		verify(messagingTemplate).convertAndSendToUser(
+			eq("creator@example.com"),
+			eq("/queue/friends/presence"),
+			event.capture()
+		);
+		assertThat(event.getValue().type()).isEqualTo("friend:presence_changed");
+		assertThat(event.getValue().payload().userId()).isEqualTo(2L);
+		assertThat(event.getValue().payload().online()).isTrue();
+	}
+
+	@Test
+	void notifiesFriendsOnlyWhenTheLastConnectionGoesOffline() {
+		when(friendRepository.findActiveFriendPresenceRecipients("member@example.com"))
+			.thenReturn(List.of(new FriendRepository.FriendPresenceRecipient(2L, "creator@example.com")));
+
+		Message<byte[]> firstTab = connected("member-1", "member@example.com");
+		Message<byte[]> secondTab = connected("member-2", "member@example.com");
+		clearInvocations(messagingTemplate);
+
+		presence.disconnected(new SessionDisconnectEvent(this, firstTab, "member-1", CloseStatus.NORMAL));
+		verify(messagingTemplate, times(0)).convertAndSendToUser(
+			eq("creator@example.com"),
+			eq("/queue/friends/presence"),
+			org.mockito.ArgumentMatchers.any(OnlinePresenceService.FriendPresenceEvent.class)
+		);
+
+		presence.disconnected(new SessionDisconnectEvent(this, secondTab, "member-2", CloseStatus.NORMAL));
+
+		ArgumentCaptor<OnlinePresenceService.FriendPresenceEvent> event =
+			ArgumentCaptor.forClass(OnlinePresenceService.FriendPresenceEvent.class);
+		verify(messagingTemplate).convertAndSendToUser(
+			eq("creator@example.com"),
+			eq("/queue/friends/presence"),
+			event.capture()
+		);
+		assertThat(event.getValue().type()).isEqualTo("friend:presence_changed");
+		assertThat(event.getValue().payload().userId()).isEqualTo(2L);
+		assertThat(event.getValue().payload().online()).isFalse();
 	}
 
 	@Test

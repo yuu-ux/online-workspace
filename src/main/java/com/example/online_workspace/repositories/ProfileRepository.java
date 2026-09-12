@@ -3,6 +3,7 @@ package com.example.online_workspace.repositories;
 import java.time.Instant;
 import java.util.Optional;
 
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -57,6 +58,19 @@ public interface ProfileRepository {
 		WHERE id = #{userId}
 		""")
 	int updateName(@Param("userId") long userId, @Param("name") String name);
+
+	@Update("""
+		UPDATE profiles
+		SET icon_url = #{iconUrl}, updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = #{userId}
+		""")
+	int updateIconUrl(@Param("userId") long userId, @Param("iconUrl") String iconUrl);
+
+	@Insert("""
+		INSERT INTO profiles (user_id, icon_url)
+		VALUES (#{userId}, #{iconUrl})
+		""")
+	int insertIconUrl(@Param("userId") long userId, @Param("iconUrl") String iconUrl);
 
 	@Update("""
 		MERGE INTO profiles AS target

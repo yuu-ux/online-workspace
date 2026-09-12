@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { format_created_at_jst } from "./date.js";
+import { format_created_at_jst, format_message_time_jst } from "./date.js";
+
+test("送信時刻を日本時間の時分で表示し、不正な日時は表示しない", () => {
+  assert.equal(format_message_time_jst("2026-09-10T05:32:00Z"), "14:32");
+  assert.equal(format_message_time_jst("2026-09-10T15:02:00Z"), "00:02");
+  assert.equal(format_message_time_jst(""), "");
+});
 
 test("UTCの作成日時を日本時間の年月日と分へ変換する", () => {
   assert.equal(
