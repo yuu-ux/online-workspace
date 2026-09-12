@@ -1,8 +1,7 @@
 #!/bin/sh
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-cert_dir="$repo_root/docker/nginx/certs"
+cert_dir="${CERT_DIR:-/etc/nginx/tls}"
 
 mkdir -p "$cert_dir"
 openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 30 \
