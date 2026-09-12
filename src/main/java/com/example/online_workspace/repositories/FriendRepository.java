@@ -50,6 +50,24 @@ public interface FriendRepository {
 	long countActiveFriends(@Param("userId") long userId);
 
 	@Select("""
+		SELECT source.id AS source_user_id,
+		       recipient.email AS recipient_email
+		FROM users source
+		JOIN account_statuses source_status ON source_status.id = source.account_status_id
+		JOIN friends f ON f.friend_user_id = source.id
+		JOIN friend_statuses fs ON fs.id = f.status_id AND fs.code = 'ACTIVE'
+		JOIN users recipient ON recipient.id = f.user_id
+		JOIN account_statuses recipient_status ON recipient_status.id = recipient.account_status_id
+		WHERE source.email = #{email}
+		  AND source.deleted_at IS NULL
+		  AND source_status.code = 'ACTIVE'
+		  AND recipient.deleted_at IS NULL
+		  AND recipient_status.code = 'ACTIVE'
+		  AND (recipient.suspended_until IS NULL OR recipient.suspended_until <= CURRENT_TIMESTAMP)
+		""")
+	List<FriendPresenceRecipient> findActiveFriendPresenceRecipients(@Param("email") String email);
+
+	@Select("""
 		SELECT u.id, u.name, u.email, p.icon_url
 		FROM users u
 		JOIN account_statuses s ON s.id = u.account_status_id
@@ -152,5 +170,8 @@ public interface FriendRepository {
 	}
 
 	record FriendTarget(long id, String name, String email, String iconUrl) {
+	}
+
+	record FriendPresenceRecipient(long sourceUserId, String recipientEmail) {
 	}
 }

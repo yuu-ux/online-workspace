@@ -5,10 +5,9 @@
 ブラウザからのREST API・画面配信はHTTPS、`/ws` のWebSocket通信はWSSを使用する。
 TLSはNginxで終端し、Dockerネットワーク内のNginxからSpring Boot / Viteへの通信はHTTPとする。
 
-ローカルでは、最初に自己署名証明書を生成してから起動する。
+ローカルでは、`proxy` コンテナの起動時に自己署名証明書を自動生成する。
 
 ```bash
-./scripts/generate-local-tls.sh
 docker compose up
 ```
 

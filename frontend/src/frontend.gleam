@@ -1,4 +1,5 @@
 import gleam/int
+import gleam/list
 import gleam/option.{type Option, None, Some}
 import lustre/element
 import lustre/effect
@@ -8,6 +9,7 @@ import types/room as room_t
 import types/session
 import wrap/session as session_api
 import wrap/api as api
+import wrap/room as room_api
 
 import pages/home
 import pages/login
@@ -136,6 +138,16 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     // mypage other
 
+    MyPage(page), MyPageMsg(mypage.FriendMsg(friend.ToUserInfo(user_info))) -> {
+      let #(detail, next_effect) = userinfofromfriend.init(page.session, user_info)
+      #(Model(..model, current_page: UserInfoFromFriend(detail)), effect.map(next_effect, UserInfoFromFriendMsg))
+    }
+
+    MyPage(page), MyPageMsg(mypage.FriendMsg(friend.SearchSubmitted)) -> {
+      let #(results, next_effect) = search.init(page.session, page.friends.search_word)
+      #(Model(..model, current_page: Search(results)), effect.map(next_effect, SearchMsg))
+    }
+
     MyPage(mypage_model), MyPageMsg(other) -> {
       let #(update_mypage_model, update_effect) = mypage.update(mypage_model, other)
       #(Model(..model, current_page: MyPage(update_mypage_model)), update_effect |> effect.map(MyPageMsg))
@@ -145,8 +157,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     Friend(friend_model), FriendMsg(friend.ToMyPage) -> {
       let #(update_friend_model, _) = friend.update(friend_model, friend.ToMyPage)
-      let #(init_mypage_model, _) = mypage.init(update_friend_model.session)
-      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
+      let #(init_mypage_model, init_effect) = mypage.init(update_friend_model.session)
+      #(
+        Model(..model, current_page: MyPage(init_mypage_model)),
+        init_effect |> effect.map(MyPageMsg),
+      )
     }
 
     Friend(friend_model), FriendMsg(friend.ToHome) -> {
@@ -159,6 +174,18 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(
         Model(..model, current_page: UserInfoFromFriend(update_user_info_model)),
         update_effect |> effect.map(UserInfoFromFriendMsg),
+      )
+    }
+
+    Friend(friend_model), FriendMsg(friend.SearchSubmitted) -> {
+      let #(updated_friend_model, _) = friend.update(friend_model, friend.SearchSubmitted)
+      let #(init_search_model, init_effect) = search.init(
+        updated_friend_model.session,
+        updated_friend_model.search_word,
+      )
+      #(
+        Model(..model, current_page: Search(init_search_model)),
+        init_effect |> effect.map(SearchMsg),
       )
     }
 
@@ -176,8 +203,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     Profile(profile_model), ProfileMsg(profile.ToMyPage) -> {
       let #(update_profile_model, _) = profile.update(profile_model, profile.ToMyPage)
-      let #(init_mypage_model, _) = mypage.init(update_profile_model.session)
-      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
+      let #(init_mypage_model, init_effect) = mypage.init(update_profile_model.session)
+      #(
+        Model(..model, current_page: MyPage(init_mypage_model)),
+        init_effect |> effect.map(MyPageMsg),
+      )
     }
 
     Profile(profile_model), ProfileMsg(profile.ToHome) -> {
@@ -197,8 +227,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     // -- home --
     Home(home_model), HomeMsg(home.ToMyPage) -> {
-      let #(init_my_page, _) = mypage.init(home_model.session)
-      #(Model(..model, current_page: MyPage(init_my_page)), effect.none())
+      let #(init_my_page, init_effect) = mypage.init(home_model.session)
+      #(
+        Model(..model, current_page: MyPage(init_my_page)),
+        init_effect |> effect.map(MyPageMsg),
+      )
     }
 
     Home(_), HomeMsg(home.ToLogin) -> {
@@ -220,10 +253,22 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     Home(home_model), HomeMsg(home.ToRoom(room_id)) -> {
-      let #(update_home_model, _) = home.update(home_model, home.ToRoom(room_id))
-      remember_room(room_id)
-      let #(init_room_model, update_effect) = room.init(update_home_model.session, room_id)
-      #(Model(..model, current_page: Room(init_room_model)), update_effect |> effect.map(RoomMsg))
+      case room_is_joinable(home_model.rooms, room_id) {
+        True -> {
+          let #(update_home_model, _) = home.update(home_model, home.ToRoom(room_id))
+          remember_room(room_id)
+          let #(init_room_model, update_effect) = room.init(update_home_model.session, room_id)
+          #(Model(..model, current_page: Room(init_room_model)), update_effect |> effect.map(RoomMsg))
+        }
+        False -> {
+          let #(update_home_model, update_effect) =
+            home.update(home_model, home.RoomNotJoinable)
+          #(
+            Model(..model, current_page: Home(update_home_model)),
+            update_effect |> effect.map(HomeMsg),
+          )
+        }
+      }
     }
 
     Home(home_model), HomeMsg(home.RoomsLoaded(response)) -> {
@@ -237,7 +282,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     Home(home_model), HomeMsg(home.LogoutCompleted(response)) -> {
       let #(update_home_model, update_effect) = home.update(home_model, home.LogoutCompleted(response))
       case response {
-        Ok(_) -> clear_current_room_id()
+        Ok(_) -> {
+          room_api.close_ws()
+          clear_current_room_id()
+        }
         Error(_) -> Nil
       }
       #(
@@ -245,6 +293,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           session: update_home_model.session,
           current_page: Home(update_home_model),
         ),
+        update_effect |> effect.map(HomeMsg),
+      )
+    }
+
+    Home(home_model), HomeMsg(other) -> {
+      let #(updated_home_model, update_effect) = home.update(home_model, other)
+      #(
+        Model(..model, current_page: Home(updated_home_model)),
         update_effect |> effect.map(HomeMsg),
       )
     }
@@ -378,10 +434,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     // -- userinfofromfriend --
 
     UserInfoFromFriend(userinfofromfriend_model), UserInfoFromFriendMsg(userinfofromfriend.ToFriend) -> {
-      let #(init_friend_model, friend_effect) = friend.init(userinfofromfriend_model.user_info_component.session)
+      let #(init_friend_model, friend_effect) = mypage.init(userinfofromfriend_model.user_info_component.session)
       #(
-        Model(..model, current_page: Friend(init_friend_model)),
-        friend_effect |> effect.map(FriendMsg),
+        Model(..model, current_page: MyPage(init_friend_model)),
+        friend_effect |> effect.map(MyPageMsg),
       )
     }
 
@@ -434,9 +490,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(Model(..model, current_page: Home(init_home_model)), effect.none())
     }
 
-    Search(search_model), SearchMsg(search.ToMyPage) -> {
-      let #(init_mypage_model, _) = mypage.init(search_model.session)
-      #(Model(..model, current_page: MyPage(init_mypage_model)), effect.none())
+    Search(search_model), SearchMsg(search.ToFriend) -> {
+      let #(init_friend_model, init_effect) = mypage.init(search_model.session)
+      #(
+        Model(..model, current_page: MyPage(init_friend_model)),
+        init_effect |> effect.map(MyPageMsg),
+      )
     }
 
     Search(search_model), SearchMsg(search.ToUserInfo(user_info)) -> {
@@ -473,8 +532,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     }
 
     UserInfoFromSearch(userinfo_model), UserInfoFromSearchMsg(userinfofromsearch.ToFriend) -> {
-      let #(init_friend_model, _) = friend.init(userinfo_model.user_info_component.session)
-      #(Model(..model, current_page: Friend(init_friend_model)), effect.none())
+      let #(page, next_effect) = mypage.init(userinfo_model.user_info_component.session)
+      #(Model(..model, current_page: MyPage(page)), effect.map(next_effect, MyPageMsg))
     }
 
 
@@ -574,6 +633,13 @@ pub fn parse_stored_room_id(value: String) -> Option(room_t.RoomId) {
   case int.parse(value) {
     Ok(id) if id > 0 -> Some(room_t.RoomId(id))
     _ -> None
+  }
+}
+
+fn room_is_joinable(rooms: List(room_t.RoomInfo), room_id: room_t.RoomId) -> Bool {
+  case list.find(rooms, fn(room) { room.room_id == room_id }) {
+    Ok(room) -> room.joinable
+    Error(_) -> True
   }
 }
 

@@ -15,6 +15,16 @@ fn request(
   callback: fn(Int, String) -> Nil,
 ) -> Nil
 
+@external(javascript, "./../ffi/api.js", "upload_file")
+fn upload_file(
+	input_id: String,
+	path: String,
+	callback: fn(Int, String) -> Nil,
+) -> Nil
+
+@external(javascript, "./../ffi/api.js", "has_selected_file")
+fn has_selected_file_js(input_id: String) -> Bool
+
 pub fn json_request(
   method: String,
   path: String,
@@ -27,6 +37,23 @@ pub fn json_request(
       dispatch(to_msg(decode_response(status, response_body, decoder)))
     })
   })
+}
+
+pub fn upload_request(
+	input_id: String,
+	path: String,
+	decoder: decode.Decoder(a),
+	to_msg: fn(Result(a, ApiError)) -> msg,
+) -> effect.Effect(msg) {
+	effect.from(fn(dispatch) {
+		upload_file(input_id, path, fn(status, response_body) {
+			dispatch(to_msg(decode_response(status, response_body, decoder)))
+		})
+	})
+}
+
+pub fn has_selected_file(input_id: String) -> Bool {
+	has_selected_file_js(input_id)
 }
 
 pub fn empty_request(

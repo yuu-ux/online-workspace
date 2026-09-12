@@ -50,7 +50,10 @@ public class RoomMembershipService {
 		long userId = requireUserId(userEmail);
 		JoinPolicy room = lockOpenRoom(roomId);
 
-		return joinLockedRoom(room, userId, joinedAt);
+		RoomMember member = joinLockedRoom(room, userId, joinedAt);
+		presence.publishRoomJoined(userEmail, roomId, member);
+		presence.publishRoomMemberCountChanged(roomId);
+		return member;
 	}
 
 	@Transactional
@@ -61,10 +64,12 @@ public class RoomMembershipService {
 		if (membershipId == null) {
 			throw notFound("Active room membership not found");
 		}
+		RoomMember member = repository.findActiveMember(roomId, userId);
 		if (repository.leave(membershipId, leftAt) != 1) {
 			throw conflict("The room membership could not be ended");
 		}
-		presence.publishRoomLeft(userEmail, roomId, userId);
+		presence.publishRoomLeft(userEmail, roomId, userId, member);
+		presence.publishRoomMemberCountChanged(roomId);
 	}
 
 	private RoomMember joinLockedRoom(JoinPolicy room, long userId, Instant joinedAt) {

@@ -1,7 +1,9 @@
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
+import gleam/list
 import gleam/option
+import gleam/string
 import lustre/effect
 import types/room.{
   Cat1,
@@ -23,7 +25,7 @@ import types/room.{
   type RoomNameType,
   type WorkStyleType,
 }
-import types/user.{UserId, UserInfo, type UserInfo}
+import types/user.{UserId, UserInfo, type UserId, type UserInfo}
 import wrap/api as api
 
 pub fn create_room(
@@ -85,6 +87,7 @@ fn rooms_decoder() -> decode.Decoder(List(RoomInfo)) {
 pub fn room_info_decoder() -> decode.Decoder(RoomInfo) {
   use id <- decode.field("id", decode.int)
   use name <- decode.field("name", decode.string)
+  use description <- decode.field("description", decode.string)
   use category_id <- decode.field(
     "category",
     category_id_decoder(),
@@ -102,6 +105,7 @@ pub fn room_info_decoder() -> decode.Decoder(RoomInfo) {
   use created_at <- decode.field("createdAt", decode.string)
   decode.success(RoomInfo(
     roomname: RoomNameType(name),
+    description: DescriptionType(description),
     visibility: Public,
     category: category_from_id(category_id),
     work_style: case work_style {
@@ -205,7 +209,7 @@ pub fn leave_room(
 
 pub fn get_room_members(
   room_id: RoomId,
-  to_msg: fn(Result(List(UserInfo), api.ApiError)) -> msg,
+  to_msg: fn(Result(List(RoomMember), api.ApiError)) -> msg,
 ) -> effect.Effect(msg) {
   api.json_request(
     "GET",
@@ -247,10 +251,15 @@ fn room_path(room_id: RoomId) -> String {
   int.to_string(id)
 }
 
-fn room_member_decoder() -> decode.Decoder(UserInfo) {
+pub type RoomMember {
+  RoomMember(name: String, user_id: UserId, icon_url: String)
+}
+
+fn room_member_decoder() -> decode.Decoder(RoomMember) {
   use id <- decode.subfield(["user", "id"], decode.int)
   use name <- decode.subfield(["user", "name"], decode.string)
-  decode.success(UserInfo(name: name, user_id: UserId(int.to_string(id))))
+  use icon <- decode.subfield(["user", "iconUrl"], decode.optional(decode.string))
+  decode.success(RoomMember(name, UserId(int.to_string(id)), option.unwrap(icon, "")))
 }
 
 fn message_list_decoder() -> decode.Decoder(List(Chat)) {
@@ -262,12 +271,16 @@ fn message_decoder() -> decode.Decoder(Chat) {
   use room_id <- decode.field("roomId", decode.int)
   use user <- decode.subfield(["sender", "name"], decode.string)
   use message <- decode.field("content", decode.string)
+  use sent_at <- decode.field("sentAt", decode.string)
+  use icon <- decode.subfield(["sender", "iconUrl"], decode.optional(decode.string))
   decode.success(
     Chat(
       msg_type: "msg",
       room_id: RoomId(room_id),
       user: user,
       message: message,
+      sent_at: sent_at,
+      icon_url: option.unwrap(icon, ""),
     ),
   )
 }
@@ -301,7 +314,27 @@ pub type Chat {
     room_id: RoomId,
     user: String,
     message: String,
+    sent_at: String,
+    icon_url: String,
   )
+}
+
+pub type Presence {
+  Presence(
+    room_id: RoomId,
+    user_id: UserId,
+    user: String,
+    online: Bool,
+    icon_url: String,
+  )
+}
+
+pub type RoomMemberCount {
+  RoomMemberCount(room_id: RoomId, current_members: Int)
+}
+
+pub type FriendPresence {
+  FriendPresence(user_id: UserId, online: Bool)
 }
 
 // ---------------------------------------------------------
@@ -311,6 +344,12 @@ pub type Chat {
 /// 接続する
 @external(javascript, "./../ffi/ws.js", "connect_ws")
 fn do_connect(room_id: Int, dispatch: fn(String) -> Nil) -> Nil
+
+@external(javascript, "./../ffi/ws.js", "connect_room_list")
+fn do_connect_room_list(room_ids_json: String, dispatch: fn(String) -> Nil) -> Nil
+
+@external(javascript, "./../ffi/ws.js", "connect_friend_presence")
+fn do_connect_friend_presence(dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
@@ -332,6 +371,30 @@ pub fn connect_to_server(room_id: RoomId, m: fn(String) -> msg) -> effect.Effect
   })
 }
 
+pub fn connect_to_room_list(room_ids: List(RoomId), m: fn(String) -> msg) -> effect.Effect(msg) {
+  let ids = list.map(room_ids, fn(room_id) {
+    let RoomId(id) = room_id
+    id
+  })
+  let ids_string = list.map(ids, int.to_string) |> string.join(",")
+  let ids_json = "[" <> ids_string <> "]"
+  effect.from(fn(dispatch) {
+    let js_callback = fn(received_text: String) {
+      dispatch(m(received_text))
+    }
+    do_connect_room_list(ids_json, js_callback)
+  })
+}
+
+pub fn connect_to_friend_presence(m: fn(String) -> msg) -> effect.Effect(msg) {
+  effect.from(fn(dispatch) {
+    let js_callback = fn(received_text: String) {
+      dispatch(m(received_text))
+    }
+    do_connect_friend_presence(js_callback)
+  })
+}
+
 pub fn send_ws_message(message: String) -> Bool {
   case do_send(message) {
     True -> True
@@ -345,12 +408,66 @@ pub fn chat_from_json(json_string: String) -> Result(Chat, json.DecodeError) {
     use room_id <- decode.field("room_id", decode.int)
     use user <- decode.field("user", decode.string)
     use message <- decode.field("message", decode.string)
+    use sent_at <- decode.field("sent_at", decode.string)
+    use icon_url <- decode.field("icon_url", decode.string)
     decode.success(Chat(
       msg_type: msg_type,
       room_id: RoomId(room_id),
       user: user,
-      message: message
+      message: message,
+      sent_at: sent_at,
+      icon_url: icon_url,
     ))
   }
   json.parse(from: json_string, using: chat_decoder)
+}
+
+pub fn presence_from_json(json_string: String) -> Result(Presence, json.DecodeError) {
+  let presence_decoder = {
+    use room_id <- decode.field("room_id", decode.int)
+    use user_id <- decode.field("user_id", decode.int)
+    use user <- decode.field("user", decode.string)
+    use online <- decode.field("online", decode.bool)
+    use icon_url <- decode.optional_field("icon_url", "", decode.string)
+    decode.success(
+      Presence(
+        room_id: RoomId(room_id),
+        user_id: UserId(int.to_string(user_id)),
+        user: user,
+        online: online,
+        icon_url: icon_url,
+      ),
+    )
+  }
+  json.parse(from: json_string, using: presence_decoder)
+}
+
+pub fn room_member_count_from_json(
+  json_string: String,
+) -> Result(RoomMemberCount, json.DecodeError) {
+  let member_count_decoder = {
+    use room_id <- decode.field("room_id", decode.int)
+    use current_members <- decode.field("current_members", decode.int)
+    decode.success(RoomMemberCount(RoomId(room_id), current_members))
+  }
+  json.parse(from: json_string, using: member_count_decoder)
+}
+
+pub fn friend_presence_from_json(
+  json_string: String,
+) -> Result(FriendPresence, json.DecodeError) {
+  let friend_presence_decoder = {
+    use user_id <- decode.field("user_id", decode.int)
+    use online <- decode.field("online", decode.bool)
+    decode.success(FriendPresence(UserId(int.to_string(user_id)), online))
+  }
+  json.parse(from: json_string, using: friend_presence_decoder)
+}
+
+pub fn room_created_from_json(json_string: String) -> Result(RoomInfo, json.DecodeError) {
+  let room_created_decoder = {
+    use room <- decode.field("payload", room_info_decoder())
+    decode.success(room)
+  }
+  json.parse(from: json_string, using: room_created_decoder)
 }

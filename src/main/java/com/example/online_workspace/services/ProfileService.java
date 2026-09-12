@@ -28,6 +28,7 @@ public class ProfileService {
 		if (userId == null) {
 			throw unauthorized();
 		}
+		validateAvatarUrl(userId, request.iconUrl());
 		if (request.workCategoryId() != null
 			&& !repository.activeCategoryExists(request.workCategoryId())) {
 			throw new ApiException(
@@ -54,6 +55,19 @@ public class ProfileService {
 		return repository.findByEmail(email)
 			.map(this::toResponse)
 			.orElseThrow(this::unauthorized);
+	}
+
+	private void validateAvatarUrl(long userId, String iconUrl) {
+		if (iconUrl != null
+			&& iconUrl.startsWith("/api/v1/users/")
+			&& !iconUrl.equals("/api/v1/users/" + userId + "/avatar")) {
+			throw new ApiException(
+				HttpStatus.UNPROCESSABLE_CONTENT,
+				"VALIDATION_FAILED",
+				"自分のアイコンURLを指定してください。",
+				List.of(new FieldErrorResponse("iconUrl", "INVALID", "自分のアイコンURLを指定してください。"))
+			);
+		}
 	}
 
 	private ProfileResponse toResponse(ProfileRow row) {

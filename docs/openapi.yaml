@@ -7,11 +7,11 @@ info:
     日時は RFC 3339、ID は 64 bit integer、JSON の property 名は lowerCamelCase とする。
 
     ブラウザ向け API は `JSESSIONID` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
-    `XSRF-TOKEN` cookieを発行し、その値を状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
+    `XSRF-TOKEN` cookieを発行し、その値をsession認証による状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
 
-    API key 認証と rate limit の採点対象は、ルーム一覧、作成、詳細、更新、削除の5 operation とする。
-    API key は発行先のユーザーまたはservice principalへ紐付き、各operationの認可判定にもその主体を使用する。
-    監視用 health check も API key で保護する。
+    API key 認証と rate limit の対象は、ルーム一覧、作成、詳細、更新、削除の5 operation とする。
+    API key は環境変数で設定する単一の共有キーで、認証時は設定された固定 principal を使用する。
+    監視用 health check と Prometheus endpoint は、ルームAPIとは別に設定する管理用API keyで保護する。
 servers:
   - url: /api/v1
     description: 同一 origin の API
@@ -263,52 +263,56 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
-  /users/me:
-    delete:
+  /users/me/avatar:
+    post:
       tags: [Users]
-      summary: 退会する
-      operationId: withdrawCurrentUser
+      summary: 自分のアイコン画像をアップロードする
+      operationId: uploadMyAvatar
       security:
         - sessionAuth: []
           csrfToken: []
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/WithdrawRequest'
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 2MB以下のPNGまたはJPEG
       responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '204':
-          description: 退会完了。現在の session も無効化する
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '200':
+          description: アップロードした画像の取得URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvatarResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /room-categories:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /users/{userId}/avatar:
     get:
-      tags: [Room categories]
-      summary: 利用可能なルームカテゴリを取得する
-      operationId: listRoomCategories
+      tags: [Users]
+      summary: ユーザーのアイコン画像を取得する
+      operationId: getUserAvatar
+      parameters:
+        - $ref: '#/components/parameters/UserId'
       responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
         '200':
-          description: 表示順に並んだカテゴリ
+          description: アイコン画像
           content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RoomCategory'
+            image/png: {}
+            image/jpeg: {}
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /rooms:
     get:
@@ -686,7 +690,7 @@ paths:
         - url: /
           description: API prefix 外の監視 endpoint
       security:
-        - apiKeyAuth: []
+        - managementApiKey: []
       responses:
         '500':
           $ref: '#/components/responses/InternalServerError'
@@ -697,7 +701,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: 管理用API keyがない、または無効
         '503':
           description: 依存サービスを含めて正常に稼働していない
           content:
@@ -714,7 +718,7 @@ paths:
         - url: /
           description: API prefix 外の監視 endpoint
       security:
-        - apiKeyAuth: []
+        - managementApiKey: []
       responses:
         '200':
           description: Prometheus text exposition format のメトリクス
@@ -723,7 +727,7 @@ paths:
               schema:
                 type: string
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: 管理用API keyがない、または無効
 
 components:
   securitySchemes:
@@ -743,8 +747,16 @@ components:
       in: header
       name: X-API-Key
       description: |
-        ユーザーまたはservice principalに紐付くAPI key。ルームAPIの採点対象5 operationと
-        監視用health checkで使用する。key単位でrate limitを適用する。
+        環境変数で設定する単一の共有API key。ルームAPIの5 operationで使用し、
+        認証後は設定された固定 principal として処理する。API key利用時のrate limitは
+        すべてのAPI keyリクエストで共有する。
+    managementApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        監視用に環境変数で設定するAPI key。`/actuator/health` と
+        `/actuator/prometheus` で使用する。ルームAPIのAPI keyとは別に設定する。
 
   parameters:
     Page:
@@ -970,9 +982,18 @@ components:
           maxLength: 100
         iconUrl:
           type: string
-          format: uri
+          format: uri-reference
           maxLength: 500
           nullable: true
+
+    AvatarResponse:
+      type: object
+      required: [iconUrl]
+      properties:
+        iconUrl:
+          type: string
+          maxLength: 500
+          description: 同一originから取得できるアイコン画像URL
 
     UserProfile:
       description: 公開設定に応じたプロフィール。非公開時は名前とアイコン、および閲覧者とのフレンド状態のみ返す。
@@ -1011,7 +1032,7 @@ components:
           maxLength: 100
         iconUrl:
           type: string
-          format: uri
+          format: uri-reference
           maxLength: 500
           nullable: true
         isPublic:
@@ -1067,10 +1088,11 @@ components:
           maxLength: 100
         iconUrl:
           type: string
-          format: uri
+          format: uri-reference
           maxLength: 500
           nullable: true
-          description: http/httpsの画像URL。nullを指定すると設定済みのアイコンを削除する。
+          pattern: '^(https://\S+|/api/v1/users/[1-9][0-9]*/avatar)$'
+          description: httpsの画像URLまたは自分を含むユーザーのavatar endpoint。nullを指定すると設定済みのアイコンを削除する。
         bio:
           type: string
           maxLength: 500
@@ -1081,19 +1103,6 @@ components:
           nullable: true
         isPublic:
           type: boolean
-
-    WithdrawRequest:
-      type: object
-      additionalProperties: false
-      required: [password]
-      properties:
-        password:
-          type: string
-          format: password
-          description: UTF-8 エンコード時に72バイト以内
-          minLength: 1
-          maxLength: 72
-          writeOnly: true
 
     UserPage:
       type: object
@@ -1126,6 +1135,7 @@ components:
       required:
         - id
         - name
+        - description
         - category
         - workStyle
         - maxMembers
@@ -1140,6 +1150,9 @@ components:
         name:
           type: string
           maxLength: 100
+        description:
+          type: string
+          maxLength: 500
         category:
           $ref: '#/components/schemas/RoomCategory'
         workStyle:

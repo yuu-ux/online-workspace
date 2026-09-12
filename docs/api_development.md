@@ -38,7 +38,7 @@ npx --yes openapi-typescript@7.13.0
 - APIはSPA向けのCSRF request handlerを使用する。ReactやSwagger UIは `XSRF-TOKEN` cookieの値を `X-CSRF-TOKEN` headerへ設定する。
 - `POST /api/v1/auth/login` は #16 の登録処理と同じく、メールアドレスの前後の空白を除去して `Locale.ROOT` で小文字化して照合する。成功時は `JSESSIONID` cookie にサーバー側セッションを保存する。
 - ログインに5回連続で失敗した場合、6回目以降の同じメールアドレス・接続元アドレスからの試行を15分間 `429 Too Many Requests` とする。429レスポンスには `Retry-After: 900` を返し、成功したログインで失敗回数をリセットする。接続元アドレスはサーバーが認識した接続元アドレスを使用する。リバースプロキシ経由で運用する場合は、アプリケーションを直接公開せず、プロキシ側で転送ヘッダーを適切に制御する。現状は単一アプリケーションインスタンス向けの上限付きインメモリ管理であり、複数インスタンス化時は共有ストアへ差し替える。
-- `JSESSIONID` cookieは `HttpOnly=true`、`SameSite=Lax` とする。HTTPSのComposeプロキシ経由では `Secure=true`、HTTPでバックエンドへ直接接続する場合は `Secure=false` を設定する。本番では `SESSION_COOKIE_SECURE=true` を設定する。`SESSION_COOKIE_HTTP_ONLY`、`SESSION_COOKIE_SECURE`、`SESSION_COOKIE_SAME_SITE` で環境ごとに変更できる。
+- `JSESSIONID` cookieは `HttpOnly=true`、`SameSite=Lax` とする。`SESSION_COOKIE_HTTP_ONLY`、`SESSION_COOKIE_SECURE`、`SESSION_COOKIE_SAME_SITE` で環境ごとに変更でき、既定値はそれぞれ `true`、`true`、`lax` とする。
 - `JSESSIONID` cookieは永続CookieにせずセッションCookieとして発行する。ページリロード中は認証状態を維持するが、ブラウザ終了後のログイン状態維持（Remember Me）は対象外とする。
 
 ### Greamからの認証API呼び出し
@@ -48,10 +48,11 @@ npx --yes openapi-typescript@7.13.0
 3. リロード時やアプリ起動時は `GET /api/v1/auth/session` を呼び出す。未ログイン時も `200` で `authenticated: false` が返る。
 4. ログイン中のユーザーがログアウトするときは、`POST /api/v1/auth/logout` に `X-CSRF-TOKEN` headerを付けて送信する。ブラウザは保存済みの`JSESSIONID` cookieを自動送信する。成功時は `204` となり、サーバーセッションを無効化して`JSESSIONID` cookieを削除する。
 
-ログイン失敗時は `401`、未認証でログアウトを呼び出した場合は `401`、CSRFトークンがない・不正な場合は `403`、入力形式エラーは `422`、レート制限中は `429` となる。`429` では `Retry-After: 900` を再試行待機時間として使用する。
+ログイン失敗時は `401`、未認証でログアウトを呼び出した場合は `401`、CSRFトークンがない・不正な場合は `403`、入力形式エラーは `422`、レート制限中は `429` となる。`429` では `Retry-After: 900` を再試行待機時間として使用する。CSRF cookieは常に `Secure=true`、`SameSite=Lax`、HttpOnlyなしで発行されるため、HTTPS経由で利用する。
 - API keyの採点対象は `GET /rooms`、`POST /rooms`、`GET /rooms/{roomId}`、`PUT /rooms/{roomId}`、`DELETE /rooms/{roomId}` の5 operationとする。
-- 採点対象5 operationはsession認証またはAPI key認証を受け付ける。API keyはユーザーまたはservice principalへ紐付け、同じ認可ルールを適用する。
-- 採点対象5 operationにはkey単位のrate limitを適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。
+- 採点対象5 operationはsession認証またはAPI key認証を受け付ける。API keyは環境変数で設定する単一の共有キーで、認証後は設定された固定 principal として処理する。
+- 採点対象5 operationには、session認証では principal 単位、API key認証ではすべての API key リクエストで共有する固定窓の rate limit を適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。既定値は1分あたり60件で、単一アプリケーションインスタンス内で管理する。
+- `/actuator/health` と `/actuator/prometheus` は API prefix 外の監視 endpoint であり、ルームAPIとは別に設定する管理用API keyを要求する。session認証、API rate limit、APIのproblem+jsonエラー形式は適用しない。
 
 ## レビュー観点
 
