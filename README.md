@@ -45,13 +45,13 @@ docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafa
 
 ### Project Documentation
 
-- [Requirements](docs/requirements.md)
+- [Requirements](docs/requirements.en.md)
 - [API contract](docs/openapi.yaml)
-- [API development guide](docs/api_development.md)
-- [WebSocket event contract](docs/websocket_events.md)
-- [Database schema](docs/db_schema.md)
-- [Web security policy](docs/web_security.md)
-- [Architecture](docs/architecture.md)
+- [API development guide](docs/api_development.en.md)
+- [WebSocket event contract](docs/websocket_events.en.md)
+- [Database schema](docs/db_schema.en.md)
+- [Web security policy](docs/web_security.en.md)
+- [Architecture](docs/architecture.en.md)
 - [42 subject](docs/ft_transcendence.pdf)
 
 ### External References
@@ -91,7 +91,7 @@ The team consists of the following four members. Their roles and primary respons
 - Regular meetings: Weekly meetings
 - Task management tools: GitHub Issues and GitHub Projects
 - Code review process: Changes to the `main` branch are made through pull requests and receive peer review from at least one person
-- Branching: [Branch naming convention](docs/branch_naming_convention.md)
+- Branching: [Branch naming convention](docs/branch_naming_convention.en.md)
 
 ## Technology Stack
 
@@ -151,7 +151,7 @@ The main tables are as follows.
 - `chat_messages`: Chat history within rooms
 - `friendships`: Friendship and removed-friend relationships
 
-The detailed schema, including constraints, is described in [docs/db_schema.md](docs/db_schema.md). Database changes are applied through Flyway migrations.
+The detailed schema, including constraints, is described in [docs/db_schema.en.md](docs/db_schema.en.md). Database changes are applied through Flyway migrations.
 
 ## Feature List
 
