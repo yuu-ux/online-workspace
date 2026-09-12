@@ -64,4 +64,4 @@ docker/nginx/certs/
 ### Environment configuration ###
 .env
 .env.*
-!.env.sample
+!.env.example

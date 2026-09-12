@@ -10,11 +10,11 @@ CA検証付きHTTPSでElasticsearchへ接続します。`ELASTIC_PASSWORD` は�
 
 ## 1. 環境変数を設定する
 
-プロジェクトルートで `.env.sample` を `.env` にコピーし、コメントを確認しながら
+プロジェクトルートで `.env.example` を `.env` にコピーし、コメントを確認しながら
 すべての `change-this-*` を変更します。
 
 ```bash
-cp .env.sample .env
+cp .env.example .env
 # .envを編集して、パスワードとAPIキーを変更する
 set -a && source .env && set +a
 ```

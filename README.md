@@ -37,11 +37,11 @@ controllers/
 
 ### Docker Compose で起動
 
-初回は `.env.sample` をコピーし、パスワードとAPIキーを変更してください。
+初回は `.env.example` をコピーし、パスワードとAPIキーを変更してください。
 `.env` はGit管理対象外です。
 
 ```bash
-cp .env.sample .env
+cp .env.example .env
 # .envを編集して、change-this-* の値を変更する
 ./docker/nginx/generate-local-tls.sh
 docker compose up
