@@ -339,7 +339,7 @@ pub fn view(model: Model) -> element.Element(Msg) {
         list.flatten([
           [
             div([class("shrink-0 px-4 pt-4 sm:px-8")], [
-              button([class("text-sm font-medium text-[#58745a] hover:underline"), on_click(ToHome)], [text("← ホームへ")]),
+              button([class("text-sm font-medium text-[#58745a] hover:underline"), on_click(ToHome)], [text("← 退出してホームへ")]),
             ]),
           ],
           [room_detail_view(model.room_detail)],
