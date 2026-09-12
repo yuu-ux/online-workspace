@@ -37,10 +37,10 @@ controllers/
 
 ### Docker Compose で起動
 
-開発時は proxy / backend / frontend / db / maildev をまとめて起動できます。
+proxy イメージのビルド時にフロントエンドを本番用にビルドし、生成された静的ファイルを nginx から配信します。
 
 ```bash
-docker compose up
+docker compose up --build
 ```
 
 自己署名証明書は `proxy` コンテナの起動時に自動生成されます。
@@ -55,11 +55,10 @@ docker compose up
 
 コンテナ構成:
 
-- `proxy`: 開発用 nginx reverse proxy
-- `frontend`: Vite gleam dev server
+- `proxy`: 静的ファイル配信と nginx reverse proxy
 - `backend`: Spring Boot dev server
 - `db`: PostgreSQL 16
-- `maildev`: 開発用メール確認サーバー
+- `ws-mock`: チャット機能テスト用 WebSocket モックサーバー
 
 HTTPS / WSS、Cookie、CSRF、CORS、セキュリティヘッダー、監査ログの方針と
 確認方法は[Webセキュリティ方針](docs/web_security.md)を参照してください。
@@ -128,7 +127,7 @@ Grafana の匿名アクセスは無効です。Prometheus データソース、
 
 ## フロントエンド開発方針
 
-本番環境では nginx がビルド済みの gleam 静的ファイルを配信します。gleam 用の常駐アプリケーションサーバーは立てません。
+nginx がビルド済みの Gleam 静的ファイルを配信します。Gleam 用の常駐アプリケーションサーバーは立てません。
 
 ```text
 Browser -> nginx
@@ -137,21 +136,19 @@ Browser -> nginx
   └─ /ws      -> Spring Boot
 ```
 
-開発時は `proxy` コンテナ経由で `frontend` コンテナの Vite dev server にアクセスします。作業者ごとの Node.js バージョン差を避けるため、Node.js 環境はコンテナ内に用意します。
+フロントエンドのビルドは `proxy` イメージの build stage で実行します。Node.js / Gleam の実行環境はコンテナ内に用意し、ホストへビルドツールを要求しません。
 
 ```text
 Browser -> proxy container
-  ├─ /        -> frontend container
-  │              ├─ gleam 開発用ファイル配信
-  │              └─ HMR
+  ├─ /        -> /var/www/static
   ├─ /api/*   -> backend container
   └─ /ws      -> backend container
 ```
 
-React のビルドは Node.js 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
+Lustre のビルドは Node.js / Gleam 環境で実行し、生成された `dist/` を nginx の静的配信対象にします。
 
 ```text
-gleam source -> npm run build -> dist/ -> nginx
+gleam source -> npm run build -> proxy image -> nginx
 ```
 
 ## テスト

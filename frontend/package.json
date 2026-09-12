@@ -3,7 +3,8 @@
   "scripts": {
     "test": "node --test src/ffi/*.test.js",
     "build:css": "npx @tailwindcss/cli -i ./src/input.css -o ./priv/static/tailwind.css --minify",
-    "watch:css": "npx @tailwindcss/cli -i ./src/input.css -o ./priv/static/tailwind.css --watch"
+    "watch:css": "npx @tailwindcss/cli -i ./src/input.css -o ./priv/static/tailwind.css --watch",
+    "build": "gleam run -m lustre/dev build --minify frontend"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
