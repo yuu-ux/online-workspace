@@ -63,38 +63,33 @@ Online Workspaceは、包括的なコラボレーションプラットフォー�
 
 > * **フロントエンド:**  
   * **Gleam:** 堅牢なUIコンポーネントを構築するために使用した、型安全な関数型言語。  
-  * **HTML/Tailwind CSS:** ウェブデザイン
+  * **Lustre:** フロントエンドフレームワーク。
+  * **Tailwind CSS:** ウェブデザイン。
 > * **バックエンド:**  
   * **Java / Spring Boot:** 堅牢でセキュア、かつスケーラブルなREST APIおよびWebSocketサーバーを提供。  
   * **Gradle:** ビルド自動化ツール。  
 > * **データベース:**  
-  * **リレーショナルデータベース (PostgreSQL/MySQL等):** Flywayマイグレーション（V1\_\_create\_mvp\_schema.sql等）により管理され、スキーマの一貫性を保証。  
+  * **PostgreSQL:** Flywayマイグレーション（V1\_\_create\_mvp\_schema.sql等）により管理され、スキーマの一貫性を保証。
 > * **インフラストラクチャ & DevOps:**  
   * **Docker & Docker Compose:** 一貫したデプロイのためのコンテナ化。  
   * **Nginx:** HTTPSルーティングを処理するリバースプロキシ。  
   * **オブザーバビリティ (可観測性):**  
     * **ELK Stack (Elasticsearch, Logstash, Kibana):** ログの中央集約と分析。  
-    * **Prometheus & Grafana:** システムメトリクスの収集とヘルス状況の可視化。  
-> * **セキュリティ:** Spring Security (APIキー認証、CSRF保護、レート制限)。
+    * **Prometheus & Grafana:** システムメトリクスの収集とヘルス状況の可視化。
 
 ## **データベーススキーマ (Database Schema)**
 
-データベーススキーマは以下のコアエンティティを中心に構成されています：
+データベーススキーマの詳細は[データスキーマ](https://github.com/yuu-ux/online-workspace/blob/main/docs/db_schema.md)を参照してください。
 
 > * users / user\_accounts: 認証情報とプロフィール詳細を保存。  
 > * rooms / room\_categories: コラボレーションスペースの管理。  
 > * room\_memberships: どのユーザーがどのルームに属しているかを追跡。  
 > * chat\_messages: リアルタイムのやり取りの履歴を保存。  
->   *（スキーマの視覚的表現については docs/db\_schema.md または docs/system\_architecture.pdf を参照してください）*
+>   *（スキーマの視覚的表現については docs/system\_architecture.pdf を参照してください）*
 
 ## **機能リスト (Features List)**
 
-> * **ユーザー認証:** パスワードのハッシュ化を伴うセキュアなサインアップ、ログイン、およびセッション管理。  
-> * **プロフィール管理:** ユーザーは自身のプロフィールを表示・更新でき、アカウントの退会リクエストが可能。  
-> * **リアルタイムチャット:** ルーム内またはユーザー間でのWebSocketベースのメッセージング。  
-> * **ルーム管理:** 整理されたディスカッションのためのルームの作成、一覧表示、カテゴリ分け。  
-> * **セキュリティ監査:** ログイン試行の追跡とAPIのレート制限（Rate Limiting）。  
-> * **監視ダッシュボード:** アプリケーションのメトリクスとログのリアルタイムモニタリング。
+機能のチェック項目は[こちらのスプレッドシート](https://docs.google.com/spreadsheets/d/1ScHkTosDOwcBnFoCIuz26hpp9bQ9IQu2MThSVHGN9mE/edit?pli=1&gid=0#gid=0)を参照してください。
 
 ## **モジュール (Modules)**
 

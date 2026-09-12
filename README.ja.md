@@ -12,29 +12,13 @@ Online Workspace は、オンラインで他のユーザーと一緒に作業す
 
 ### 主な機能
 
-- ユーザー登録、ログイン、ログアウト、セッション管理、退会
+- ユーザー登録、ログイン、ログアウト
 - プロフィール編集、アイコン画像アップロード、ユーザー検索、公開設定
-- ルームの作成、一覧、絞り込み、ページネーション、参加、退出、更新、終了
-- ルームカテゴリ、作業スタイル、人数上限、参加者の在席状態
-- 保存されたチャット履歴とWebSocketによるリアルタイム配信
-- フレンド管理とフレンドのオンライン状態通知
-- CSRF対策、API key認証、レート制限、セキュリティ監査ログ
-- Prometheusメトリクス、Grafanaダッシュボード、アラート、ELKによるログ収集
+- ルームの作成、一覧、参加、退出
+- チャット機能
+- フレンド管理とフレンドのオンライン状態表示
 
 ## 実行手順
-
-### 前提条件
-
-| ツール | 要件 |
-| --- | --- |
-| Docker | Docker Engine と Docker Compose |
-| Java | バックエンドをDocker外で実行する場合はJDK 25 |
-| Node.js / npm | フロントエンドをDocker外で開発する場合に必要 |
-| Gleam | フロントエンドをDocker外で開発する場合に必要 |
-
-標準のDocker Compose構成では、フロントエンド、バックエンド、PostgreSQL、リバースプロキシを起動します。
-
-### 開発環境の起動
 
 ```bash
 docker compose up --build
@@ -43,34 +27,8 @@ docker compose up --build
 開発用プロキシには次のURLからアクセスできます。
 
 - HTTPSアプリケーション: `https://localhost:8443`
-- HTTPリダイレクト用エンドポイント: `http://localhost:8088`
-- バックエンドへの直接アクセス: `http://localhost:8080`
-- PostgreSQL: `localhost:5432`
 
 プロキシでは開発用の自己署名証明書を使用します。起動時にブラウザで証明書の例外設定が必要になる場合があります。
-
-### バックエンド単体の起動
-
-先にPostgreSQLを起動してから、次を実行します。
-
-```bash
-SESSION_COOKIE_SECURE=false ./gradlew bootRun
-```
-
-環境変数が未設定の場合は、次の値が使用されます。
-
-| 変数 | デフォルト値 |
-| --- | --- |
-| `DB_URL` | `jdbc:postgresql://localhost:5432/postgres` |
-| `DB_USERNAME` | `postgres` |
-| `DB_PASSWORD` | `password` |
-| `MAIL_HOST` | `localhost` |
-| `MAIL_PORT` | `1025` |
-| `SESSION_COOKIE_HTTP_ONLY` | `true` |
-| `SESSION_COOKIE_SECURE` | `true` |
-| `SESSION_COOKIE_SAME_SITE` | `lax` |
-
-HTTPで直接アクセスする場合は `SESSION_COOKIE_SECURE=false` を設定してください。HTTPS経由では `true` を使用します。
 
 ### 監視環境の起動
 
@@ -81,25 +39,6 @@ MANAGEMENT_API_KEY="change-me" \
 GRAFANA_ADMIN_PASSWORD="change-me" \
 GRAFANA_ALERT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." \
 docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
-```
-
-利用できる主なサービスは次のとおりです。
-
-- Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3000`
-- Elasticsearch: `http://localhost:9200`
-- Kibana: `http://localhost:5601`
-
-### テスト
-
-```bash
-./gradlew test
-```
-
-REST APIの契約は次で検証できます。
-
-```bash
-npx --yes @redocly/cli@2.43.2 lint online-workspace@v1
 ```
 
 ## 参考資料
@@ -114,12 +53,10 @@ npx --yes @redocly/cli@2.43.2 lint online-workspace@v1
 - [Webセキュリティ方針](docs/web_security.md)
 - [退会時のデータ保持方針](docs/account_withdrawal_data_policy.md)
 - [アーキテクチャ](docs/architecture.md)
-- [42 subject](en.subject.pdf)
+- [42 subject](docs/ft_transcendence.pdf)
 
 ### 外部参考資料
 
-- [ft_transcendence READMEの例](https://github.com/team-cinnamoroll/ft_transcendence)
-- [42 Eval Hub: ft_transcendence](https://www.42evalhub.com/common/fttranscendence)
 - [Spring Boot ドキュメント](https://spring.io/projects/spring-boot)
 - [Gleam ドキュメント](https://gleam.run/documentation/)
 - [PostgreSQL ドキュメント](https://www.postgresql.org/docs/)
