@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 public record ProfileUpdateRequest(
 	@NotBlank @Size(max = 100) String name,
 	@Size(max = 500)
-	@Pattern(regexp = "(?i)^(https://\\S+|/api/v1/users/[1-9][0-9]*/avatar)$", message = "アイコンURLはhttpsで入力してください。")
+	@Pattern(regexp = "(?i)^(https://\\S+|/api/v1/users/[1-9][0-9]*/avatar)$", message = "アイコン情報はhttpsで入力してください。")
 	String iconUrl,
 	@NotNull @Size(max = 500) String bio,
 	@Positive Long workCategoryId,

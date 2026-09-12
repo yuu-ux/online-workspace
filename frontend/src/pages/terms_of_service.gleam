@@ -1,8 +1,10 @@
 import components/btn
-import lustre/attribute
+import gleam/list
+import lustre/attribute.{class}
 import lustre/effect
 import lustre/element
-import lustre/element/html.{div, text}
+import lustre/element/html.{div, h1, h2, text}
+
 import types/session.{type Session}
 
 pub type Model {
@@ -24,8 +26,67 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 }
 
 pub fn view(_model: Model) -> element.Element(Msg) {
-  div(
-    [attribute.class("min-h-screen bg-[#f7f5f0] px-4 py-5 sm:px-8")],
-    [btn.to_home_btn_component(ToHome), div([attribute.class("mx-auto mt-10 max-w-3xl border-b border-[#dedbd2] pb-5 text-2xl font-semibold text-slate-900")], [text("利用規約")])]
-  )
+  div([class("min-h-screen bg-[#f7f5f0] px-4 py-5 text-gray-800 sm:px-8")], [
+    btn.to_home_btn_component(ToHome),
+    div([class("mx-auto max-w-3xl")], [
+      div([class("mb-6")], [
+        h1([class("text-3xl font-bold text-gray-900")], [text("利用規約")]),
+        div([class("mt-2 text-sm text-gray-500")], [text("最終更新日: 2026年9月12日")]),
+      ]),
+      div([class("space-y-4")], [
+        section("1. 適用", [
+          "この利用規約（以下「本規約」といいます。）は、online-workspace 開発チーム（以下「運営者」といいます。）が提供するオンラインコミュニケーションサービス（以下「本サービス」といいます。）の利用条件を定めるものです。",
+          "ユーザーは、本規約に同意したうえで本サービスを利用してください。",
+        ]),
+        section("2. アカウント", [
+          "ユーザーは、正確かつ最新の情報を登録し、登録情報を適切に管理するものとします。",
+          "アカウントを第三者に貸与、譲渡、共有または売買してはいけません。アカウントを利用して行われた操作は、当該アカウントのユーザーが行ったものとみなします。",
+          "登録情報に変更がある場合は、本サービスが提供する方法で速やかに更新してください。",
+        ]),
+        section("3. 本サービスの内容", [
+          "本サービスでは、プロフィールの登録・閲覧、ユーザー検索、フレンド管理、作業ルームの作成・閲覧・入退室、ルーム内のリアルタイムチャットを利用できます。",
+          "機能の追加、変更、停止または終了を行う場合があります。重要な変更については、可能な限り事前に本サービス上でお知らせします。",
+        ]),
+        section("4. ユーザーコンテンツ", [
+          "ユーザーがプロフィール、アイコン情報、自己紹介、チャットその他の方法で投稿した情報（以下「ユーザーコンテンツ」といいます。）について、ユーザーは自ら責任を負います。",
+          "ユーザーは、投稿する情報について必要な権利を有していること、第三者の権利を侵害しないこと、および真実かつ適切な内容であることを保証するものとします。",
+          "運営者は、本サービスの提供、表示、保存および安全確保に必要な範囲で、ユーザーコンテンツを利用します。",
+        ]),
+        section("5. 禁止事項", [
+          "法令または公序良俗に違反する行為、犯罪に関連する行為、他のユーザーへの嫌がらせ、脅迫、差別、なりすまし、スパムまたは過度な勧誘を行ってはいけません。",
+          "他人の個人情報を無断で収集・公開する行為、第三者の知的財産権・プライバシー・名誉を侵害する行為を行ってはいけません。",
+          "不正アクセス、脆弱性の悪用、過度な負荷を与える行為、マルウェアの送信、サービスの運営を妨害する行為を行ってはいけません。",
+          "本サービスを、運営者が認めていない商業目的、違法行為または本サービスの趣旨に反する目的で利用してはいけません。",
+        ]),
+        section("6. 外部アイコン情報", [
+          "プロフィール画像として外部URLを登録する場合、ユーザーはそのURLの利用条件および安全性を確認するものとします。外部サイトの内容、可用性またはプライバシーの取扱いについて、運営者は責任を負いません。",
+        ]),
+        section("7. 免責事項", [
+          "運営者は、本サービスを現状有姿で提供します。通信障害、設備障害、メンテナンス、外部サービスの停止その他の事情により、本サービスを利用できない場合があります。",
+          "運営者は、故意または重過失がある場合を除き、本サービスの利用または利用不能により生じた損害について、法令で認められる範囲で責任を負いません。",
+          "ユーザー間またはユーザーと第三者との間で生じた紛争は、当事者間で解決するものとします。",
+        ]),
+        section("8. 規約の変更", [
+          "運営者は、法令の改正、サービス内容の変更その他の必要に応じて、本規約を変更することがあります。変更内容と効力発生日は、本サービス上でお知らせします。",
+          "変更後に本サービスを利用した場合、変更後の規約に同意したものとみなします。",
+        ]),
+        section("9. 準拠法・管轄裁判所", [
+          "本規約は日本法に準拠します。本サービスまたは本規約に関して紛争が生じた場合は、法令に従って解決します。",
+        ]),
+        section("10. 問い合わせ窓口", [
+          "運営者: online-workspace 開発チーム / 問い合わせ先: kisaragi.12056 at gmail.com",
+        ]),
+      ]),
+    ]),
+  ])
+}
+
+fn section(title: String, paragraphs: List(String)) -> element.Element(Msg) {
+  div([class("rounded-xl border border-gray-200 bg-white p-5 shadow-sm")], [
+    h2([class("text-lg font-semibold text-gray-900")], [text(title)]),
+    div(
+      [class("mt-3 space-y-2 text-sm leading-6 text-gray-700")],
+      list.map(paragraphs, fn(paragraph) { div([], [text(paragraph)]) }),
+    ),
+  ])
 }
