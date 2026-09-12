@@ -296,21 +296,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
-    delete:
-      tags: [Users]
-      summary: 自分のアイコン画像を削除する
-      operationId: deleteMyAvatar
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      responses:
-        '204':
-          description: アイコン画像を削除した
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
   /users/{userId}/avatar:
     get:
       tags: [Users]
@@ -328,53 +313,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  /users/me:
-    delete:
-      tags: [Users]
-      summary: 退会する
-      operationId: withdrawCurrentUser
-      security:
-        - sessionAuth: []
-          csrfToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WithdrawRequest'
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '204':
-          description: 退会完了。現在の session も無効化する
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /room-categories:
-    get:
-      tags: [Room categories]
-      summary: 利用可能なルームカテゴリを取得する
-      operationId: listRoomCategories
-      responses:
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '200':
-          description: 表示順に並んだカテゴリ
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RoomCategory'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
   /rooms:
     get:
@@ -1165,19 +1103,6 @@ components:
           nullable: true
         isPublic:
           type: boolean
-
-    WithdrawRequest:
-      type: object
-      additionalProperties: false
-      required: [password]
-      properties:
-        password:
-          type: string
-          format: password
-          description: UTF-8 エンコード時に72バイト以内
-          minLength: 1
-          maxLength: 72
-          writeOnly: true
 
     UserPage:
       type: object

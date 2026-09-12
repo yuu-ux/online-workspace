@@ -29,13 +29,6 @@ public class AvatarService {
 		return new AvatarResponse(iconUrl);
 	}
 
-	@Transactional
-	public void delete(String email) {
-		long userId = activeUserId(email);
-		repository.updateIconUrl(userId, null);
-		storage.delete(userId);
-	}
-
 	private long activeUserId(String email) {
 		Long userId = repository.lockActiveUserIdByEmail(email);
 		if (userId == null) {

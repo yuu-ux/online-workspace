@@ -3,7 +3,6 @@ package com.example.online_workspace.controllers.users;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -99,33 +98,4 @@ class AvatarControllerIntegrationTests {
 			.andExpect(status().isUnprocessableEntity());
 	}
 
-	@Test
-	void deletesAnAvatar() throws Exception {
-		MockMultipartFile file = new MockMultipartFile(
-			"file", "avatar.png", MediaType.IMAGE_PNG_VALUE, PNG
-		);
-
-		String iconUrl = mockMvc.perform(multipart("/api/v1/users/me/avatar")
-				.file(file)
-				.with(user(email))
-				.with(csrf()))
-			.andReturn()
-			.getResponse()
-			.getContentAsString()
-			.replaceAll(".*\\\"iconUrl\\\":\\\"([^\\\"]+)\\\".*", "$1");
-
-		mockMvc.perform(delete("/api/v1/users/me/avatar")
-				.with(user(email))
-				.with(csrf()))
-			.andExpect(status().isNoContent());
-
-		Long userId = jdbcTemplate.queryForObject(
-			"SELECT id FROM users WHERE email = ?", Long.class, email
-		);
-		org.junit.jupiter.api.Assertions.assertNull(
-			jdbcTemplate.queryForObject("SELECT icon_url FROM profiles WHERE user_id = ?", String.class, userId)
-		);
-		mockMvc.perform(get(iconUrl).with(user(email)))
-			.andExpect(status().isNotFound());
-	}
 }
