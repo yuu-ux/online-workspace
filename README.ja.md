@@ -51,7 +51,6 @@ docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafa
 - [WebSocketイベント契約](docs/websocket_events.md)
 - [DBスキーマ](docs/db_schema.md)
 - [Webセキュリティ方針](docs/web_security.md)
-- [退会時のデータ保持方針](docs/account_withdrawal_data_policy.md)
 - [アーキテクチャ](docs/architecture.md)
 - [42 subject](docs/ft_transcendence.pdf)
 
