@@ -10,7 +10,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,12 +36,6 @@ public class AvatarController {
 		Authentication authentication
 	) {
 		return service.upload(authentication.getName(), file);
-	}
-
-	@DeleteMapping("/me/avatar")
-	public ResponseEntity<Void> delete(Authentication authentication) {
-		service.delete(authentication.getName());
-		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping("/{userId}/avatar")

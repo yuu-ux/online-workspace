@@ -66,16 +66,6 @@ public class AvatarStorageService {
 		return Optional.empty();
 	}
 
-	public void delete(long userId) {
-		try {
-			for (ImageFormat format : ImageFormat.values()) {
-				Files.deleteIfExists(pathFor(userId, format));
-			}
-		} catch (IOException exception) {
-			throw storageFailure();
-		}
-	}
-
 	private byte[] readAndValidate(MultipartFile file) {
 		if (file == null || file.isEmpty() || file.getSize() > MAX_SIZE_BYTES) {
 			throw invalidImage();
