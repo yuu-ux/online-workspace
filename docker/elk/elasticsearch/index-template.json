@@ -1,0 +1,11 @@
+{
+  "index_patterns": [
+    "online-workspace-*"
+  ],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "index.lifecycle.name": "online-workspace-logs"
+    }
+  }
+}
