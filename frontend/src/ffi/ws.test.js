@@ -29,13 +29,15 @@ class FakeWebSocket {
 
 globalThis.WebSocket = FakeWebSocket;
 
+const ws = await import("./ws.js");
+
 const {
   close_ws,
   connect_friend_presence,
   connect_room_list,
   connect_ws,
   send_ws,
-} = await import("./ws.js");
+} = ws;
 
 test("SockJS/STOMPで接続してメッセージを変換できる", () => {
   const received = [];
@@ -146,5 +148,30 @@ test("接続済みソケットの画面遷移で購読を入れ替えられる",
   assert.ok(connection.sent.some((message) => message.includes("/topic/rooms/10/presence")));
   assert.equal(connection.sent.some((message) => message.includes("/user/queue/friends/presence")), true);
 
+  close_ws();
+});
+
+test("操作本人向けの通知を購読して受信できる", () => {
+  assert.equal(typeof ws.connect_notifications, "function");
+
+  const received = [];
+  ws.connect_notifications((payload) => received.push(payload));
+  const connection = FakeWebSocket.instances[FakeWebSocket.instances.length - 1];
+  connection.readyState = FakeWebSocket.OPEN;
+  connection.onmessage?.({ data: "o" });
+  connection.onmessage?.({ data: 'a["CONNECTED\\nversion:1.2\\n\\n\\u0000"]' });
+
+  assert.ok(connection.sent.some((message) => message.includes("/user/queue/notifications")));
+
+  const notificationMessage = [
+    "MESSAGE",
+    "subscription:sub-notifications",
+    "message-id:011",
+    "",
+    '{"type":"notification","message":"ルームを作成しました。"}\u0000',
+  ].join("\n");
+  connection.onmessage?.({ data: `a[${JSON.stringify(notificationMessage)}]` });
+
+  assert.deepEqual(received, ['{"type":"notification","message":"ルームを作成しました。"}']);
   close_ws();
 });

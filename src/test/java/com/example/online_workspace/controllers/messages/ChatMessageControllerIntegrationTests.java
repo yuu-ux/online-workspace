@@ -25,6 +25,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.online_workspace.services.ChatMessageService.ChatMessageEvent;
+import com.example.online_workspace.services.NotificationService.NotificationEvent;
 
 @SpringBootTest(properties =
 	"spring.datasource.url=jdbc:h2:mem:chat-message-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
@@ -63,6 +64,13 @@ class ChatMessageControllerIntegrationTests {
 		)).isOne();
 		verifyPublishedTo("member@example.com");
 		verifyPublishedTo("member2@example.com");
+		verify(messagingTemplate).convertAndSendToUser(
+			eq("member@example.com"),
+			eq("/queue/notifications"),
+			argThat(payload -> payload instanceof NotificationEvent event
+				&& "notification".equals(event.type())
+				&& "メッセージを送信しました。".equals(event.message()))
+		);
 		verifyNoMoreInteractions(messagingTemplate);
 	}
 

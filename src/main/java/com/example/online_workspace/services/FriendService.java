@@ -17,15 +17,18 @@ public class FriendService {
 	private final FriendRepository friendRepository;
 	private final UserRepository userRepository;
 	private final OnlinePresenceService onlinePresenceService;
+	private final NotificationService notificationService;
 
 	public FriendService(
 		FriendRepository friendRepository,
 		UserRepository userRepository,
-		OnlinePresenceService onlinePresenceService
+		OnlinePresenceService onlinePresenceService,
+		NotificationService notificationService
 	) {
 		this.friendRepository = friendRepository;
 		this.userRepository = userRepository;
 		this.onlinePresenceService = onlinePresenceService;
+		this.notificationService = notificationService;
 	}
 
 	@Transactional(readOnly = true)
@@ -60,7 +63,9 @@ public class FriendService {
 		} else {
 			friendRepository.reactivateFriend(existingFriendId);
 		}
-		return toItem(friendRepository.findActiveFriend(userId, friendUserId));
+		FriendItem item = toItem(friendRepository.findActiveFriend(userId, friendUserId));
+		notificationService.publishTo(email, "フレンドを追加しました。");
+		return item;
 	}
 
 	@Transactional
@@ -69,6 +74,7 @@ public class FriendService {
 		if (friendRepository.removeFriend(userId, friendUserId) == 0) {
 			throw new ApiException(HttpStatus.NOT_FOUND, "FRIEND_NOT_FOUND", "フレンドが見つかりません。");
 		}
+		notificationService.publishTo(email, "フレンドを削除しました。");
 	}
 
 	private long activeUserId(String email) {

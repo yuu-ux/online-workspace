@@ -17,9 +17,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class ProfileService {
 
 	private final ProfileRepository repository;
+	private final NotificationService notificationService;
 
-	public ProfileService(ProfileRepository repository) {
+	public ProfileService(ProfileRepository repository, NotificationService notificationService) {
 		this.repository = repository;
+		this.notificationService = notificationService;
 	}
 
 	@Transactional
@@ -52,9 +54,11 @@ public class ProfileService {
 			request.isPublic()
 		);
 
-		return repository.findByEmail(email)
+		ProfileResponse response = repository.findByEmail(email)
 			.map(this::toResponse)
 			.orElseThrow(this::unauthorized);
+		notificationService.publishTo(email, "プロフィールを更新しました。");
+		return response;
 	}
 
 	private void validateAvatarUrl(long userId, String iconUrl) {
