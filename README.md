@@ -117,7 +117,8 @@ MANAGEMENT_API_KEY="change-me" GRAFANA_ADMIN_PASSWORD="change-me" \
 - Grafana: http://localhost:3000（ユーザー名は `admin`。`GRAFANA_ADMIN_USER` で変更可能）
 
 Grafana の匿名アクセスは無効です。Prometheus データソースと
-`Online Workspace Monitoring` ダッシュボードは起動時に自動設定されます。
+`Online Workspace Monitoring` ダッシュボード、および5xx率が5分間5%を超えた場合の
+アラートルールは起動時に自動設定されます。
 メトリクスの保持期間は15日です。
 
 ## フロントエンド開発方針
