@@ -40,9 +40,10 @@ controllers/
 開発時は proxy / backend / frontend / db / maildev をまとめて起動できます。
 
 ```bash
-./scripts/generate-local-tls.sh
 docker compose up
 ```
+
+自己署名証明書は `proxy` コンテナの起動時に自動生成されます。
 
 起動後のURL:
 

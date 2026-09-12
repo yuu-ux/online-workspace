@@ -114,6 +114,23 @@ class ProfileControllerIntegrationTests {
 	}
 
 	@Test
+	void acceptsTheAuthenticatedUsersAvatarUrl() throws Exception {
+		Long userId = jdbcTemplate.queryForObject(
+			"SELECT id FROM users WHERE email = ?", Long.class, email
+		);
+
+		mockMvc.perform(put("/api/v1/users/me/profile")
+				.with(user(email))
+				.with(csrf())
+				.contentType(APPLICATION_JSON)
+				.content("""
+					{"name":"更新後","iconUrl":"/api/v1/users/%d/avatar","bio":"","workCategoryId":null,"isPublic":true}
+					""".formatted(userId)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.iconUrl").value("/api/v1/users/" + userId + "/avatar"));
+	}
+
+	@Test
 	void rejectUnknownCategory() throws Exception {
 		mockMvc.perform(put("/api/v1/users/me/profile")
 				.with(user(email))

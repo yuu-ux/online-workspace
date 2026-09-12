@@ -26,7 +26,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 }
 
 pub fn view(_model: Model) -> element.Element(Msg) {
-  div([class("min-h-screen bg-gray-50 px-4 py-8 text-gray-800")], [
+  div([class("min-h-screen bg-[#f7f5f0] px-4 py-5 text-gray-800 sm:px-8")], [
+    btn.to_home_btn_component(ToHome),
     div([class("mx-auto max-w-3xl")], [
       div([class("mb-6")], [
         h1([class("text-3xl font-bold text-gray-900")], [text("利用規約")]),
@@ -76,7 +77,6 @@ pub fn view(_model: Model) -> element.Element(Msg) {
           "運営者: online-workspace 開発チーム / 問い合わせ先: kisaragi.12056 at gmail.com",
         ]),
       ]),
-      div([class("mt-8")], [btn.to_home_btn_component(ToHome)]),
     ]),
   ])
 }

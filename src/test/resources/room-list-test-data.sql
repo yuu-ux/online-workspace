@@ -36,6 +36,7 @@ CREATE TABLE room_categories (
 CREATE TABLE rooms (
     id BIGINT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
+    description VARCHAR(500) NOT NULL,
     created_by BIGINT NOT NULL,
     category_id BIGINT NOT NULL,
     work_style_id SMALLINT NOT NULL,
@@ -67,12 +68,12 @@ INSERT INTO room_categories VALUES
     (1, '開発', 'ソフトウェア開発', 10),
     (2, '読書', '読書会', 20);
 INSERT INTO profiles VALUES (2, 'https://example.com/icon.png');
-INSERT INTO rooms VALUES
-    (10, '参加可能', 2, 1, 1, 3, 1, TIMESTAMP WITH TIME ZONE '2026-08-10 10:00:00+09:00'),
-    (12, '終了済み', 2, 1, 1, 3, 2, TIMESTAMP WITH TIME ZONE '2026-08-12 10:00:00+09:00'),
-    (13, '参加可能2', 2, 1, 2, 3, 1, TIMESTAMP WITH TIME ZONE '2026-08-13 10:00:00+09:00'),
-    (14, '満室', 2, 1, 1, 2, 1, TIMESTAMP WITH TIME ZONE '2026-08-14 10:00:00+09:00'),
-    (15, '読書ルーム', 5, 2, 1, 3, 1, TIMESTAMP WITH TIME ZONE '2026-08-09 10:00:00+09:00');
+INSERT INTO rooms (id, name, description, created_by, category_id, work_style_id, max_members, status_id, created_at) VALUES
+    (10, '参加可能', '静かに作業します', 2, 1, 1, 3, 1, TIMESTAMP WITH TIME ZONE '2026-08-10 10:00:00+09:00'),
+    (12, '終了済み', '終了したルーム', 2, 1, 1, 3, 2, TIMESTAMP WITH TIME ZONE '2026-08-12 10:00:00+09:00'),
+    (13, '参加可能2', '雑談できます', 2, 1, 2, 3, 1, TIMESTAMP WITH TIME ZONE '2026-08-13 10:00:00+09:00'),
+    (14, '満室', '満員です', 2, 1, 1, 2, 1, TIMESTAMP WITH TIME ZONE '2026-08-14 10:00:00+09:00'),
+    (15, '読書ルーム', '読書について話します', 5, 2, 1, 3, 1, TIMESTAMP WITH TIME ZONE '2026-08-09 10:00:00+09:00');
 INSERT INTO room_members VALUES
     (100, 10, 2, NULL),
     (101, 13, 2, NULL),

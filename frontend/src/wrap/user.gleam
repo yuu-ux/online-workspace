@@ -4,7 +4,7 @@ import gleam/json
 import gleam/option
 import gleam/result
 import lustre/effect
-import types/user.{type UserId, UserId, type UserInfo, UserInfo}
+import types/user.{type FriendInfo, FriendInfo, type UserId, UserId, type UserInfo, UserInfo}
 import types/session.{type Session, Token}
 import types/room.{type RoomId}
 import wrap/api
@@ -138,6 +138,26 @@ pub fn get_my_profile(
   )
 }
 
+pub fn has_selected_avatar() -> Bool {
+	api.has_selected_file("avatar-file")
+}
+
+pub fn upload_my_avatar(
+	to_msg: fn(Result(String, api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+	api.upload_request(
+		"avatar-file",
+		"/api/v1/users/me/avatar",
+		avatar_response_decoder(),
+		to_msg,
+	)
+}
+
+fn avatar_response_decoder() -> decode.Decoder(String) {
+	use icon_url <- decode.field("iconUrl", decode.string)
+	decode.success(icon_url)
+}
+
 fn my_profile_decoder() -> decode.Decoder(MyProfile) {
   use name <- decode.field("name", decode.string)
   use icon_url <- decode.optional_field("iconUrl", option.None, decode.optional(decode.string))
@@ -222,6 +242,27 @@ pub fn get_friends(
 }
 
 /// フレンドを追加する
+pub fn get_friends_with_icons(
+  to_msg: fn(Result(List(#(FriendInfo, String)), api.ApiError)) -> msg,
+) -> effect.Effect(msg) {
+  let item = {
+    use friend <- decode.then(friend_info_decoder())
+    use icon <- decode.subfield(["user", "iconUrl"], decode.optional(decode.string))
+    decode.success(#(friend, option.unwrap(icon, "")))
+  }
+  let decoder = {
+    use items <- decode.field("items", decode.list(item))
+    decode.success(items)
+  }
+  api.json_request("GET", "/api/v1/friends?page=0&size=50", "", decoder, to_msg)
+}
+
+fn friend_info_decoder() -> decode.Decoder(FriendInfo) {
+  use user <- decode.then(friend_user_decoder())
+  use online <- decode.field("online", decode.bool)
+  decode.success(FriendInfo(user, online))
+}
+
 pub fn add_friend(
   user_id: UserId,
   to_msg: fn(Result(Nil, api.ApiError)) -> msg,

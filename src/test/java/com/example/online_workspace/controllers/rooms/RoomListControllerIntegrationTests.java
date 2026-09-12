@@ -37,6 +37,7 @@ class RoomListControllerIntegrationTests {
 			.andExpect(jsonPath("$.items[1].joinRestriction").doesNotExist())
 			.andExpect(jsonPath("$.items[2].name").value("参加可能"))
 			.andExpect(jsonPath("$.items[2].category.name").value("開発"))
+			.andExpect(jsonPath("$.items[2].description").value("静かに作業します"))
 			.andExpect(jsonPath("$.items[2].workStyle").value("FOCUS"))
 			.andExpect(jsonPath("$.items[2].currentMembers").value(1))
 			.andExpect(jsonPath("$.items[2].createdAt").exists())
