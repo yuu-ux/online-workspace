@@ -1,11 +1,12 @@
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import lustre/attribute
 import lustre/element
+import lustre/element/html.{button, div, text}
 import lustre/effect
+import lustre/event.{on_click}
 import lustre
-import lustre/attribute.{class}
-import lustre/element/html.{div}
 
 import types/room as room_t
 import types/session
@@ -51,7 +52,8 @@ pub type Page {
 pub type Model {
   Model(
     current_page: Page,
-    session: session.Session
+    session: session.Session,
+    notification: Option(String),
   )
 }
 
@@ -72,6 +74,8 @@ pub type Msg {
   UserInfoFromRoomMsg(userinfofromroom.Msg)
   SessionLoaded(Result(session.Session, api.ApiError))
   UserInfoFromSearchMsg(userinfofromsearch.Msg)
+  NotificationReceived(String)
+  DismissNotification
 }
 
 @external(javascript, "./ffi/storage.js", "get_current_room_id")
@@ -87,7 +91,8 @@ fn init(_flag) -> #(Model, effect.Effect(Msg)) {
   let #(init_home_model, _) = home.init(session.Guest)
   #(Model(
       current_page: Home(init_home_model),
-      session: session.Guest
+      session: session.Guest,
+      notification: None,
       ), 
     session_api.get_session(SessionLoaded)
   )
@@ -95,6 +100,17 @@ fn init(_flag) -> #(Model, effect.Effect(Msg)) {
 
 pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case model.current_page, msg {
+
+    _, NotificationReceived(payload) -> {
+      case room_api.notification_from_json(payload) {
+        Ok(room_api.Notification(message)) ->
+          #(Model(..model, notification: Some(message)), effect.none())
+        Error(_) -> #(model, effect.none())
+      }
+    }
+
+    _, DismissNotification ->
+      #(Model(..model, notification: None), effect.none())
 
     _, SessionLoaded(Ok(current_session)) -> restore_page(current_session)
 
@@ -116,7 +132,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToHome)
       let #(init_home_model, home_effect) = home.init(update_mypage_model.session)
       #(
-        Model(session: update_mypage_model.session, current_page: Home(init_home_model)),
+        Model(session: update_mypage_model.session, current_page: Home(init_home_model), notification: model.notification),
         home_effect |> effect.map(HomeMsg),
       )
     }
@@ -125,7 +141,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToFriend)
       let #(init_friend_model, friend_effect) = friend.init(update_mypage_model.session)
       #(
-        Model(session: update_mypage_model.session, current_page: Friend(init_friend_model)),
+        Model(session: update_mypage_model.session, current_page: Friend(init_friend_model), notification: model.notification),
         friend_effect |> effect.map(FriendMsg),
       )
     }
@@ -134,7 +150,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_mypage_model, _) = mypage.update(mypage_model, mypage.ToProfile)
       let #(init_profile_model, init_effect) = profile.init(update_mypage_model.session)
       #(
-        Model(session: init_profile_model.session, current_page: Profile(init_profile_model)),
+        Model(session: init_profile_model.session, current_page: Profile(init_profile_model), notification: model.notification),
         init_effect |> effect.map(ProfileMsg),
       )
     }
@@ -302,10 +318,15 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         }
         Error(_) -> Nil
       }
+      let notification = case response {
+        Ok(_) -> Some("ログアウトしました。")
+        Error(_) -> model.notification
+      }
       #(
         Model(
           session: update_home_model.session,
           current_page: Home(update_home_model),
+          notification: notification,
         ),
         update_effect |> effect.map(HomeMsg),
       )
@@ -325,8 +346,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_login_model, _) = login.update(login_model, login.ToHome)
       let #(init_home_model, home_effect) = home.init(update_login_model.session)
       #(
-        Model(session: update_login_model.session, current_page: Home(init_home_model)),
-        home_effect |> effect.map(HomeMsg),
+        Model(session: update_login_model.session, current_page: Home(init_home_model), notification: Some("ログインしました。")),
+        effect.batch([
+          home_effect |> effect.map(HomeMsg),
+          room_api.connect_to_notifications(NotificationReceived),
+        ]),
       )
     }
 
@@ -353,6 +377,14 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
     // -- register --
 
+    Register(_register_model), RegisterMsg(register.RegistrationCompleted(Ok(_))) -> {
+      let #(init_login_model, _) = login.init(session.Guest)
+      #(
+        Model(..model, current_page: Login(init_login_model), notification: Some("ユーザーを作成しました。")),
+        effect.none(),
+      )
+    }
+
     Register(_register_model), RegisterMsg(register.ToLogin) -> {
       let #(init_login_model, _) = login.init(session.Guest)
       #(Model(..model, current_page: Login(init_login_model)), effect.none())
@@ -361,7 +393,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     Register(register_model), RegisterMsg(register.ToHome) -> {
       let #(init_register_model, _) = register.update(register_model, register.ToHome)
       let #(init_home_model, _) = home.init(init_register_model.session)
-      #(Model(session: init_register_model.session, current_page: Home(init_home_model)), effect.none())
+      #(Model(session: init_register_model.session, current_page: Home(init_home_model), notification: model.notification), effect.none())
     }
 
     Register(_register_model), RegisterMsg(register.ToPrivacyPolicy) -> {
@@ -387,7 +419,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(init_create_room_model, _) = create_room.update(create_room_model, create_room.ToHome)
       let #(init_home_model, home_effect) = home.init(init_create_room_model.session)
       #(
-        Model(session: init_create_room_model.session, current_page: Home(init_home_model)),
+        Model(session: init_create_room_model.session, current_page: Home(init_home_model), notification: model.notification),
         home_effect |> effect.map(HomeMsg),
       )
     }
@@ -421,8 +453,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(init_home_model, home_effect) = home.init(room_model.session)
       let #(updated_home_model, _) = home.update(init_home_model, home.LeftRoom)
       #(
-        Model(session: room_model.session, current_page: Home(updated_home_model)),
-        home_effect |> effect.map(HomeMsg),
+        Model(session: room_model.session, current_page: Home(updated_home_model), notification: model.notification),
+        effect.batch([
+          home_effect |> effect.map(HomeMsg),
+          room_api.connect_to_notifications(NotificationReceived),
+        ]),
       )
     }
 
@@ -617,7 +652,7 @@ fn restore_page(current_session: session.Session) -> #(Model, effect.Effect(Msg)
       clear_current_room_id()
       let #(home_model, home_effect) = home.init(current_session)
       #(
-        Model(session: current_session, current_page: Home(home_model)),
+        Model(session: current_session, current_page: Home(home_model), notification: None),
         home_effect |> effect.map(HomeMsg),
       )
     }
@@ -626,16 +661,22 @@ fn restore_page(current_session: session.Session) -> #(Model, effect.Effect(Msg)
         Some(room_id) -> {
           let #(room_model, room_effect) = room.init(current_session, room_id)
           #(
-            Model(session: current_session, current_page: Room(room_model)),
-            room_effect |> effect.map(RoomMsg),
+            Model(session: current_session, current_page: Room(room_model), notification: None),
+            effect.batch([
+              room_effect |> effect.map(RoomMsg),
+              room_api.connect_to_notifications(NotificationReceived),
+            ]),
           )
         }
         None -> {
           clear_current_room_id()
           let #(home_model, home_effect) = home.init(current_session)
           #(
-            Model(session: current_session, current_page: Home(home_model)),
-            home_effect |> effect.map(HomeMsg),
+            Model(session: current_session, current_page: Home(home_model), notification: None),
+            effect.batch([
+              home_effect |> effect.map(HomeMsg),
+              room_api.connect_to_notifications(NotificationReceived),
+            ]),
           )
         }
       }
@@ -663,7 +704,7 @@ fn remember_room(room_id: room_t.RoomId) -> Nil {
 }
 
 fn view (model: Model) -> element.Element(Msg) {
-  let current_page = case model.current_page {
+  let page = case model.current_page {
     Home(home_model) -> {
       home.view(home_model) |> element.map(HomeMsg)
     }
@@ -711,10 +752,37 @@ fn view (model: Model) -> element.Element(Msg) {
     }
   }
 
-  div([class("relative")], [
-    current_page,
+  div([attribute.class("relative")], [
+    page,
+    notification_view(model.notification),
     footer.view() |> element.map(FooterMsg),
   ])
+}
+
+fn notification_view(notification: Option(String)) -> element.Element(Msg) {
+  case notification {
+    Some(message) ->
+      div(
+        [
+          attribute.class(
+            "fixed right-4 top-4 z-50 flex max-w-sm items-center gap-3 rounded-lg bg-[#314b37] px-4 py-3 text-sm text-white shadow-lg",
+          ),
+          attribute.attribute("role", "status"),
+        ],
+        [
+          text(message),
+          button(
+            [
+              attribute.class("rounded px-1 text-lg leading-none hover:bg-white/20"),
+              attribute.attribute("aria-label", "通知を閉じる"),
+              on_click(DismissNotification),
+            ],
+            [text("×")],
+          ),
+        ],
+      )
+    None -> div([], [])
+  }
 }
 
 pub fn main() {

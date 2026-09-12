@@ -178,6 +178,6 @@ Backend 起動後、次のURLで `docs/openapi.yaml` を表示できる。
 - Swagger UI: https://localhost:8443/swagger-ui.html
 - OpenAPI YAML: https://localhost:8443/openapi.yaml
 
-認証が必要な API を `Try it out` で確認する場合は、先に同じブラウザで https://localhost:8443/login からログインする。session cookie は同一 origin のリクエストに自動で付与される。API key 認証は Swagger UI 右上の `Authorize` から `X-API-Key` を設定する。
+ブラウザ向け API を `Try it out` で確認する場合は、先に同じブラウザで https://localhost:8443/login からログインする。session cookie は同一 origin のリクエストに自動で付与される。`/api/v1/public/rooms` 以下の公開 API はセッション認証では利用できないため、Swagger UI 右上の `Authorize` から `X-API-Key` を設定する。
 
-状態を変更する API では CSRF token が必要になる。Swagger UI は `XSRF-TOKEN` cookie の値を `X-CSRF-TOKEN` header として送信する設定になっている。
+セッション認証で状態を変更する API では CSRF token が必要になる。Swagger UI は `XSRF-TOKEN` cookie の値を `X-CSRF-TOKEN` header として送信する設定になっている。API key 必須の公開 API では CSRF token は不要。

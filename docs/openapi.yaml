@@ -9,7 +9,8 @@ info:
     ブラウザ向け API は `JSESSIONID` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
     `XSRF-TOKEN` cookieを発行し、その値をsession認証による状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
 
-    API key 認証と rate limit の対象は、ルーム一覧、作成、詳細、更新、削除の5 operation とする。
+    API key 認証と rate limit の対象は、`/public/rooms` 以下の
+    ルーム一覧、作成、詳細、更新、削除の5 operation とする。これらはAPI keyを必須とする。
     API key は環境変数で設定する単一の共有キーで、認証時は設定された固定 principal を使用する。
     監視用 health check と Prometheus endpoint は、ルームAPIとは別に設定する管理用API keyで保護する。
 servers:
@@ -314,13 +315,12 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /rooms:
+  /public/rooms:
     get:
       tags: [Rooms]
       summary: 参加可能なルームを取得する
       operationId: listRooms
       security:
-        - sessionAuth: []
         - apiKeyAuth: []
       parameters:
         - name: categoryId
@@ -353,8 +353,6 @@ paths:
       summary: ルームを作成する
       operationId: createRoom
       security:
-        - sessionAuth: []
-          csrfToken: []
         - apiKeyAuth: []
       requestBody:
         required: true
@@ -382,7 +380,7 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
-  /rooms/{roomId}:
+  /public/rooms/{roomId}:
     parameters:
       - $ref: '#/components/parameters/RoomId'
     get:
@@ -390,7 +388,6 @@ paths:
       summary: ルーム詳細を取得する
       operationId: getRoom
       security:
-        - sessionAuth: []
         - apiKeyAuth: []
       responses:
         '500':
@@ -415,8 +412,6 @@ paths:
       description: ルーム作成者だけが実行できる。
       operationId: updateRoom
       security:
-        - sessionAuth: []
-          csrfToken: []
         - apiKeyAuth: []
       requestBody:
         required: true
@@ -453,8 +448,6 @@ paths:
       description: ルーム作成者だけが実行できる。
       operationId: closeRoom
       security:
-        - sessionAuth: []
-          csrfToken: []
         - apiKeyAuth: []
       responses:
         '500':
@@ -747,7 +740,7 @@ components:
       in: header
       name: X-API-Key
       description: |
-        環境変数で設定する単一の共有API key。ルームAPIの5 operationで使用し、
+        環境変数で設定する単一の共有API key。`/public/rooms` 以下の5 operationで使用し、
         認証後は設定された固定 principal として処理する。API key利用時のrate limitは
         すべてのAPI keyリクエストで共有する。
     managementApiKey:
