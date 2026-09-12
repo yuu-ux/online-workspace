@@ -58,7 +58,7 @@ public interface RoomListRepository {
 			ORDER BY r.created_at DESC, r.id DESC
 			LIMIT #{size} OFFSET #{offset}
 		)
-		SELECT r.id, r.name,
+		SELECT r.id, r.name, r.description,
 		       c.id AS category_id, c.name AS category_name,
 		       c.description AS category_description, c.sort_order AS category_sort_order,
 		       ws.code AS work_style, r.max_members,

@@ -1126,6 +1126,7 @@ components:
       required:
         - id
         - name
+        - description
         - category
         - workStyle
         - maxMembers
@@ -1140,6 +1141,9 @@ components:
         name:
           type: string
           maxLength: 100
+        description:
+          type: string
+          maxLength: 500
         category:
           $ref: '#/components/schemas/RoomCategory'
         workStyle:

@@ -77,6 +77,7 @@ public class RoomListController {
 	public record RoomSummaryResponse(
 		long id,
 		String name,
+		String description,
 		RoomCategoryResponse category,
 		String workStyle,
 		int maxMembers,
@@ -92,6 +93,7 @@ public class RoomListController {
 			return new RoomSummaryResponse(
 				item.id(),
 				item.name(),
+				item.description(),
 				new RoomCategoryResponse(
 					item.categoryId(),
 					item.categoryName(),
