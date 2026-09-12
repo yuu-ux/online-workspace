@@ -139,6 +139,7 @@ pub fn friend_loaded_message_updates_friend_page_test() {
   let model = frontend.Model(
     current_page: frontend.Friend(friend_model),
     session: session,
+    notification: None,
   )
 
   let #(updated_model, _) = frontend.update(
@@ -470,6 +471,7 @@ pub fn friend_search_submission_opens_search_results_test() {
   let model = frontend.Model(
     current_page: frontend.Friend(friend_model),
     session: session,
+    notification: None,
   )
 
   let #(updated_model, _) = frontend.update(
@@ -508,6 +510,7 @@ pub fn search_page_back_link_opens_friend_management_test() {
   let model = frontend.Model(
     current_page: frontend.Search(search_model),
     session: session,
+    notification: None,
   )
 
   let #(updated_model, _) = frontend.update(
@@ -771,6 +774,7 @@ pub fn full_room_does_not_transition_from_home_test() {
   let model = frontend.Model(
     current_page: frontend.Home(home_model),
     session: session,
+    notification: None,
   )
 
   let #(updated_model, _) =
@@ -781,5 +785,27 @@ pub fn full_room_does_not_transition_from_home_test() {
       updated_home.messages
       |> should.equal(["このルームは満員のため入室できません。"])
     _ -> should.fail()
+  }
+}
+
+pub fn notification_updates_global_model_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(home_model, _) = home.init(session)
+  let model = frontend.Model(
+    current_page: frontend.Home(home_model),
+    session: session,
+    notification: None,
+  )
+
+  let #(updated_model, _) = frontend.update(
+    model,
+    frontend.NotificationReceived(
+      "{\"type\":\"notification\",\"message\":\"ルームを作成しました。\"}",
+    ),
+  )
+
+  case updated_model.notification {
+    Some(message) -> message |> should.equal("ルームを作成しました。")
+    None -> should.fail()
   }
 }

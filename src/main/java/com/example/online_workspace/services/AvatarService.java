@@ -12,10 +12,16 @@ public class AvatarService {
 
 	private final ProfileRepository repository;
 	private final AvatarStorageService storage;
+	private final NotificationService notificationService;
 
-	public AvatarService(ProfileRepository repository, AvatarStorageService storage) {
+	public AvatarService(
+		ProfileRepository repository,
+		AvatarStorageService storage,
+		NotificationService notificationService
+	) {
 		this.repository = repository;
 		this.storage = storage;
+		this.notificationService = notificationService;
 	}
 
 	@Transactional
@@ -26,6 +32,7 @@ public class AvatarService {
 		if (repository.updateIconUrl(userId, iconUrl) == 0) {
 			repository.insertIconUrl(userId, iconUrl);
 		}
+		notificationService.publishTo(email, "プロフィール画像を更新しました。");
 		return new AvatarResponse(iconUrl);
 	}
 

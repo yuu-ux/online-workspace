@@ -169,7 +169,7 @@ test("操作本人向けの通知を購読して受信できる", () => {
     "message-id:011",
     "",
     '{"type":"notification","message":"ルームを作成しました。"}\u0000',
-  ].join("\\n");
+  ].join("\n");
   connection.onmessage?.({ data: `a[${JSON.stringify(notificationMessage)}]` });
 
   assert.deepEqual(received, ['{"type":"notification","message":"ルームを作成しました。"}']);

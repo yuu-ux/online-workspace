@@ -21,15 +21,18 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.online_workspace.models.ChatMessage;
 import com.example.online_workspace.services.ChatMessageService;
 import com.example.online_workspace.services.ChatMessageService.Result;
+import com.example.online_workspace.services.NotificationService;
 
 @RestController
 @RequestMapping("/api/v1/rooms/{roomId}/messages")
 public class ChatMessageController {
 
 	private final ChatMessageService service;
+	private final NotificationService notificationService;
 
-	public ChatMessageController(ChatMessageService service) {
+	public ChatMessageController(ChatMessageService service, NotificationService notificationService) {
 		this.service = service;
+		this.notificationService = notificationService;
 	}
 
 	@GetMapping
@@ -64,6 +67,7 @@ public class ChatMessageController {
 	) {
 		ChatMessage message = service.create(roomId, authentication.getName(), request.content());
 		service.publish(message);
+		notificationService.publishTo(authentication.getName(), "メッセージを送信しました。");
 		return message;
 	}
 

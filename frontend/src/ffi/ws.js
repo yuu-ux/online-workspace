@@ -3,6 +3,8 @@ let messageDispatch = null;
 let desiredRoomIds = [];
 let desiredChatRoomId = null;
 let desiredFriendPresence = false;
+let notificationDispatch = null;
+let desiredNotifications = false;
 let activeSubscriptionIds = new Set();
 
 function sockFrame(stompFrame) {
@@ -73,6 +75,21 @@ function subscribeFriendPresence(connection) {
   activeSubscriptionIds.add(id);
 }
 
+function subscribeNotifications(connection) {
+  const id = "sub-notifications";
+  connection.send(
+    sockFrame(
+      stompFrame([
+        "SUBSCRIBE",
+        `id:${id}`,
+        "destination:/user/queue/notifications",
+        "ack:auto",
+      ])
+    )
+  );
+  activeSubscriptionIds.add(id);
+}
+
 function applySubscriptions(connection) {
   activeSubscriptionIds.forEach((id) => {
     connection.send(sockFrame(stompFrame(["UNSUBSCRIBE", `id:${id}`])));
@@ -86,6 +103,7 @@ function applySubscriptions(connection) {
   }
   desiredRoomIds.forEach((roomId) => subscribePresence(connection, roomId));
   if (desiredFriendPresence) subscribeFriendPresence(connection);
+  if (desiredNotifications) subscribeNotifications(connection);
 }
 
 function parseSockJsMessages(raw) {
@@ -221,11 +239,25 @@ function parseStompFriendPresenceMessage(frame) {
   }
 }
 
-function open_ws(roomIds, chatRoomId, dispatch, friendPresence = false) {
-  messageDispatch = dispatch;
-  desiredRoomIds = [...new Set(roomIds)];
-  desiredChatRoomId = chatRoomId;
-  desiredFriendPresence = friendPresence;
+function parseStompNotificationMessage(frame) {
+  const separator = frame.indexOf("\n\n");
+  if (separator < 0) return null;
+
+  const bodyWithNull = frame.slice(separator + 2);
+  const body = bodyWithNull.endsWith("\0")
+    ? bodyWithNull.slice(0, -1)
+    : bodyWithNull;
+
+  try {
+    const event = JSON.parse(body);
+    if (event.type !== "notification" || typeof event.message !== "string") return null;
+    return JSON.stringify({ type: "notification", message: event.message });
+  } catch (_) {
+    return null;
+  }
+}
+
+function ensureSocket() {
   if (
     socket &&
     (socket.readyState === WebSocket.CONNECTING ||
@@ -262,20 +294,29 @@ function open_ws(roomIds, chatRoomId, dispatch, friendPresence = false) {
       }
 
       if (frame.startsWith("MESSAGE")) {
-        const parsed = parseStompChatMessage(frame);
-        const presence = parsed === null ? parseStompPresenceMessage(frame) : null;
+        const notification = parseStompNotificationMessage(frame);
+        const parsed = notification === null ? parseStompChatMessage(frame) : null;
+        const presence =
+          notification === null && parsed === null ? parseStompPresenceMessage(frame) : null;
         const memberCount =
-          parsed === null && presence === null
+          notification === null && parsed === null && presence === null
             ? parseStompRoomMemberCountMessage(frame)
             : null;
         const roomCreated =
-          parsed === null && presence === null && memberCount === null
+          notification === null && parsed === null && presence === null && memberCount === null
             ? parseStompRoomCreatedMessage(frame)
             : null;
         const friendPresence =
-          parsed === null && presence === null && memberCount === null && roomCreated === null
+          notification === null &&
+          parsed === null &&
+          presence === null &&
+          memberCount === null &&
+          roomCreated === null
             ? parseStompFriendPresenceMessage(frame)
             : null;
+        if (notification !== null && notificationDispatch !== null) {
+          notificationDispatch(notification);
+        }
         if (parsed !== null && messageDispatch !== null) messageDispatch(parsed);
         if (presence !== null && messageDispatch !== null) messageDispatch(presence);
         if (memberCount !== null && messageDispatch !== null) messageDispatch(memberCount);
@@ -290,6 +331,14 @@ function open_ws(roomIds, chatRoomId, dispatch, friendPresence = false) {
   };
 }
 
+function open_ws(roomIds, chatRoomId, dispatch, friendPresence = false) {
+  messageDispatch = dispatch;
+  desiredRoomIds = [...new Set(roomIds)];
+  desiredChatRoomId = chatRoomId;
+  desiredFriendPresence = friendPresence;
+  ensureSocket();
+}
+
 export function connect_ws(roomId, dispatch) {
   open_ws([roomId], roomId, dispatch);
 }
@@ -300,6 +349,12 @@ export function connect_room_list(roomIdsJson, dispatch) {
 
 export function connect_friend_presence(dispatch) {
   open_ws([], null, dispatch, true);
+}
+
+export function connect_notifications(dispatch) {
+  notificationDispatch = dispatch;
+  desiredNotifications = true;
+  ensureSocket();
 }
 
 export function send_ws(message) {
@@ -320,5 +375,7 @@ export function close_ws() {
   desiredRoomIds = [];
   desiredChatRoomId = null;
   desiredFriendPresence = false;
+  notificationDispatch = null;
+  desiredNotifications = false;
   activeSubscriptionIds.clear();
 }

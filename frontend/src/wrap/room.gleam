@@ -337,6 +337,10 @@ pub type FriendPresence {
   FriendPresence(user_id: UserId, online: Bool)
 }
 
+pub type Notification {
+  Notification(message: String)
+}
+
 // ---------------------------------------------------------
 // 1. FFI (JavaScriptの関数をインポート)
 // ---------------------------------------------------------
@@ -350,6 +354,9 @@ fn do_connect_room_list(room_ids_json: String, dispatch: fn(String) -> Nil) -> N
 
 @external(javascript, "./../ffi/ws.js", "connect_friend_presence")
 fn do_connect_friend_presence(dispatch: fn(String) -> Nil) -> Nil
+
+@external(javascript, "./../ffi/ws.js", "connect_notifications")
+fn do_connect_notifications(dispatch: fn(String) -> Nil) -> Nil
 
 /// 送る
 @external(javascript, "./../ffi/ws.js", "send_ws")
@@ -392,6 +399,15 @@ pub fn connect_to_friend_presence(m: fn(String) -> msg) -> effect.Effect(msg) {
       dispatch(m(received_text))
     }
     do_connect_friend_presence(js_callback)
+  })
+}
+
+pub fn connect_to_notifications(m: fn(String) -> msg) -> effect.Effect(msg) {
+  effect.from(fn(dispatch) {
+    let js_callback = fn(received_text: String) {
+      dispatch(m(received_text))
+    }
+    do_connect_notifications(js_callback)
   })
 }
 
@@ -462,6 +478,14 @@ pub fn friend_presence_from_json(
     decode.success(FriendPresence(UserId(int.to_string(user_id)), online))
   }
   json.parse(from: json_string, using: friend_presence_decoder)
+}
+
+pub fn notification_from_json(json_string: String) -> Result(Notification, json.DecodeError) {
+  let notification_decoder = {
+    use message <- decode.field("message", decode.string)
+    decode.success(Notification(message))
+  }
+  json.parse(from: json_string, using: notification_decoder)
 }
 
 pub fn room_created_from_json(json_string: String) -> Result(RoomInfo, json.DecodeError) {

@@ -47,13 +47,15 @@ class RoomMembershipServiceTests {
 	private SimpMessagingTemplate messagingTemplate;
 	private RoomMembershipService service;
 	private OnlinePresenceService presence;
+	private NotificationService notificationService;
 
 	@BeforeEach
 	void setUp() {
 		messagingTemplate = mock(SimpMessagingTemplate.class);
 		friendRepository = mock(FriendRepository.class);
 		presence = new OnlinePresenceService(membershipRepository, friendRepository, messagingTemplate);
-		service = new RoomMembershipService(membershipRepository, presence);
+		notificationService = mock(NotificationService.class);
+		service = new RoomMembershipService(membershipRepository, presence, notificationService);
 	}
 
 	@Test
