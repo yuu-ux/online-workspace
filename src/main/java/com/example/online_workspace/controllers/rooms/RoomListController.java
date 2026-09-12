@@ -17,7 +17,7 @@ import com.example.online_workspace.services.RoomListService;
 import com.example.online_workspace.services.RoomListService.Result;
 
 @RestController
-@RequestMapping("/api/v1/rooms")
+@RequestMapping({"/api/v1/rooms", "/api/v1/public/rooms"})
 public class RoomListController {
 
 	private final RoomListService service;

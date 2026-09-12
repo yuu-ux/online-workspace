@@ -9,7 +9,8 @@ info:
     ブラウザ向け API は `JSESSIONID` cookie を使用する。クライアントは最初に `GET /auth/csrf` で
     `XSRF-TOKEN` cookieを発行し、その値を状態変更リクエストの `X-CSRF-TOKEN` header に設定する。
 
-    API key 認証と rate limit の採点対象は、ルーム一覧、作成、詳細、更新、削除の5 operation とする。
+    API key 認証と rate limit の採点対象は、`/public/rooms` 以下の
+    ルーム一覧、作成、詳細、更新、削除の5 operation とする。これらはAPI keyを必須とする。
     API key は発行先のユーザーまたはservice principalへ紐付き、各operationの認可判定にもその主体を使用する。
     監視用 health check も API key で保護する。
 servers:
@@ -376,13 +377,12 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /rooms:
+  /public/rooms:
     get:
       tags: [Rooms]
       summary: 参加可能なルームを取得する
       operationId: listRooms
       security:
-        - sessionAuth: []
         - apiKeyAuth: []
       parameters:
         - name: categoryId
@@ -415,8 +415,6 @@ paths:
       summary: ルームを作成する
       operationId: createRoom
       security:
-        - sessionAuth: []
-          csrfToken: []
         - apiKeyAuth: []
       requestBody:
         required: true
@@ -444,7 +442,7 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
-  /rooms/{roomId}:
+  /public/rooms/{roomId}:
     parameters:
       - $ref: '#/components/parameters/RoomId'
     get:
@@ -452,7 +450,6 @@ paths:
       summary: ルーム詳細を取得する
       operationId: getRoom
       security:
-        - sessionAuth: []
         - apiKeyAuth: []
       responses:
         '500':
@@ -477,8 +474,6 @@ paths:
       description: ルーム作成者だけが実行できる。
       operationId: updateRoom
       security:
-        - sessionAuth: []
-          csrfToken: []
         - apiKeyAuth: []
       requestBody:
         required: true
@@ -515,8 +510,6 @@ paths:
       description: ルーム作成者だけが実行できる。
       operationId: closeRoom
       security:
-        - sessionAuth: []
-          csrfToken: []
         - apiKeyAuth: []
       responses:
         '500':
@@ -809,7 +802,7 @@ components:
       in: header
       name: X-API-Key
       description: |
-        ユーザーまたはservice principalに紐付くAPI key。ルームAPIの採点対象5 operationと
+        ユーザーまたはservice principalに紐付くAPI key。`/public/rooms` 以下の5 operationと
         監視用health checkで使用する。key単位でrate limitを適用する。
 
   parameters:

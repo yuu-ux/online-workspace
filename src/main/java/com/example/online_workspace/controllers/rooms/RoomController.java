@@ -28,7 +28,7 @@ import com.example.online_workspace.services.RoomService.CreateRoomCommand;
 import com.example.online_workspace.services.RoomService.UpdateRoomCommand;
 
 @RestController
-@RequestMapping("/api/v1/rooms")
+@RequestMapping({"/api/v1/rooms", "/api/v1/public/rooms"})
 public class RoomController {
 
 	private final RoomService service;
