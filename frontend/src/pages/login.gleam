@@ -121,7 +121,6 @@ pub fn view(model: Model) -> element.Element(Msg) {
           form_section(model),
           ui.divider_with_text("または"),
           btn.secondary_button("新規アカウントを作成", ToRegister),
-          policy_links()
         ],
         // 第2引数: フッター
         footer_links()
@@ -171,16 +170,6 @@ fn footer_links() -> element.Element(Msg) {
     [class("flex flex-wrap items-center gap-5 text-sm text-[#6f6a61]")],
     [
       btn.to_home_btn_component(ToHome),
-    ]
-  )
-}
-
-fn policy_links() -> element.Element(Msg) {
-  div(
-    [class("flex flex-wrap items-center justify-center gap-4 text-sm text-[#6f6a61]")],
-    [
-      btn.to_privacypolicy_btn_component(ToPrivacyPolicy),
-      btn.to_tos_btn_component(ToTOS),
     ]
   )
 }

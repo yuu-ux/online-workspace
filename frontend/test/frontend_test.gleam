@@ -14,6 +14,7 @@ import pages/create_room
 import pages/search
 import components/ui
 import components/userinfo
+import pages/footer
 import wrap/api.{ApiError}
 import types/session.{Authenticated, Token}
 import types/room as room_t
@@ -23,6 +24,53 @@ import wrap/room as room_wrap
 
 pub fn main() {
   gleeunit.main()
+}
+
+pub fn global_footer_shows_legal_links_at_the_bottom_test() {
+  let rendered = footer.view() |> element.to_string
+
+  rendered |> string.contains("プライバシーポリシー") |> should.equal(True)
+  rendered |> string.contains("利用規約") |> should.equal(True)
+  rendered |> string.contains("fixed") |> should.equal(True)
+  rendered |> string.contains("bottom-0") |> should.equal(True)
+}
+
+pub fn global_footer_opens_privacy_policy_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(home_model, _) = home.init(session)
+  let model = frontend.Model(
+    current_page: frontend.Home(home_model),
+    session: session,
+  )
+
+  let #(updated_model, _) = frontend.update(
+    model,
+    frontend.FooterMsg(footer.ToPrivacyPolicy),
+  )
+
+  case updated_model.current_page {
+    frontend.PrivacyPolicy(_) -> should.equal(True, True)
+    _ -> should.fail()
+  }
+}
+
+pub fn global_footer_opens_terms_of_service_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(home_model, _) = home.init(session)
+  let model = frontend.Model(
+    current_page: frontend.Home(home_model),
+    session: session,
+  )
+
+  let #(updated_model, _) = frontend.update(
+    model,
+    frontend.FooterMsg(footer.ToTermsOfService),
+  )
+
+  case updated_model.current_page {
+    frontend.TermsOfService(_) -> should.equal(True, True)
+    _ -> should.fail()
+  }
 }
 
 pub fn room_presence_updates_member_list_test() {

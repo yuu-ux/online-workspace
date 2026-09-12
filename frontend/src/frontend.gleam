@@ -4,6 +4,8 @@ import gleam/option.{type Option, None, Some}
 import lustre/element
 import lustre/effect
 import lustre
+import lustre/attribute.{class}
+import lustre/element/html.{div}
 
 import types/room as room_t
 import types/session
@@ -22,6 +24,7 @@ import pages/mypage
 import pages/friend
 import pages/profile
 import pages/search
+import pages/footer
 
 import pages/userinfofromfriend
 import pages/userinfofromroom
@@ -59,6 +62,7 @@ pub type Msg {
   HomeMsg(home.Msg)
   LoginMsg(login.Msg)
   RegisterMsg(register.Msg)
+  FooterMsg(footer.Msg)
   PrivacyPolicyMsg(privacypolicy.Msg)
   TermsOfServiceMsg(terms_of_service.Msg)
   CreateRoomMsg(create_room.Msg)
@@ -95,6 +99,16 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     _, SessionLoaded(Ok(current_session)) -> restore_page(current_session)
 
     _, SessionLoaded(Error(_)) -> #(model, effect.none())
+
+    _, FooterMsg(footer.ToPrivacyPolicy) -> {
+      let #(init_privacy_policy_model, _) = privacypolicy.init(model.session)
+      #(Model(..model, current_page: PrivacyPolicy(init_privacy_policy_model)), effect.none())
+    }
+
+    _, FooterMsg(footer.ToTermsOfService) -> {
+      let #(init_terms_model, _) = terms_of_service.init(model.session)
+      #(Model(..model, current_page: TermsOfService(init_terms_model)), effect.none())
+    }
 
     // -- mypage --
 
@@ -649,7 +663,7 @@ fn remember_room(room_id: room_t.RoomId) -> Nil {
 }
 
 fn view (model: Model) -> element.Element(Msg) {
-  case model.current_page {
+  let current_page = case model.current_page {
     Home(home_model) -> {
       home.view(home_model) |> element.map(HomeMsg)
     }
@@ -696,6 +710,11 @@ fn view (model: Model) -> element.Element(Msg) {
       userinfofromsearch.view(userinfofromsearch_model) |> element.map(UserInfoFromSearchMsg)
     }
   }
+
+  div([class("relative")], [
+    current_page,
+    footer.view() |> element.map(FooterMsg),
+  ])
 }
 
 pub fn main() {

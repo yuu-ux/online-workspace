@@ -211,8 +211,6 @@ fn footer_links() -> element.Element(Msg) {
     [class("flex flex-wrap items-center gap-5 text-sm text-[#6f6a61]")],
     [
       btn.to_home_btn_component(ToHome),
-      btn.to_privacypolicy_btn_component(ToPrivacyPolicy),
-      btn.to_tos_btn_component(ToTOS),
     ]
   )
 }
