@@ -1,0 +1,19 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: Online Workspace Admin
+    receivers:
+      - uid: online-workspace-admin-email
+        type: email
+        settings:
+          addresses: $GRAFANA_ALERT_EMAIL
+          singleEmail: true
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: Online Workspace Admin
+    group_by:
+      - grafana_folder
+      - alertname
