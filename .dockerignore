@@ -2,6 +2,13 @@
 .gradle
 build
 bin
+.codex
+**/.env
+**/.env.*
 frontend/node_modules
 frontend/dist
+frontend/priv
+frontend/build
+frontend/.lustre
+docker/nginx/certs
 HELP.md

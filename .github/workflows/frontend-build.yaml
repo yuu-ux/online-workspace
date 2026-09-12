@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - frontend/**
+      - docker/nginx/**
+      - .dockerignore
       - .github/workflows/frontend-build.yaml
 
 permissions:
@@ -15,10 +17,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --file frontend/Dockerfile.dev --tag online-workspace-frontend frontend
+      - run: docker build --file docker/nginx/Dockerfile --target frontend-build --tag online-workspace-frontend .
       - run: docker run --rm online-workspace-frontend npm test
 
-# 変更点: npm run build ではなく、Lustre のビルドコマンドを実行
       - run: >-
           docker run --rm online-workspace-frontend sh -c
-          'gleam run -m lustre/dev build frontend >/tmp/build.log 2>&1 || { tail -n 250 /tmp/build.log; exit 1; }'
+          'test -s dist/index.html && test -s dist/frontend.js && test -s dist/tailwind.css'
+      - run: docker build --file docker/nginx/Dockerfile --tag online-workspace-proxy .
+      - run: >-
+          docker run --rm online-workspace-proxy sh -c
+          'test -s /var/www/static/index.html && test -s /var/www/static/frontend.js && test -s /var/www/static/tailwind.css'
