@@ -108,6 +108,7 @@ Prometheus形式では各メトリクス名のドットがアンダースコア�
 
 ```bash
 MANAGEMENT_API_KEY="change-me" GRAFANA_ADMIN_PASSWORD="change-me" \
+  GRAFANA_ALERT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." \
   docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
 ```
 
@@ -122,9 +123,7 @@ Grafana の匿名アクセスは無効です。Prometheus データソース、
 - 5xx率が5分間5%を超えた
 - Backendのメトリクスを2分間取得できない
 
-通知メールを送信する場合は `GRAFANA_SMTP_ENABLED=true`、`GRAFANA_SMTP_HOST`、
-`GRAFANA_ALERT_EMAIL` を設定します。SMTP認証が必要な場合は
-`GRAFANA_SMTP_USER` と `GRAFANA_SMTP_PASSWORD` も設定してください。
+通知先のDiscord Webhook URLは `GRAFANA_ALERT_DISCORD_WEBHOOK_URL` で設定します。
 メトリクスの保持期間は15日です。
 
 ## フロントエンド開発方針
