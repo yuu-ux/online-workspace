@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Gream向けのログインAPI。
+ * Gleam向けのログインAPI。
  */
 @RestController
 @RequestMapping("/api/v1/auth")

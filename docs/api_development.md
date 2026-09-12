@@ -41,7 +41,7 @@ npx --yes openapi-typescript@7.13.0
 - `JSESSIONID` cookieは `HttpOnly=true`、`SameSite=Lax` とする。`SESSION_COOKIE_HTTP_ONLY`、`SESSION_COOKIE_SECURE`、`SESSION_COOKIE_SAME_SITE` で環境ごとに変更でき、既定値はそれぞれ `true`、`true`、`lax` とする。
 - `JSESSIONID` cookieは永続CookieにせずセッションCookieとして発行する。ページリロード中は認証状態を維持するが、ブラウザ終了後のログイン状態維持（Remember Me）は対象外とする。
 
-### Greamからの認証API呼び出し
+### Gleamからの認証API呼び出し
 
 1. `GET /api/v1/auth/csrf` を呼び出し、レスポンスの `XSRF-TOKEN` cookieを読み取る。
 2. `POST /api/v1/auth/login` にログイン情報をJSONで送信し、`X-CSRF-TOKEN` headerへCSRF tokenを設定する。成功時はレスポンスにユーザー情報が返り、`JSESSIONID` cookieが発行される。
