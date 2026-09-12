@@ -1,6 +1,7 @@
 package com.example.online_workspace.controllers.rooms;
 
 import java.time.Instant;
+import java.util.List;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -19,24 +20,64 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.online_workspace.models.RoomListItem;
 import com.example.online_workspace.repositories.RoomRepository.RoomView;
+import com.example.online_workspace.services.RoomListService;
+import com.example.online_workspace.services.RoomListService.Result;
 import com.example.online_workspace.services.RoomService;
 import com.example.online_workspace.services.RoomService.CreateRoomCommand;
 import com.example.online_workspace.services.RoomService.UpdateRoomCommand;
 
 @RestController
-@RequestMapping("/api/v1/rooms")
+@RequestMapping({"/api/v1/rooms", "/api/v1/public/rooms"})
 public class RoomController {
 
 	private final RoomService service;
+	private final RoomListService listService;
 	private final SimpMessagingTemplate messagingTemplate;
 
-	public RoomController(RoomService service, SimpMessagingTemplate messagingTemplate) {
+	public RoomController(
+		RoomService service,
+		RoomListService listService,
+		SimpMessagingTemplate messagingTemplate
+	) {
 		this.service = service;
+		this.listService = listService;
 		this.messagingTemplate = messagingTemplate;
+	}
+
+	@GetMapping
+	public RoomPageResponse list(
+		@RequestParam(required = false) @Positive Long categoryId,
+		@RequestParam(required = false) WorkStyle workStyle,
+		@RequestParam(defaultValue = "0") @Min(0) int page,
+		@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+		Authentication authentication
+	) {
+		Result result = listService.list(
+			authentication.getName(),
+			categoryId,
+			workStyle == null ? null : workStyle.name(),
+			page,
+			size
+		);
+		long totalPages = result.totalElements() / size
+			+ (result.totalElements() % size == 0 ? 0 : 1);
+		return new RoomPageResponse(
+			result.items().stream().map(RoomSummaryResponse::from).toList(),
+			new PageMetaResponse(
+				page,
+				size,
+				result.totalElements(),
+				totalPages,
+				page == 0,
+				totalPages == 0 || page >= totalPages - 1
+			)
+		);
 	}
 
 	@PostMapping
@@ -113,6 +154,57 @@ public class RoomController {
 	public enum WorkStyle {
 		FOCUS,
 		CHAT_OK
+	}
+
+	public record RoomPageResponse(List<RoomSummaryResponse> items, PageMetaResponse page) {
+	}
+
+	public record PageMetaResponse(
+		int page,
+		int size,
+		long totalElements,
+		long totalPages,
+		boolean first,
+		boolean last
+	) {
+	}
+
+	public record RoomSummaryResponse(
+		long id,
+		String name,
+		String description,
+		RoomCategoryResponse category,
+		String workStyle,
+		int maxMembers,
+		int currentMembers,
+		String status,
+		UserSummaryResponse createdBy,
+		boolean joinable,
+		String joinRestriction,
+		Instant createdAt
+	) {
+		private static RoomSummaryResponse from(RoomListItem item) {
+			String restriction = item.currentMembers() >= item.maxMembers() ? "FULL" : null;
+			return new RoomSummaryResponse(
+				item.id(),
+				item.name(),
+				item.description(),
+				new RoomCategoryResponse(
+					item.categoryId(),
+					item.categoryName(),
+					item.categoryDescription(),
+					item.categorySortOrder()
+				),
+				item.workStyle(),
+				item.maxMembers(),
+				item.currentMembers(),
+				item.status(),
+				new UserSummaryResponse(item.creatorId(), item.creatorName(), item.creatorIconUrl()),
+				restriction == null,
+				restriction,
+				item.createdAt()
+			);
+		}
 	}
 
 	public record RoomDetailResponse(

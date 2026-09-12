@@ -49,9 +49,9 @@ npx --yes openapi-typescript@7.13.0
 4. ログイン中のユーザーがログアウトするときは、`POST /api/v1/auth/logout` に `X-CSRF-TOKEN` headerを付けて送信する。ブラウザは保存済みの`JSESSIONID` cookieを自動送信する。成功時は `204` となり、サーバーセッションを無効化して`JSESSIONID` cookieを削除する。
 
 ログイン失敗時は `401`、未認証でログアウトを呼び出した場合は `401`、CSRFトークンがない・不正な場合は `403`、入力形式エラーは `422`、レート制限中は `429` となる。`429` では `Retry-After: 900` を再試行待機時間として使用する。CSRF cookieは常に `Secure=true`、`SameSite=Lax`、HttpOnlyなしで発行されるため、HTTPS経由で利用する。
-- API keyの採点対象は `GET /rooms`、`POST /rooms`、`GET /rooms/{roomId}`、`PUT /rooms/{roomId}`、`DELETE /rooms/{roomId}` の5 operationとする。
-- 採点対象5 operationはsession認証またはAPI key認証を受け付ける。API keyは環境変数で設定する単一の共有キーで、認証後は設定された固定 principal として処理する。
-- 採点対象5 operationには、session認証では principal 単位、API key認証ではすべての API key リクエストで共有する固定窓の rate limit を適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。既定値は1分あたり60件で、単一アプリケーションインスタンス内で管理する。
+- API keyの採点対象は `GET /public/rooms`、`POST /public/rooms`、`GET /public/rooms/{roomId}`、`PUT /public/rooms/{roomId}`、`DELETE /public/rooms/{roomId}` の5 operationとする。
+- 採点対象5 operationはAPI keyを必須とし、session認証では利用できない。API keyは環境変数で設定する単一の共有キーで、認証後は設定された固定 principal として処理する。
+- 採点対象5 operationには、すべてのAPI keyリクエストで共有する固定窓のrate limitを適用し、超過時は `429 Too Many Requests` と `Retry-After` headerを返す。既定値は1分あたり60件で、単一アプリケーションインスタンス内で管理する。
 - `/actuator/health` と `/actuator/prometheus` は API prefix 外の監視 endpoint であり、ルームAPIとは別に設定する管理用API keyを要求する。session認証、API rate limit、APIのproblem+jsonエラー形式は適用しない。
 
 ## レビュー観点
