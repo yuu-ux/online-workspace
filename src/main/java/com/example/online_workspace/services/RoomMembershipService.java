@@ -18,13 +18,16 @@ public class RoomMembershipService {
 
 	private final RoomMembershipRepository repository;
 	private final OnlinePresenceService presence;
+	private final NotificationService notificationService;
 
 	public RoomMembershipService(
 		RoomMembershipRepository repository,
-		OnlinePresenceService presence
+		OnlinePresenceService presence,
+		NotificationService notificationService
 	) {
 		this.repository = repository;
 		this.presence = presence;
+		this.notificationService = notificationService;
 	}
 
 	@Transactional(readOnly = true)
@@ -53,6 +56,7 @@ public class RoomMembershipService {
 		RoomMember member = joinLockedRoom(room, userId, joinedAt);
 		presence.publishRoomJoined(userEmail, roomId, member);
 		presence.publishRoomMemberCountChanged(roomId);
+		notificationService.publishTo(userEmail, "ルームに参加しました。");
 		return member;
 	}
 
@@ -70,6 +74,7 @@ public class RoomMembershipService {
 		}
 		presence.publishRoomLeft(userEmail, roomId, userId, member);
 		presence.publishRoomMemberCountChanged(roomId);
+		notificationService.publishTo(userEmail, "ルームから退出しました。");
 	}
 
 	private RoomMember joinLockedRoom(JoinPolicy room, long userId, Instant joinedAt) {

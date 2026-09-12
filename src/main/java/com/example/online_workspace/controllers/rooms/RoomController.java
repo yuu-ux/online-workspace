@@ -28,6 +28,7 @@ import com.example.online_workspace.models.RoomListItem;
 import com.example.online_workspace.repositories.RoomRepository.RoomView;
 import com.example.online_workspace.services.RoomListService;
 import com.example.online_workspace.services.RoomListService.Result;
+import com.example.online_workspace.services.NotificationService;
 import com.example.online_workspace.services.RoomService;
 import com.example.online_workspace.services.RoomService.CreateRoomCommand;
 import com.example.online_workspace.services.RoomService.UpdateRoomCommand;
@@ -39,15 +40,18 @@ public class RoomController {
 	private final RoomService service;
 	private final RoomListService listService;
 	private final SimpMessagingTemplate messagingTemplate;
+	private final NotificationService notificationService;
 
 	public RoomController(
 		RoomService service,
 		RoomListService listService,
-		SimpMessagingTemplate messagingTemplate
+		SimpMessagingTemplate messagingTemplate,
+		NotificationService notificationService
 	) {
 		this.service = service;
 		this.listService = listService;
 		this.messagingTemplate = messagingTemplate;
+		this.notificationService = notificationService;
 	}
 
 	@GetMapping
@@ -92,6 +96,7 @@ public class RoomController {
 			"/topic/rooms",
 			new RoomCreatedEvent("room:created", response)
 		);
+		notificationService.publishTo(authentication.getName(), "ルームを作成しました。");
 		return response;
 	}
 
@@ -106,13 +111,17 @@ public class RoomController {
 		@Valid @RequestBody UpdateRoomRequest request,
 		Authentication authentication
 	) {
-		return RoomDetailResponse.from(service.update(authentication.getName(), roomId, request.toCommand()));
+		RoomDetailResponse response =
+			RoomDetailResponse.from(service.update(authentication.getName(), roomId, request.toCommand()));
+		notificationService.publishTo(authentication.getName(), "ルームを更新しました。");
+		return response;
 	}
 
 	@DeleteMapping("/{roomId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void close(@PathVariable @Positive long roomId, Authentication authentication) {
 		service.close(authentication.getName(), roomId);
+		notificationService.publishTo(authentication.getName(), "ルームを削除しました。");
 	}
 
 	public record CreateRoomRequest(
