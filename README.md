@@ -1,78 +1,36 @@
-_This project has been created as part of the 42 curriculum by yehara, tmuranak, kofujita, yonuma._
+_This project was created by yehara, tmuranak, kofujita, and yonuma as part of the 42 curriculum._
 
-# Online Workspace
+# Online Workspace (ft_transcendence)
 
-[日本語版](README.ja.md)
+[Japanese version](README.ja.md)
 
-## Description
+## Overview
 
-Online Workspace is a web application for people who want to work together online. Users can create and join shared work rooms, see who is currently present, and communicate through real-time chat.
+Online Workspace is a collaboration platform for working with other people online. Users can create, search for, and join work rooms, check who is present, and communicate through real-time chat.
 
-The project focuses on a secure REST API, a WebSocket-based real-time experience, and an observable containerized environment.
+The project is designed to let logged-in users join work rooms for a shared purpose without requiring a friendship relationship. It focuses on a secure REST API, WebSocket-based real-time communication, and an observable containerized environment.
 
-### Key features
+### Key Features
 
-- User registration, login, logout, session management, and account withdrawal
-- Profile editing, avatar upload, user search, and profile visibility
-- Room creation, filtering, pagination, joining, leaving, updating, and closing
-- Room categories, work styles, capacity limits, and member presence
-- Persistent room chat with real-time WebSocket delivery
-- Friend management and friend online-presence updates
-- CSRF protection, API-key authentication, rate limiting, and security audit logging
-- Prometheus metrics, Grafana dashboards, alerting, and ELK-based log collection
+- User registration, login, and logout
+- Profile editing, avatar image upload, user search, and visibility settings
+- Room creation, listing, joining, and leaving
+- Chat
+- Friend management and display of friends' online status
 
-## Instructions
-
-### Prerequisites
-
-| Tool | Requirement |
-| --- | --- |
-| Docker | Docker Engine and Docker Compose |
-| Java | JDK 25 for running the backend outside Docker |
-| Node.js and npm | Required for frontend tooling outside Docker |
-| Gleam | Required for frontend development outside Docker |
-
-The default Docker Compose setup provides the frontend, backend, PostgreSQL database, and reverse proxy.
-
-### Start the development environment
+## Getting Started
 
 ```bash
 docker compose up --build
 ```
 
-Open the application through the development proxy:
+Access the development proxy at the following URL:
 
 - HTTPS application: `https://localhost:8443`
-- HTTP redirect endpoint: `http://localhost:8088`
-- Backend direct access: `http://localhost:8080`
-- PostgreSQL: `localhost:5432`
 
-The proxy uses a local self-signed certificate. Your browser may require an exception for the certificate during development.
+The proxy uses a self-signed certificate for development. Your browser may require a certificate exception when starting the environment.
 
-### Run the backend directly
-
-Start PostgreSQL first, then run:
-
-```bash
-SESSION_COOKIE_SECURE=false ./gradlew bootRun
-```
-
-The backend uses these defaults when the corresponding environment variables are not set:
-
-| Variable | Default |
-| --- | --- |
-| `DB_URL` | `jdbc:postgresql://localhost:5432/postgres` |
-| `DB_USERNAME` | `postgres` |
-| `DB_PASSWORD` | `password` |
-| `MAIL_HOST` | `localhost` |
-| `MAIL_PORT` | `1025` |
-| `SESSION_COOKIE_HTTP_ONLY` | `true` |
-| `SESSION_COOKIE_SECURE` | `true` |
-| `SESSION_COOKIE_SAME_SITE` | `lax` |
-
-For local HTTP access, set `SESSION_COOKIE_SECURE=false`. Use `true` when accessing the backend through HTTPS.
-
-### Start the observability stack
+### Starting the Observability Environment
 
 The observability services are defined in `compose.observability.yaml`. Set the required variables and run:
 
@@ -83,28 +41,9 @@ GRAFANA_ALERT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." \
 docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
 ```
 
-Available services include:
+## References
 
-- Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3000`
-- Elasticsearch: `http://localhost:9200`
-- Kibana: `http://localhost:5601`
-
-### Test the project
-
-```bash
-./gradlew test
-```
-
-Validate the REST API contract with:
-
-```bash
-npx --yes @redocly/cli@2.43.2 lint online-workspace@v1
-```
-
-## Resources
-
-### Project documentation
+### Project Documentation
 
 - [Requirements](docs/requirements.md)
 - [API contract](docs/openapi.yaml)
@@ -112,53 +51,58 @@ npx --yes @redocly/cli@2.43.2 lint online-workspace@v1
 - [WebSocket event contract](docs/websocket_events.md)
 - [Database schema](docs/db_schema.md)
 - [Web security policy](docs/web_security.md)
-- [Account withdrawal data policy](docs/account_withdrawal_data_policy.md)
 - [Architecture](docs/architecture.md)
-- [42 subject](en.subject.pdf)
+- [42 subject](docs/ft_transcendence.pdf)
 
-### External references
+### External References
 
-- [Example ft_transcendence README](https://github.com/team-cinnamoroll/ft_transcendence)
-- [42 Eval Hub: ft_transcendence](https://www.42evalhub.com/common/fttranscendence)
 - [Spring Boot documentation](https://spring.io/projects/spring-boot)
 - [Gleam documentation](https://gleam.run/documentation/)
 - [PostgreSQL documentation](https://www.postgresql.org/docs/)
 - [Prometheus documentation](https://prometheus.io/docs/)
 - [Grafana documentation](https://grafana.com/docs/)
 
-### AI usage
+### AI Usage
 
-TODO: describe which AI tools were used, for which tasks, and how the generated output was reviewed and tested by the team.
+AI tools such as ChatGPT and GitHub Copilot were used as assistants in this project. The main uses were as follows.
+
+Coding was primarily implemented using an AI coding agent, but every change was reviewed by a person to ensure that it did not diverge from the architecture. AI was also used to connect the backend and frontend.
+
+- Assistance with the initial setup of Nginx configuration and Dockerfiles
+- Ideas for troubleshooting the integration of the ELK stack with the Spring Boot backend
+- Generation of boilerplate code for backend unit tests
+
+AI-generated content was reviewed, tested, and modified by the team. Adopted code was used only after the team understood its contents.
 
 ## Team Information
 
-The project team consists of four members. Roles and responsibilities are intentionally left for the team to complete.
+The team consists of the following four members. Their roles and primary responsibilities are listed below.
 
-| Member | Role(s) | Responsibilities |
+| Member | Role | Responsibilities |
 | --- | --- | --- |
-| `yehara` | TODO | TODO |
-| `tmuranak` | TODO | TODO |
-| `kofujita` | TODO | TODO |
-| `yonuma` | TODO | TODO |
+| `yehara` | Product Owner, Developer | Requirements definition, API, security, infrastructure, and monitoring |
+| `tmuranak` | Tech Lead, Developer | Gleam/Lustre frontend and WebSocket client |
+| `kofujita` | Project Manager, Developer | Development environment, database, backend review, and team support |
+| `yonuma` | Developer | Authentication, profile, friends, rooms, and real-time presence updates |
 
 ## Project Management
 
-- Communication channel: TODO
-- Recurring meetings: TODO
-- Task management tool: GitHub Issues and GitHub Projects
-- Code review process: TODO
-- Branching and release process: see [branch naming conventions](docs/branch_naming_convention.md)
+- Communication: Discord
+- Regular meetings: Weekly meetings
+- Task management tools: GitHub Issues and GitHub Projects
+- Code review process: Changes to the `main` branch are made through pull requests and receive peer review from at least one person
+- Branching: [Branch naming convention](docs/branch_naming_convention.md)
 
-## Technical Stack
+## Technology Stack
 
 ### Frontend
 
 - Gleam
 - Lustre
 - Tailwind CSS
-- JavaScript FFI for browser APIs and SockJS/STOMP communication
+- JavaScript FFI for browser APIs and STOMP communication
 
-Gleam was selected for a typed functional frontend. Lustre provides the application architecture, while Tailwind CSS is used for styling.
+Gleam is used to build a type-safe functional frontend. Lustre provides the application structure, and Tailwind CSS is used for styling.
 
 ### Backend
 
@@ -166,27 +110,27 @@ Gleam was selected for a typed functional frontend. Lustre provides the applicat
 - Spring Boot 4
 - Spring Security
 - Spring Web MVC
-- Spring WebSocket and STOMP
+- Spring WebSocket / STOMP
 - Bean Validation
 - MyBatis
 - Gradle
 
-Spring Boot provides the HTTP and WebSocket servers. Spring Security handles session authentication, CSRF protection, API keys, access control, and security events. MyBatis is used for explicit SQL mapping and database access.
+The HTTP and WebSocket servers are built with Spring Boot. Spring Security handles session authentication, CSRF protection, API keys, access control, and security events. MyBatis is used for SQL mapping and database access.
 
-### Database and infrastructure
+### Database and Infrastructure
 
 - PostgreSQL 16
 - Flyway
-- Docker and Docker Compose
+- Docker / Docker Compose
 - Nginx
-- Prometheus and Grafana
-- Elasticsearch, Logstash, and Kibana
+- Prometheus / Grafana
+- Elasticsearch / Logstash / Kibana
 
-Docker Compose keeps the development environment reproducible. Nginx provides the HTTPS reverse proxy and routes browser requests to the frontend and backend.
+Docker Compose provides a reproducible development environment, and Nginx is used as an HTTPS reverse proxy.
 
 ## Database Schema
 
-The main relationships are:
+The relationships between the main entities are as follows.
 
 ```text
 users
@@ -197,84 +141,95 @@ users
 └── account status / withdrawal data
 ```
 
-Important entities include:
+The main tables are as follows.
 
-- `users`: account identity and authentication-related data
-- `user_profiles`: names, biography, work category, visibility, and avatar references
-- `rooms`: room settings, capacity, work style, status, and creator
-- `room_categories`: administrator-defined room categories
-- `room_memberships`: users currently or previously associated with rooms
-- `chat_messages`: messages stored for room history
-- `friendships`: active and removed friend relationships
+- `users`: Account and authentication information
+- `user_profiles`: Name, profile, work category, visibility settings, and avatar information
+- `rooms`: Room settings, participant limit, work style, status, and creator
+- `room_categories`: Room categories configured by administrators
+- `room_memberships`: Relationships between users and rooms
+- `chat_messages`: Chat history within rooms
+- `friendships`: Friendship and removed-friend relationships
 
-The complete schema and constraints are documented in [docs/db_schema.md](docs/db_schema.md), and database changes are applied through Flyway migrations.
+The detailed schema, including constraints, is described in [docs/db_schema.md](docs/db_schema.md). Database changes are applied through Flyway migrations.
 
-## Features List
+## Feature List
 
-| Feature | Description | Contributor(s) |
+| Feature | Description | Owner |
 | --- | --- | --- |
-| Authentication | Registration, login, logout, sessions, and CSRF token handling | TODO |
-| Profile management | Profile visibility, biography, work category, and avatar management | TODO |
-| User search | Paginated name-based user search and public profiles | TODO |
-| Room management | Create, list, filter, inspect, update, and close rooms | TODO |
-| Room membership | Join, leave, member listing, capacity checks, and access control | TODO |
-| Chat | Persistent paginated chat history and message validation | TODO |
-| Real-time updates | Chat, room presence, member counts, room creation, and friend presence | TODO |
-| Friend management | Add, list, remove, and observe friends | TODO |
-| Public API | OpenAPI-described endpoints with session/API-key authentication and rate limiting | TODO |
-| Observability | Health checks, Prometheus metrics, Grafana dashboards, alerts, and ELK logs | TODO |
+| Authentication | Registration, login, logout, sessions, and CSRF tokens | `yehara`, `yonuma`, `kofujita` |
+| Profile management | Visibility settings, bio, work categories, and avatar management | `yehara`, `yonuma`, `kofujita` |
+| User search | Paginated name search and public profiles | `yonuma`, `kofujita` |
+| Room management | Creation, listing, filtering, details, updating, and closing | `yehara`, `yonuma`, `kofujita` |
+| Room participation | Joining, leaving, participant list, capacity limits, and access control | `yehara`, `yonuma`, `kofujita` |
+| Chat | Paginated history and message validation | `yehara`, `tmuranak`, `kofujita` |
+| Real-time updates | Chat, presence, participant count, room creation, and friend status | `yehara`, `tmuranak`, `yonuma`, `kofujita` |
+| Friend management | Adding, listing, removing, and online status | `yehara`, `yonuma`, `kofujita` |
+| Public API | OpenAPI-defined REST API with session/API key authentication and rate limiting | `yehara`, `kofujita` |
+| Observability | Health checks, Prometheus, Grafana, alerting, and ELK logs | `yehara`, `kofujita` |
 
 ## Modules
 
-The current module plan targets 14 points. Final ownership and evaluation notes remain TODO.
+The current module plan totals 14 points. Owners are listed in each row.
+Refer to [this spreadsheet](https://docs.google.com/spreadsheets/d/1ScHkTosDOwcBnFoCIuz26hpp9bQ9IQu2MThSVHGN9mE/edit?pli=1&gid=0#gid=0) for the module requirements checklist.
 
-| Module | Weight | Implementation | Owner |
+| Module | Category | Implementation | Owner |
 | --- | ---: | --- | --- |
-| Frontend and backend frameworks | Major, 2 pts | Gleam/Lustre frontend and Spring Boot backend | TODO |
-| Real-time features | Major, 2 pts | STOMP over SockJS/WebSocket for chat and presence | TODO |
-| User interaction | Major, 2 pts | Profiles, friends, room membership, and chat | TODO |
-| Public API | Major, 2 pts | Secured OpenAPI REST API with API key and rate limiting | TODO |
-| Log management infrastructure | Major, 2 pts | Elasticsearch, Logstash, and Kibana | TODO |
-| Monitoring system | Major, 2 pts | Prometheus, Grafana, dashboards, and alerts | TODO |
-| File upload and management | Minor, 1 pt | Avatar upload, storage, retrieval, and deletion | TODO |
-| Health check and status page | Minor, 1 pt | Protected health and Prometheus actuator endpoints | TODO |
-| **Total** | **14 pts** |  |  |
+| Frontend and backend frameworks | Major, 2 points | Gleam/Lustre frontend and Spring Boot backend | `yehara`, `tmuranak` |
+| Real-time features | Major, 2 points | Chat and presence through STOMP over WebSocket | `yehara`, `tmuranak`, `yonuma` |
+| User-to-user features | Major, 2 points | Profiles, friends, room participation, and chat | `yehara`, `yonuma` |
+| Public API | Major, 2 points | OpenAPI REST API with API keys and rate limiting | `yehara` |
+| Log management infrastructure | Major, 2 points | Elasticsearch, Logstash, and Kibana | `yehara` |
+| Monitoring system | Major, 2 points | Prometheus, Grafana, dashboards, and alerts | `yehara` |
+| File upload and management | Minor, 1 point | Avatar upload, storage, retrieval, and deletion | `yehara`, `yonuma` |
+| Health checks and status | Minor, 1 point | Protected Actuator health / Prometheus endpoints | `yehara` |
+| **Total** | **14 points** |  |  |
+
+### Rationale for Module Selection
+
+- Web frameworks: Gleam/Lustre and Spring Boot provide a type-safe UI and robust APIs.
+- Real-time features: WebSocket distributes changes to chat, presence, and participant counts to connected users.
+- User-to-user features: Profiles, friends, rooms, and chat allow users to interact with their work partners.
+- Public API: The project provides a REST API with OpenAPI, API keys, and rate limiting.
+- Log management and monitoring: ELK, Prometheus, Grafana, and alerting make the operational state observable.
+- File management and health checks: The project provides avatar image management and protected operational endpoints.
 
 ## Individual Contributions
 
-The following sections are intentionally left as TODO for the team to complete.
+The main contributions of each member and the challenges they addressed are listed below.
 
-### `yehara`
+### tmuranak
 
-- Role(s): TODO
-- Contributions: TODO
-- Challenges and solutions: TODO
+- Designed the frontend architecture using Gleam.
+- Implemented the real-time WebSocket client logic (`ws.js`).
+- *Challenge faced:*
+  - Anticipating the difficulty of connecting to the server-side API, actively separated functions that might be needed from the design stage.
 
-### `tmuranak`
+### yonuma
 
-- Role(s): TODO
-- Contributions: TODO
-- Challenges and solutions: TODO
+- Implemented user authentication features, including user registration, login/logout, and session authentication.
+- Implemented friend search, adding, and removal, as well as profile and My Page displays, friend status, and avatar displays.
+- Implemented room listing, details, joining, and leaving; handling for page refreshes and tab closing; and real-time participant count updates through WebSocket.
+- Resolved issues involving double-counting participant counts from API and WebSocket notifications, friend status on private profiles, and external avatar display.
+- Having never worked with Spring Security before, initially found it difficult to understand what was happening. Consulted yehara, a team member with practical experience in this area, to resolve questions.
 
-### `kofujita`
+### kofujita
 
-- Role(s): TODO
-- Contributions: TODO
-- Challenges and solutions: TODO
+- Reviewed the development environment.
+- Reviewed the database and backend.
+- Helped wherever additional support was needed.
+- Refer to the commits for details.
+- *Challenge faced:*
+  - Since it was necessary to balance personal tasks with reviewing other members' work within a limited timeframe, secured time to carry out the reviews.
 
-### `yonuma`
+### yehara
 
-- Role(s): TODO
-- Contributions: TODO
-- Challenges and solutions: TODO
-
-## Known Limitations
-
-- The local development proxy uses a self-signed certificate.
-- Presence state is maintained per backend instance and is not persisted in the database.
-- The default rate-limit and login-failure counters are in-memory and intended for a single application instance.
-- TODO: document any additional known limitations before evaluation.
-
-## License
-
-TODO: add the project license and credit information.
+- Defined the requirements, system architecture, database schema, and OpenAPI contract, and established the development foundation using Flyway, Swagger UI, and OpenAPI lint.
+- Built the Spring Boot API foundation and implemented APIs and integration tests for the common error format, room creation/listing/joining/leaving, chat, friend management, and other features.
+- Implemented login, logout, and session management, and established CSRF protection, API key authentication, rate limiting, account-status revalidation, and security audit logging.
+- Implemented real-time chat and presence through WebSocket and connected authentication, room, and friend features to the Gleam frontend.
+- Set up Docker Compose, Nginx, automatic generation of local HTTPS certificates, CI, and the frontend build environment.
+- Built the ELK, Actuator, Prometheus, and Grafana monitoring foundation, and automated the configuration of dashboards, incident alerts, and Discord notifications.
+- In line with the remaining time and final requirements, organized and removed out-of-scope features such as administration, blocking, timers, and work history, adjusting the implementation scope to a completable size.
+- *Challenge faced:*
+  - With limited time remaining for the initially planned features, removed unnecessary features while ensuring that the requirements were met.
