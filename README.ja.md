@@ -100,7 +100,7 @@ AIが生成した内容は、チームでレビュー、テスト、修正を行
 - Gleam
 - Lustre
 - Tailwind CSS
-- ブラウザAPIとSockJS/STOMP通信のためのJavaScript FFI
+- ブラウザAPIとSTOMP通信のためのJavaScript FFI
 
 型安全な関数型フロントエンドを構築するためにGleamを使用しています。Lustreでアプリケーション構造を作り、Tailwind CSSでスタイリングしています。
 
@@ -176,7 +176,7 @@ users
 | モジュール | 区分 | 実装内容 | 担当 |
 | --- | ---: | --- | --- |
 | フロントエンド・バックエンドフレームワーク | Major, 2点 | Gleam/LustreフロントエンドとSpring Bootバックエンド | `yehara`, `tmuranak` |
-| リアルタイム機能 | Major, 2点 | チャットと在席状態のSTOMP over SockJS/WebSocket | `yehara`, `tmuranak`, `yonuma` |
+| リアルタイム機能 | Major, 2点 | チャットと在席状態のSTOMP over WebSocket | `yehara`, `tmuranak`, `yonuma` |
 | ユーザー間機能 | Major, 2点 | プロフィール、フレンド、ルーム参加、チャット | `yehara`, `yonuma` |
 | 公開API | Major, 2点 | API keyとレート制限を備えたOpenAPI REST API | `yehara` |
 | ログ管理基盤 | Major, 2点 | Elasticsearch、Logstash、Kibana | `yehara` |
