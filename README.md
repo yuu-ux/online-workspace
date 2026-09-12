@@ -2,6 +2,8 @@ _This project has been created as part of the 42 curriculum by yehara, tmuranak,
 
 # Online Workspace
 
+[日本語版](README.ja.md)
+
 ## Description
 
 Online Workspace is a web application for people who want to work together online. Users can create and join shared work rooms, see who is currently present, and communicate through real-time chat.
