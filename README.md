@@ -71,7 +71,7 @@ HTTPS / WSS、Cookie、CSRF、CORS、セキュリティヘッダー、監査ロ�
 1. PostgreSQL を起動し、接続情報を環境変数で設定します。Composeでは `.env` の値が使われます。
    - `DB_URL` (default: `jdbc:postgresql://localhost:5432/postgres`)
    - `DB_USERNAME` (default: `postgres`)
-   - `DB_PASSWORD` (`.env` の `POSTGRES_PASSWORD`)
+   - `DB_PASSWORD`（必須。`.env` を使う場合は `POSTGRES_PASSWORD` の値を指定）
    - `MAIL_HOST` (default: `localhost`)
    - `MAIL_PORT` (default: `1025`)
 2. アプリを起動します。
@@ -81,7 +81,8 @@ HTTPS / WSS、Cookie、CSRF、CORS、セキュリティヘッダー、監査ロ�
 本番でも `SESSION_COOKIE_SECURE=true` を設定します。
 
 ```bash
-SESSION_COOKIE_SECURE=false ./gradlew bootRun
+set -a && source .env && set +a
+DB_PASSWORD="$POSTGRES_PASSWORD" SESSION_COOKIE_SECURE=false ./gradlew bootRun
 ```
 
 初回起動時に Flyway がマイグレーションを実行します。
