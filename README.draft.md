@@ -48,10 +48,10 @@ Online Workspaceは、包括的なコラボレーションプラットフォー�
 
 ## **チーム情報 (Team Information)**
 
-> * **\[login1\] (Product Owner / Developer):** プロジェクトのビジョン定義、機能の優先順位付け、フロントエンドのチャットインターフェースの実装を担当。  
-> * **\[login2\] (Scrum Master / Developer):** タスク分配の整理、GitHub Issuesの管理、ユーザー認証およびセッション管理のバックエンド開発を担当。  
-> * **\[login3\] (Tech Lead / Developer):** システム全体のアーキテクチャ設計、Dockerインフラストラクチャの構築、CI/CDワークフローの実装を担当。  
-> * **\[login4\] (Developer):** 監視スタック（ELK、Prometheus、Grafana）の実装、およびルーム管理機能の開発を担当。
+> * **\[yehara\] (Product Owner / Developer):** TODO
+> * **\[kofujita\] (Scrum Master / Developer):** TODO
+> * **\[tmuranak\] (Tech Lead / Developer):** フロントエンド周りGleamという純粋関数型言語を利用し、状態遷移の記述を得意とする言語、フレームワークを導入した。
+> * **\[yonuma\] (Developer):** TODO
 
 ## **プロジェクト管理 (Project Management)**
 
@@ -63,8 +63,7 @@ Online Workspaceは、包括的なコラボレーションプラットフォー�
 
 > * **フロントエンド:**  
   * **Gleam:** 堅牢なUIコンポーネントを構築するために使用した、型安全な関数型言語。  
-  * **Vite:** 高速な開発とバンドルを実現する次世代のフロントエンドツール。  
-  * **HTML/CSS:** カスタムスタイリング。  
+  * **HTML/Tailwind CSS:** ウェブデザイン
 > * **バックエンド:**  
   * **Java / Spring Boot:** 堅牢でセキュア、かつスケーラブルなREST APIおよびWebSocketサーバーを提供。  
   * **Gradle:** ビルド自動化ツール。  
