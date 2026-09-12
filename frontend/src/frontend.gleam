@@ -306,11 +306,15 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         }
         Error(_) -> Nil
       }
+      let notification = case response {
+        Ok(_) -> Some("ログアウトしました。")
+        Error(_) -> model.notification
+      }
       #(
         Model(
           session: update_home_model.session,
           current_page: Home(update_home_model),
-          notification: model.notification,
+          notification: notification,
         ),
         update_effect |> effect.map(HomeMsg),
       )
@@ -330,7 +334,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let #(update_login_model, _) = login.update(login_model, login.ToHome)
       let #(init_home_model, home_effect) = home.init(update_login_model.session)
       #(
-        Model(session: update_login_model.session, current_page: Home(init_home_model), notification: model.notification),
+        Model(session: update_login_model.session, current_page: Home(init_home_model), notification: Some("ログインしました。")),
         effect.batch([
           home_effect |> effect.map(HomeMsg),
           room_api.connect_to_notifications(NotificationReceived),

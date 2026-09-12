@@ -7,6 +7,7 @@ import lustre/element
 import gleam/string
 import pages/friend
 import pages/home
+import pages/login
 import pages/mypage
 import pages/profile
 import pages/room
@@ -806,6 +807,43 @@ pub fn notification_updates_global_model_test() {
 
   case updated_model.notification {
     Some(message) -> message |> should.equal("ルームを作成しました。")
+    None -> should.fail()
+  }
+}
+
+pub fn login_shows_success_notification_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(login_model, _) = login.init(session)
+  let model = frontend.Model(
+    current_page: frontend.Login(login_model),
+    session: session,
+    notification: None,
+  )
+
+  let #(updated_model, _) = frontend.update(model, frontend.LoginMsg(login.ToHome))
+
+  case updated_model.notification {
+    Some(message) -> message |> should.equal("ログインしました。")
+    None -> should.fail()
+  }
+}
+
+pub fn logout_shows_success_notification_test() {
+  let session = Authenticated(Token("session"), UserInfo("me", UserId("1")))
+  let #(home_model, _) = home.init(session)
+  let model = frontend.Model(
+    current_page: frontend.Home(home_model),
+    session: session,
+    notification: None,
+  )
+
+  let #(updated_model, _) = frontend.update(
+    model,
+    frontend.HomeMsg(home.LogoutCompleted(Ok(Nil))),
+  )
+
+  case updated_model.notification {
+    Some(message) -> message |> should.equal("ログアウトしました。")
     None -> should.fail()
   }
 }
