@@ -1,6 +1,9 @@
 package com.example.online_workspace.controllers.rooms;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -16,7 +19,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -31,6 +36,9 @@ class RoomControllerIntegrationTests {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+
+	@MockitoBean
+	private SimpMessagingTemplate messagingTemplate;
 
 	@Test
 	void createsRoomAndJoinsCreator() throws Exception {
@@ -57,6 +65,11 @@ class RoomControllerIntegrationTests {
 			"SELECT COUNT(*) FROM room_members WHERE room_id = 1 AND user_id = 1 AND left_at IS NULL",
 			Integer.class
 		)).isOne();
+		verify(messagingTemplate).convertAndSendToUser(
+			eq("creator@example.com"),
+			eq("/queue/notifications"),
+			argThat(payload -> payload != null && payload.toString().contains("ルームを作成しました。"))
+		);
 	}
 
 	@ParameterizedTest
