@@ -1,4 +1,4 @@
-package com.example.online_workspace.controllers.members;
+package com.example.online_workspace.controllers.rooms;
 
 import java.time.Instant;
 import java.util.List;
