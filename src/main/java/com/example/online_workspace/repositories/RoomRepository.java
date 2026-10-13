@@ -76,16 +76,6 @@ public interface RoomRepository {
 		""")
 	RoomState findRoomState(@Param("roomId") long roomId);
 
-	@Select("""
-		SELECT EXISTS (
-			SELECT 1
-			FROM room_categories rc
-			JOIN room_category_statuses rcs ON rcs.id = rc.status_id
-			WHERE rc.id = #{categoryId} AND rcs.code = 'ACTIVE'
-		)
-		""")
-	boolean existsActiveCategory(@Param("categoryId") long categoryId);
-
 	@Update("""
 		UPDATE rooms
 		SET name = #{name},
