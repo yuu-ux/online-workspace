@@ -1,0 +1,47 @@
+name: ELK startup
+
+on:
+  pull_request:
+    paths:
+      - compose.yaml
+      - compose.observability.yaml
+      - docker/elk/**
+      - .github/workflows/elk-startup.yaml
+
+permissions:
+  contents: read
+
+jobs:
+  startup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      POSTGRES_PASSWORD: elk-startup-test-only
+      MANAGEMENT_API_KEY: elk-startup-test-only
+      ELASTIC_PASSWORD: elk-startup-test-only
+      GRAFANA_ADMIN_PASSWORD: elk-startup-test-only
+      GRAFANA_ALERT_DISCORD_WEBHOOK_URL: https://example.invalid/webhook
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Elasticsearch and Kibana with automatic token setup
+        run: |
+          docker compose --env-file /dev/null up -d --wait --wait-timeout 300 elasticsearch kibana
+          curl --fail --silent --show-error --output /dev/null \
+            --retry 60 --retry-all-errors --retry-delay 2 --max-time 10 \
+            http://localhost:5601/api/status
+          docker compose exec -T elasticsearch sha256sum config/kibana-service-token > /tmp/kibana-token-before
+      - name: Verify token reuse after restart
+        run: |
+          docker compose --env-file /dev/null stop kibana elasticsearch
+          docker compose --env-file /dev/null up -d --wait --wait-timeout 300 elasticsearch kibana
+          curl --fail --silent --show-error --output /dev/null \
+            --retry 60 --retry-all-errors --retry-delay 2 --max-time 10 \
+            http://localhost:5601/api/status
+          docker compose exec -T elasticsearch sha256sum config/kibana-service-token > /tmp/kibana-token-after
+          cmp /tmp/kibana-token-before /tmp/kibana-token-after
+      - name: Show startup logs on failure
+        if: failure()
+        run: docker compose --env-file /dev/null logs elasticsearch kibana-setup kibana
+      - name: Clean up test containers
+        if: always()
+        run: docker compose --env-file /dev/null down --volumes
