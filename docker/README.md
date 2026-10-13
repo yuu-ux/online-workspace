@@ -2,6 +2,9 @@
 
 この構成では、Elasticsearchが生成するHTTP CAを共有し、LogstashとKibanaが
 CA検証付きHTTPSでElasticsearchへ接続します。`ELASTIC_PASSWORD` は必須です。
+Elasticsearchの自動セキュリティ設定は起動時に `config/certs` を作り直すため、
+証明書だけではなく設定ディレクトリ全体を名前付きvolumeとして共有します。
+`http.publish_host` にComposeのサービス名を指定し、クライアント側ではホスト名検証も行います。
 
 ログは `online-workspace-*` に保存され、ILMで30日後に削除されます。30日を超えて
 保存する必要がある場合は、削除前にElasticsearch Snapshot Repositoryへ
