@@ -132,22 +132,6 @@ public interface UserRepository {
 		""")
 	MyProfileRow findMyProfileByEmail(@Param("email") String email);
 
-	/**
-	 * 指定したユーザー行をロックし、存在を確認する。
-	 *
-	 * @param userId ロックするユーザーID
-	 * @return ユーザーが存在する場合はtrue
-	 */
-	@Select("""
-		SELECT EXISTS (
-			SELECT 1
-			FROM users
-			WHERE id = #{userId}
-			FOR UPDATE
-		)
-		""")
-	boolean lockById(@Param("userId") long userId);
-
 	@Select("""
 		SELECT u.id FROM users u
 		JOIN account_statuses s ON s.id = u.account_status_id
