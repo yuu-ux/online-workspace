@@ -14,17 +14,6 @@ services:
     depends_on:
       - backend
 
-  # チャット機能テスト用
-  ws-mock:
-    image: denoland/deno:alpine
-    container_name: online-workspace-ws-mock
-    working_dir: /app
-    ports:
-      - "${WS_MOCK_PORT:-8081}:8081"
-    volumes:
-      - ./mock-server:/app
-    command: run --allow-net server.ts
-
   backend:
     image: eclipse-temurin:25-jdk
     container_name: online-workspace-backend
