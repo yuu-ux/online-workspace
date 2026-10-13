@@ -19,18 +19,17 @@ Elasticsearchの自動セキュリティ設定は起動時に `config/certs` を
 ```bash
 cp .env.example .env
 # .envを編集して、パスワードとAPIキーを変更する
-set -a && source .env && set +a
 ```
 
 `.env` はGit管理対象外です。実際のパスワードやAPIキーをコミットしないでください。
 
 ## 2. Composeを起動する
 
+`compose.yaml` が監視サービスの構成も自動的に取り込むため、次の1コマンドで
+アプリケーション、Elasticsearch、Logstash、Kibana、Prometheus、Grafanaを起動できます。
+
 ```bash
-docker compose \
-  -f compose.yaml \
-  -f compose.observability.yaml \
-  up -d
+docker compose up -d
 ```
 
 `elk-policy` がILMポリシーとインデックステンプレートを登録します。
@@ -43,6 +42,7 @@ docker compose \
 Elasticsearch検索、Kibanaヘルスを順に確認します。
 
 ```bash
+set -a && source .env && set +a
 bash scripts/tests/172/elk_validation.sh
 ```
 
@@ -57,8 +57,5 @@ bash scripts/tests/172/elk_validation.sh
 初回設定後は、以下の起動だけで構成を再利用できます。
 
 ```bash
-docker compose \
-  -f compose.yaml \
-  -f compose.observability.yaml \
-  up -d
+docker compose up -d
 ```

@@ -20,8 +20,12 @@ Online Workspace は、オンラインで他のユーザーと一緒に作業す
 
 ## 実行手順
 
+`.env.example` を `.env` にコピーし、先に `change-this-*` の値を変更してください。
+
 ```bash
-docker compose up --build
+cp .env.example .env
+# .envの秘密値を変更してから実行する
+docker compose up -d
 ```
 
 開発用プロキシには次のURLからアクセスできます。
@@ -32,14 +36,8 @@ docker compose up --build
 
 ### 監視環境の起動
 
-監視サービスは `compose.observability.yaml` に定義されています。必要な変数を設定して次を実行します。
-
-```bash
-MANAGEMENT_API_KEY="change-me" \
-GRAFANA_ADMIN_PASSWORD="change-me" \
-GRAFANA_ALERT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." \
-docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
-```
+`compose.yaml` が監視サービスも自動的に取り込むため、上記のコマンドだけで
+アプリケーション、Elasticsearch、Logstash、Kibana、Prometheus、Grafanaを起動できます。
 
 ## 参考資料
 
