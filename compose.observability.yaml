@@ -3,10 +3,11 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.1
     environment:
       discovery.type: single-node
+      http.publish_host: elasticsearch
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
-      - elasticsearch_certs:/usr/share/elasticsearch/config/certs
+      - elasticsearch_config:/usr/share/elasticsearch/config
     ports:
       - "${ELASTICSEARCH_PORT:-9200}:9200"
     healthcheck:
@@ -27,7 +28,7 @@ services:
       - ./docker/elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
       - app_logs:/var/log/app:ro
       - logstash_data:/usr/share/logstash/data
-      - elasticsearch_certs:/usr/share/logstash/config/certs:ro
+      - elasticsearch_config:/usr/share/logstash/config/es-config:ro
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -38,7 +39,7 @@ services:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}
     volumes:
       - ./docker/elk/elasticsearch:/config:ro
-      - elasticsearch_certs:/certs:ro
+      - elasticsearch_config:/es-config:ro
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -46,32 +47,74 @@ services:
     command:
       - |
         curl --fail --silent --show-error \
-          --cacert /certs/http_ca.crt \
+          --cacert /es-config/certs/http_ca.crt \
           -u "elastic:$${ELASTIC_PASSWORD}" \
           -X PUT https://elasticsearch:9200/_ilm/policy/online-workspace-logs \
           -H 'Content-Type: application/json' \
           --data-binary @/config/ilm-policy.json
         curl --fail --silent --show-error \
-          --cacert /certs/http_ca.crt \
+          --cacert /es-config/certs/http_ca.crt \
           -u "elastic:$${ELASTIC_PASSWORD}" \
           -X PUT https://elasticsearch:9200/_index_template/online-workspace-logs \
           -H 'Content-Type: application/json' \
           --data-binary @/config/index-template.json
 
+  kibana-setup:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.1
+    user: "1000:0"
+    volumes:
+      - elasticsearch_config:/usr/share/elasticsearch/config
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        token_file=config/kibana-service-token
+        tokens=$$(bin/elasticsearch-service-tokens list elastic/kibana)
+        if [ ! -s "$$token_file" ] || ! printf '%s\n' "$$tokens" | grep -Fxq 'elastic/kibana/online-workspace'; then
+          if printf '%s\n' "$$tokens" | grep -Fxq 'elastic/kibana/online-workspace'; then
+            bin/elasticsearch-service-tokens delete elastic/kibana online-workspace
+          fi
+          output=$$(bin/elasticsearch-service-tokens create elastic/kibana online-workspace)
+          prefix='SERVICE_TOKEN elastic/kibana/online-workspace = '
+          case "$$output" in
+            "$$prefix"?*) token=$${output#"$$prefix"} ;;
+            *) echo 'Service token creation returned an unexpected response' >&2; exit 1 ;;
+          esac
+          umask 077
+          printf '%s\n' "$$token" > "$$token_file.tmp"
+          mv "$$token_file.tmp" "$$token_file"
+        fi
+        # Elasticsearch dynamically reloads service_tokens; wait for authentication to succeed.
+        curl --fail --silent --show-error --output /dev/null \
+          --retry 10 --retry-all-errors --retry-delay 1 --max-time 10 \
+          --cacert config/certs/http_ca.crt \
+          -H "Authorization: Bearer $$(cat "$$token_file")" \
+          https://elasticsearch:9200/_security/_authenticate
+
   kibana:
     image: docker.elastic.co/kibana/kibana:9.5.1
     environment:
       ELASTICSEARCH_HOSTS: https://elasticsearch:9200
-      ELASTICSEARCH_USERNAME: elastic
-      ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}
-      ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: /usr/share/kibana/config/certs/http_ca.crt
+      ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: /usr/share/kibana/config/es-config/certs/http_ca.crt
+      ELASTICSEARCH_SSL_VERIFICATIONMODE: full
+    command:
+      - /bin/bash
+      - -ec
+      - |
+        export ELASTICSEARCH_SERVICEACCOUNTTOKEN=$$(cat /usr/share/kibana/config/es-config/kibana-service-token)
+        test -n "$$ELASTICSEARCH_SERVICEACCOUNTTOKEN"
+        exec /usr/local/bin/kibana-docker
     ports:
       - "${KIBANA_PORT:-5601}:5601"
     depends_on:
       elasticsearch:
         condition: service_healthy
+      kibana-setup:
+        condition: service_completed_successfully
     volumes:
-      - elasticsearch_certs:/usr/share/kibana/config/certs:ro
+      - elasticsearch_config:/usr/share/kibana/config/es-config:ro
 
   prometheus:
     image: prom/prometheus:v3.14.0
@@ -115,7 +158,7 @@ secrets:
 
 volumes:
   elasticsearch_data:
-  elasticsearch_certs:
+  elasticsearch_config:
   logstash_data:
   prometheus_data:
   grafana_data:

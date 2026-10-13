@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-COMPOSE=(docker compose -f compose.yaml -f compose.observability.yaml)
+COMPOSE=(docker compose)
 : "${ELASTIC_PASSWORD:?Set ELASTIC_PASSWORD before running this script}"
 
 marker="elk-validation-$(date +%s)-$$"

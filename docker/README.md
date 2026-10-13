@@ -2,6 +2,9 @@
 
 この構成では、Elasticsearchが生成するHTTP CAを共有し、LogstashとKibanaが
 CA検証付きHTTPSでElasticsearchへ接続します。`ELASTIC_PASSWORD` は必須です。
+Elasticsearchの自動セキュリティ設定は起動時に `config/certs` を作り直すため、
+証明書だけではなく設定ディレクトリ全体を名前付きvolumeとして共有します。
+`http.publish_host` にComposeのサービス名を指定し、クライアント側ではホスト名検証も行います。
 
 ログは `online-workspace-*` に保存され、ILMで30日後に削除されます。30日を超えて
 保存する必要がある場合は、削除前にElasticsearch Snapshot Repositoryへ
@@ -16,21 +19,24 @@ CA検証付きHTTPSでElasticsearchへ接続します。`ELASTIC_PASSWORD` は�
 ```bash
 cp .env.example .env
 # .envを編集して、パスワードとAPIキーを変更する
-set -a && source .env && set +a
 ```
 
 `.env` はGit管理対象外です。実際のパスワードやAPIキーをコミットしないでください。
 
 ## 2. Composeを起動する
 
+`compose.yaml` が監視サービスの構成も自動的に取り込むため、次の1コマンドで
+アプリケーション、Elasticsearch、Logstash、Kibana、Prometheus、Grafanaを起動できます。
+
 ```bash
-docker compose \
-  -f compose.yaml \
-  -f compose.observability.yaml \
-  up -d
+docker compose up -d
 ```
 
 `elk-policy` がILMポリシーとインデックステンプレートを登録します。
+`kibana-setup` が `elastic/kibana` のサービスアカウントトークンを自動発行し、
+Elasticsearchの設定volumeに保存します。Kibanaは初期化成功後にそのトークンで
+接続し、再起動時も再利用します。トークンの手動発行や `.env` への追記は不要です。
+`elk-policy` と `kibana-setup` は正常完了後に終了する初期化用サービスです。
 既存の `elasticsearch_data` volume を使う場合、パスワードは初回作成時の値が
 維持されるため、`.env` と一致させてください。
 
@@ -40,6 +46,7 @@ docker compose \
 Elasticsearch検索、Kibanaヘルスを順に確認します。
 
 ```bash
+set -a && source .env && set +a
 bash scripts/tests/172/elk_validation.sh
 ```
 
@@ -54,8 +61,5 @@ bash scripts/tests/172/elk_validation.sh
 初回設定後は、以下の起動だけで構成を再利用できます。
 
 ```bash
-docker compose \
-  -f compose.yaml \
-  -f compose.observability.yaml \
-  up -d
+docker compose up -d
 ```

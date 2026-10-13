@@ -20,8 +20,12 @@ The project is designed to let logged-in users join work rooms for a shared purp
 
 ## Getting Started
 
+Copy `.env.example` to `.env` and replace the `change-this-*` values first.
+
 ```bash
-docker compose up --build
+cp .env.example .env
+# Change the secret values in .env before starting
+docker compose up -d
 ```
 
 Access the development proxy at the following URL:
@@ -32,14 +36,8 @@ The proxy uses a self-signed certificate for development. Your browser may requi
 
 ### Starting the Observability Environment
 
-The observability services are defined in `compose.observability.yaml`. Set the required variables and run:
+`compose.yaml` automatically includes the observability services, so the command above starts the entire environment.
 
-```bash
-MANAGEMENT_API_KEY="change-me" \
-GRAFANA_ADMIN_PASSWORD="change-me" \
-GRAFANA_ALERT_DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..." \
-docker compose -f compose.yaml -f compose.observability.yaml up prometheus grafana
-```
 
 ## References
 
