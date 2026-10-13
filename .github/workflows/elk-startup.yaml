@@ -44,7 +44,7 @@ jobs:
           for marker in logstashciinitial logstashciafterrestart; do
             docker compose --env-file /dev/null run --rm --no-deps --entrypoint /bin/sh backend -ec \
               'printf "%s INFO [elk-ci] %s\n" "$(date -Iseconds)" "$1" >> /var/log/app/application.log' sh "$marker"
-            docker compose --env-file /dev/null up -d --wait --wait-timeout 120 elk-policy logstash
+            docker compose --env-file /dev/null up -d elk-policy logstash
             found=false
             for attempt in $(seq 1 90); do
               if docker compose --env-file /dev/null exec -T elasticsearch sh -ec \
