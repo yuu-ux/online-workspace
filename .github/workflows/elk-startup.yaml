@@ -39,9 +39,44 @@ jobs:
             http://localhost:5601/api/status
           docker compose exec -T elasticsearch sha256sum config/kibana-service-token > /tmp/kibana-token-after
           cmp /tmp/kibana-token-before /tmp/kibana-token-after
+      - name: Verify Logstash ingestion and checkpoint persistence
+        run: |
+          for marker in logstashciinitial logstashciafterrestart; do
+            docker compose --env-file /dev/null run --rm --no-deps --entrypoint /bin/sh backend -ec \
+              'printf "%s INFO [elk-ci] %s\n" "$(date -Iseconds)" "$1" >> /var/log/app/application.log' sh "$marker"
+            docker compose --env-file /dev/null up -d elk-policy logstash
+            found=false
+            for attempt in $(seq 1 90); do
+              if docker compose --env-file /dev/null exec -T elasticsearch sh -ec \
+                'curl --fail --silent --cacert config/certs/http_ca.crt -u "elastic:${ELASTIC_PASSWORD}" \
+                  --get https://localhost:9200/online-workspace-*/_search \
+                  --data-urlencode "q=message:$1" --data-urlencode size=1' sh "$marker" \
+                | jq -e '.hits.total.value == 1' > /dev/null; then
+                found=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$found" != true ]; then
+              echo "Logstash failed to index $marker" >&2
+              exit 1
+            fi
+            if [ "$marker" = logstashciinitial ]; then
+              docker compose --env-file /dev/null stop logstash
+            fi
+          done
+          docker compose --env-file /dev/null exec -T elasticsearch sh -ec \
+            'curl --fail --silent --cacert config/certs/http_ca.crt -u "elastic:${ELASTIC_PASSWORD}" \
+              --get https://localhost:9200/online-workspace-*/_search \
+              --data-urlencode q=message:logstashciinitial --data-urlencode size=1' \
+            | jq -e '.hits.total.value == 1'
+          docker compose --env-file /dev/null exec -T elasticsearch sh -ec \
+            'curl --fail --silent --cacert config/certs/http_ca.crt -u "elastic:${ELASTIC_PASSWORD}" \
+              https://localhost:9200/online-workspace-*/_settings/index.lifecycle.name' \
+            | jq -e 'length > 0 and all(.[]; .settings.index.lifecycle.name == "online-workspace-logs")'
       - name: Show startup logs on failure
         if: failure()
-        run: docker compose --env-file /dev/null logs elasticsearch kibana-setup kibana
+        run: docker compose --env-file /dev/null logs elasticsearch kibana-setup kibana elk-policy logstash
       - name: Clean up test containers
         if: always()
         run: docker compose --env-file /dev/null down --volumes

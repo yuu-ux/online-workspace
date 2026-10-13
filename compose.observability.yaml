@@ -32,9 +32,12 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+      elk-policy:
+        condition: service_completed_successfully
 
   elk-policy:
     image: curlimages/curl:8.16.0
+    user: "1000:0"
     environment:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}
     volumes:
