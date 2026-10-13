@@ -70,6 +70,10 @@ jobs:
               --get https://localhost:9200/online-workspace-*/_search \
               --data-urlencode q=message:logstashciinitial --data-urlencode size=1' \
             | jq -e '.hits.total.value == 1'
+          docker compose --env-file /dev/null exec -T elasticsearch sh -ec \
+            'curl --fail --silent --cacert config/certs/http_ca.crt -u "elastic:${ELASTIC_PASSWORD}" \
+              https://localhost:9200/online-workspace-*/_settings/index.lifecycle.name' \
+            | jq -e 'length > 0 and all(.[]; .settings.index.lifecycle.name == "online-workspace-logs")'
       - name: Show startup logs on failure
         if: failure()
         run: docker compose --env-file /dev/null logs elasticsearch kibana-setup kibana elk-policy logstash

@@ -39,6 +39,7 @@ Elasticsearchの設定volumeに保存します。Kibanaは初期化成功後に�
 `elk-policy` と `kibana-setup` は正常完了後に終了する初期化用サービスです。
 Logstashの読み取り位置はデフォルトのsincedbで管理し、`logstash_data` volumeに
 永続化します。保存先ディレクトリはLogstashが自動作成します。
+Logstashは `elk-policy` の正常完了を待って起動し、最初のログからILM設定を適用します。
 既存の `elasticsearch_data` volume を使う場合、パスワードは初回作成時の値が
 維持されるため、`.env` と一致させてください。
 
